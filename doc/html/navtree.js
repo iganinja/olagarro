@@ -11,6 +11,7 @@ var NAVTREE =
         [ "Implementation details", "index.html#Implementation", null ]
       ] ]
     ] ],
+    [ "Olagarro C++ utility library", "md__i_1_proyectos_olagarro__r_e_a_d_m_e.html", null ],
     [ "Namespaces", null, [
       [ "Namespace List", "namespaces.html", "namespaces" ],
       [ "Namespace Members", "namespacemembers.html", [

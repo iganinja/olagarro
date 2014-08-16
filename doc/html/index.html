@@ -47,6 +47,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
+      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -118,6 +119,8 @@ Examples</h2>
 <p>Concurrency module is very easy to use. Here are some examples and it does not get more complicated. First we see how to launch a task in another thread:</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;olagarro/concurrency.h&quot;</span></div>
 <div class="line"></div>
+<div class="line"><span class="keyword">using namespace </span>Olagarro;</div>
+<div class="line"></div>
 <div class="line"><span class="keywordtype">float</span> calculateSomeValue(<span class="keyword">const</span> std::vector&lt;float&gt;&amp; someData)</div>
 <div class="line">{</div>
 <div class="line">    <span class="keywordtype">float</span> valueResult = 0.0f;</div>
@@ -129,7 +132,7 @@ Examples</h2>
 <div class="line">{</div>
 <div class="line">    std:vector&lt;float&gt; data(getSomeData());</div>
 <div class="line"></div>
-<div class="line">    Olagarro::Result&lt;float&gt; someValue = Olagarro::launchJob(calculateSomeValue, data);</div>
+<div class="line">    Concurrency::Result&lt;float&gt; someValue = <a class="code" href="namespace_olagarro_1_1_concurrency.html#a49802e2fcab5a2bb8fcf4354ee75ea16" title="Launches a function asynchronously. ">Concurrency::launchJob</a>(calculateSomeValue, data);</div>
 <div class="line"></div>
 <div class="line">    std::cout &lt;&lt; <span class="stringliteral">&quot;Result is = &quot;</span> &lt;&lt; someValue.result() &lt;&lt; std::endl;</div>
 <div class="line">}</div>
@@ -137,6 +140,8 @@ Examples</h2>
 <p>It is possible to launch any number of jobs: concurrency module will enqueue and process them as soon as it can, which is when a physical CPU core is free from a previous Job.</p>
 <p>Other utility provided by concurrency module is concurrentFor, which spawns as many threads as machine's CPU core number:</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;olagarro/concurrency.h&quot;</span></div>
+<div class="line"></div>
+<div class="line"><span class="keyword">using namespace </span>Olagarro;</div>
 <div class="line"></div>
 <div class="line"><span class="keywordtype">void</span> addOK(<span class="keywordtype">int</span> index, std::string&amp; str)</div>
 <div class="line">{</div>
@@ -147,7 +152,7 @@ Examples</h2>
 <div class="line">{</div>
 <div class="line">    std::vector&lt;std::string&gt; messages(getMessages());</div>
 <div class="line"></div>
-<div class="line">    Future&lt;void&gt; messagesFuture = Olagarro::concurrentFor(messages.begin(), messages.end(), addOK);</div>
+<div class="line">    Future&lt;void&gt; messagesFuture = <a class="code" href="namespace_olagarro_1_1_concurrency.html#ab27239c32b7753251250f4336566bca3" title="Launches a function concurrently taking into account passed element number and host&#39;s CPUs...">Concurrency::concurrentFor</a>(messages.begin(), messages.end(), addOK);</div>
 <div class="line"></div>
 <div class="line">    messagesFuture.result(); <span class="comment">// Block until all processing is done</span></div>
 <div class="line"></div>
@@ -169,7 +174,7 @@ Implementation details</h2>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Sat Aug 16 2014 18:25:35 for Olagarro by
+    <li class="footer">Generated on Sat Aug 16 2014 19:26:00 for Olagarro by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.4 </li>
   </ul>
