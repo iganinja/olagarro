@@ -1,104 +1,108 @@
-/// @file
-/// @mainpage Documentation
-/// Olagarro is a C++ utility library which aims to provide small, easily usable, portable and useful utilities. Currently it only contains the concurrency module.
-///
-/// License is zlib/libpng (http://opensource.org/licenses/zlib-license.php)
-///
-/// @section concurrency_sec Concurrency module
-/// Concurrency module provides some facilities to take advantage of multiple CPUs of modern machines in a very easy and straightforward way. It uses
-/// futures paradigm in order to launch concurrent jobs or tasks in an unobstructive way. It is inspired by <a href="http://qt-project.org/doc/qt-5/qtconcurrent-index.html">Qt's concurrency module</a>.
-///
-///	It's written in C++ 2003 and does not use C++11 features in order to be able to offer its functionality in older compilers. Also in C++11 there is std::async so concurrency module would be redundant. In some
-/// way it can be seen as a C++ 2003 version of C++11's std::async.
-///
-/// @subsection Portability
-/// Concurrency module uses <a href="http://tinythreadpp.bitsnbites.eu/">TinyThread++</a> in order to have portable threads, so module is as portable as that library. It have been tested on Windows, Linux, Mac OS X and iOS.
-///
-///
-/// @subsection Installation
-/// Module's installation is very easy: just unzip library somewhere in your project's tree and add .h and .cpp files to it in your IDE or project file. 
-/// There is no need to build a library, configure it or something similar.
-///
-/// @subsection Examples
-/// Concurrency module is very easy to use. Here are some examples and it does not get more complicated. First we see how to launch a task in another thread:
-///
-/// @code
-///
-///
-/// #include "olagarro/concurrency.h"
-///
-///	float calculateSomeValue(const std::vector<float>& someData)
-///	{
-///		float valueResult = 0.0f;
-///		// ...
-///		return valueResult;
-///	}
-///
-///	void otherFunction()
-///	{
-///		std:vector<float> data(getSomeData());
-///
-///		Olagarro::Result<float> someValue = Olagarro::launchJob(calculateSomeValue, data);
-///
-///		std::cout << "Result is = " << someValue.result() << std::endl;
-///	}
-///
-/// @endcode
-///
-/// In this example calculateSomeValue() runs in a different thread than calling code. Calling someValue.result() we block calling thread until calculateSomeValue()
-/// finishes its job or it just returns calculated value immediately if job has been done. This way using concurrency module we can launch
-/// jobs, do some other task while they are running in another threads and then ask for their result, blocking if its needed. No thread manual handling is required at all.
-///
-/// It is possible to launch any number of jobs: concurrency module will enqueue and process them as soon as it can, which is when a physical CPU core is free from a previous Job.
-///
-/// Other utility provided by concurrency module is concurrentFor, which spawns as many threads as machine's CPU core number:
-///
-/// @code
-///
-/// #include "olagarro/concurrency.h"
-///
-///	void addOK(int index, std::string& str)
-///	{
-///		str += " OK";
-///	}
-///
-///	void otherFunction()
-///	{
-///		std::vector<std::string> messages(getMessages());
-///
-///		Future<void> messagesFuture = Olagarro::concurrentFor(messages.begin(), messages.end(), addOK);
-///
-///		messagesFuture.result(); // Block until all processing is done
-///
-///		std::cout << "All strings processed\n";
-///	}
-///
-/// @endcode
-///
-/// In this example we process a vector of strings. For each string a call is made to addOk() function, passing element's index and element itself to it.
-/// If that code runs in a machine with 4 CPUs, messages vector will be split in 4 parts and each part will be processed in its own thread. concurrentFor() call is no blocking,
-/// so we need a Future in order to know when it has finished its job.
-///
-/// These two examples summarize what concurrency module can do. There are other versions which take methods or functors instead of functions but everything falls in one of these two categories.
-///
-/// @subsection raceconds Race conditions
-/// 
-/// If we are using for example a std::vector<int> in a function which modifies it and we call it with launchJob or concurrentFor, this std::vector<int> variable will be modified in another one or more threads. The calling
-/// thread should not modify it at the same time because concurrency module takes no care avoiding data races. That is, no locking or synchronization job is done so use this module with totally independent tasks. In the case
-/// of concurrentFor the std::vector<int> would be split in several chunks. Function assumes each element of the vector can be processed on its own, without the intervention of the other elements of the vector.
-///
-/// @subsection Performance
-///	This concurrency module nor any other concurrency library will offer a "magical" performance boost to your code. Sometimes serial code will be faster (even by several orders of magnitude) than
-/// concurrent one due to the type of calculations, memory access, etc you are doing. Concurrency only makes sense when you have heavy tasks which take much more time doing its job than managing its launching, or
-/// to avoid blocking some important thread (like GUI thread in a typical desktop application). Fortunately concurrency module is very unobstructive so you can easily make your code take
-/// advantage of its facilities, profile your new code and see if it's worth or not to go concurrent.
-///
-///
-/// @subsection Implementation Implementation details
-///	Concurrency module manages a thread pool under the hood. This pool contains several threads blocked, waiting for new tasks. When launchJob() or concurrentFor()
-/// is called, those functions create tasks and enqueue them in the task queue. This way tasks are executed in sequential order (first in first executed) but
-/// due to their asynchronous nature they finish in a non-ordered fashion.
-/// Be careful: concurrency module is not designed to have nested tasks. In other words, it's dangerous that a function launched by launchJob() makes a call to launchJob(), thread pool could get blocked forever.
+@file
+@mainpage Documentation
+Olagarro is a C++ utility library which aims to provide small, easily usable, portable and useful utilities. Currently it only contains the concurrency module.
+
+License is zlib/libpng (http://opensource.org/licenses/zlib-license.php)
+
+@section concurrency_sec Concurrency module
+Concurrency module provides some facilities to take advantage of multiple CPUs of modern machines in a very easy and straightforward way. It uses
+futures paradigm in order to launch concurrent jobs or tasks in an unobstructive way. It is inspired by <a href="http://qt-project.org/doc/qt-5/qtconcurrent-index.html">Qt's concurrency module</a>.
+
+It's written in C++ 2003 and does not use C++11 features in order to be able to offer its functionality in older compilers. Also in C++11 there is std::async so concurrency module would be redundant. In some
+way it can be seen as a C++ 2003 version of C++11's std::async.
+
+@subsection Portability
+Concurrency module uses <a href="http://tinythreadpp.bitsnbites.eu/">TinyThread++</a> in order to have portable threads, so module is as portable as that library. It have been tested on Windows, Linux, Mac OS X and iOS.
+
+
+@subsection Installation
+Module's installation is very easy: just unzip library somewhere in your project's tree and add .h and .cpp files to it in your IDE or project file. 
+There is no need to build a library, configure it or something similar.
+
+@subsection Examples
+Concurrency module is very easy to use. Here are some examples and it does not get more complicated. First we see how to launch a task in another thread:
+
+@code
+
+
+#include "olagarro/concurrency.h"
+
+using namespace Olagarro;
+
+float calculateSomeValue(const std::vector<float>& someData)
+{
+	float valueResult = 0.0f;
+	// ...
+	return valueResult;
+}
+
+void otherFunction()
+{
+	std:vector<float> data(getSomeData());
+
+	Concurrency::Result<float> someValue = Concurrency::launchJob(calculateSomeValue, data);
+
+	std::cout << "Result is = " << someValue.result() << std::endl;
+}
+
+@endcode
+
+In this example calculateSomeValue() runs in a different thread than calling code. Calling someValue.result() we block calling thread until calculateSomeValue()
+finishes its job or it just returns calculated value immediately if job has been done. This way using concurrency module we can launch
+jobs, do some other task while they are running in another threads and then ask for their result, blocking if its needed. No thread manual handling is required at all.
+
+It is possible to launch any number of jobs: concurrency module will enqueue and process them as soon as it can, which is when a physical CPU core is free from a previous Job.
+
+Other utility provided by concurrency module is concurrentFor, which spawns as many threads as machine's CPU core number:
+
+@code
+
+#include "olagarro/concurrency.h"
+
+using namespace Olagarro;
+
+void addOK(int index, std::string& str)
+{
+	str += " OK";
+}
+
+void otherFunction()
+{
+	std::vector<std::string> messages(getMessages());
+
+	Future<void> messagesFuture = Concurrency::concurrentFor(messages.begin(), messages.end(), addOK);
+
+	messagesFuture.result(); // Block until all processing is done
+
+	std::cout << "All strings processed\n";
+}
+
+@endcode
+
+In this example we process a vector of strings. For each string a call is made to addOk() function, passing element's index and element itself to it.
+If that code runs in a machine with 4 CPUs, messages vector will be split in 4 parts and each part will be processed in its own thread. concurrentFor() call is no blocking,
+so we need a Future in order to know when it has finished its job.
+
+These two examples summarize what concurrency module can do. There are other versions which take methods or functors instead of functions but everything falls in one of these two categories.
+
+@subsection raceconds Race conditions
+
+If we are using for example a std::vector<int> in a function which modifies it and we call it with launchJob or concurrentFor, this std::vector<int> variable will be modified in another one or more threads. The calling
+thread should not modify it at the same time because concurrency module takes no care avoiding data races. That is, no locking or synchronization job is done so use this module with totally independent tasks. In the case
+of concurrentFor the std::vector<int> would be split in several chunks. Function assumes each element of the vector can be processed on its own, without the intervention of the other elements of the vector.
+
+@subsection Performance
+This concurrency module nor any other concurrency library will offer a "magical" performance boost to your code. Sometimes serial code will be faster (even by several orders of magnitude) than
+concurrent one due to the type of calculations, memory access, etc you are doing. Concurrency only makes sense when you have heavy tasks which take much more time doing its job than managing its launching, or
+to avoid blocking some important thread (like GUI thread in a typical desktop application). Fortunately concurrency module is very unobstructive so you can easily make your code take
+advantage of its facilities, profile your new code and see if it's worth or not to go concurrent.
+
+
+@subsection Implementation Implementation details
+Concurrency module manages a thread pool under the hood. This pool contains several threads blocked, waiting for new tasks. When launchJob() or concurrentFor()
+is called, those functions create tasks and enqueue them in the task queue. This way tasks are executed in sequential order (first in first executed) but
+due to their asynchronous nature they finish in a non-ordered fashion.
+Be careful: concurrency module is not designed to have nested tasks. In other words, it's dangerous that a function launched by launchJob() makes a call to launchJob(), thread pool could get blocked forever.
 
 Copyright (c) 2014 Inaki Griego
 
