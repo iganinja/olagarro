@@ -41,6 +41,7 @@ void otherFunction()
 	Concurrency::Future<void> messagesFuture = Concurrency::concurrentFor(messages.begin(), messages.end(), addOK);
 	messagesFuture.result(); // Block until all processing is done
 	std::cout << "All strings processed\n";
-}```
+}
+```
 
 For more details take a look at the documentation.
