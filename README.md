@@ -13,7 +13,7 @@ Concurrency module provides some facilities to take advantage of multiple CPUs o
 
 Module presents basically 2 facilities: launchJob and concurrentFor in various flavours:
 
-```
+```CPP
 #include "olagarro/concurrency.h"
 
 using namespace Olagarro;
