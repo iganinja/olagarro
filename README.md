@@ -1,6 +1,8 @@
 Olagarro C++ utility library
 ========
 
+![Olagarro logo](https://raw.githubusercontent.com/iganinja/olagarro/master/doc/logo.png)
+
 Olagarro is a C++ utility library which aims to provide small, easily usable, portable and useful utilities. Currently it only contains the concurrency module.
 
 License is zlib/libpng (http://opensource.org/licenses/zlib-license.php)
