@@ -28,16 +28,18 @@ float calculateSomeValue(const std::vector<float>& someData)
 void otherFunction()
 {
 	std:vector<float> data(getSomeData());
-	Concurrency::Result<float> someValue = Concurrency::launchJob(calculateSomeValue, data);
+	Concurrency::Future<float> someValue = Concurrency::launchJob(calculateSomeValue, data);
 	std::cout << "Result is = " << someValue.result() << std::endl;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void addOK(int index, std::string& str)
 {
 	str += " OK";
 }
 
-void otherFunction()
+void otherFunction2()
 {
 	std::vector<std::string> messages(getMessages());
 	Concurrency::Future<void> messagesFuture = Concurrency::concurrentFor(messages.begin(), messages.end(), addOK);
