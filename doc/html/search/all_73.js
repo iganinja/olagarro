@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['shared',['Shared',['../class_olagarro_1_1_shared.html',1,'Olagarro']]],
-  ['shared_3c_20olagarro_3a_3ajob_2c_20olagarro_3a_3amutexmtpolicy_20_3e',['Shared&lt; Olagarro::Job, Olagarro::MutexMTPolicy &gt;',['../class_olagarro_1_1_shared.html',1,'Olagarro']]],
-  ['shared_3c_20tthread_3a_3athread_20_3e',['Shared&lt; tthread::thread &gt;',['../class_olagarro_1_1_shared.html',1,'Olagarro']]]
+  ['savetofile',['saveToFile',['../class_olagarro_1_1_byte_stream.html#a2983407fe5d1c086826d187cbb50b88f',1,'Olagarro::ByteStream']]],
+  ['size',['size',['../class_olagarro_1_1_byte_stream.html#a43d17d8d939f0e7da9118b34b4e87167',1,'Olagarro::ByteStream']]]
 ];

@@ -103,6 +103,86 @@
 /// is called, those functions create tasks and enqueue them in the task queue. This way tasks are executed in sequential order (first in first executed) but
 /// due to their asynchronous nature they finish in a non-ordered fashion.
 /// Be careful: concurrency module is not designed to have nested tasks. In other words, it's dangerous that a function launched by launchJob() makes a call to launchJob(), thread pool could get blocked forever.
+///
+///
+/// @section bytestream_sec ByteStream 
+/// This class provides an easy way to deal extracting and adding different data types from and to a raw byte buffer. Thanks to operator overloading it is very simple to
+/// define insertion and extraction means for custom data types.
+/// @subsection Portability
+/// ByteStream class uses only standard C++ so it is portable to a very large number of systems.
+///
+/// @subsection Installation
+/// Class is contained in a .h and a .cpp files. Just copy them in your project and start using the class. There is no need to build a library, configure it or something similar.
+///
+/// @subsection Examples
+/// ByteStream is just a bytes buffer which works like C++ standard streams. When we create one it is empty
+/// 
+/// @code
+/// #include <bytestream.h>
+/// #include <cassert.h>
+/// 
+/// Olagarro::ByteStream data;
+/// 
+/// assert(data.size() == 0);
+/// 
+/// @endcode
+/// 
+/// We can add any POD to it with << operator
+/// 
+/// @code
+/// int a = 10;
+/// 
+/// data << a;
+/// @endcode
+/// 
+/// Now "data" is a buffer big enough to hold an int and it contains a copy of "a" variable's bytes
+/// 
+/// It is possible to store raw arrays as any other POD:
+/// 
+/// @code
+/// const double b[100] = {...};
+/// 
+/// data << b;
+/// @endcode
+/// 
+/// Now we have an int and then 100 doubles in "data" ByteStream object. We can retrieve this data with >> operator:
+/// 
+/// @code
+/// int intValue;
+/// double doubleValues[100];
+/// 
+/// data >> intValue >> doubleValues;
+/// @endcode
+/// 
+/// Everything shown so far works also with structs and classes which contain PODs. If we need to deal with more elaborated data types we need to provide our own custom << and >> operators. 
+/// See ByteStream test file to see one possible implementation of these operators for std::string and std::vector classes
+/// 
+/// Finally ByteStream provides a convenience functions to deal with files: loadFromFile() and saveToFile():
+/// 
+/// @code
+/// 
+/// Olagarro::ByteStream data;
+/// 
+/// data << ...
+/// 
+/// Olagarro::ByteStream::saveToFile(data, "somedata.bin");
+/// 
+/// ...
+/// 
+/// Olagarro::ByteStream fileData;
+/// 
+/// Olagarro::ByteStream::loadFromFile(fileData, "somedata.bin");
+/// 
+/// fileData >> ...
+/// 
+/// @endcode
+/// 
+/// Take a look to documentation to see more all the member functions of ByteStream class.
+/// 
+/// 
+/// 
+
+
 
 Copyright (c) 2014 Inaki Griego
 

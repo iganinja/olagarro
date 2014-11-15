@@ -47,7 +47,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -168,13 +167,61 @@ Performance</h2>
 <p>This concurrency module nor any other concurrency library will offer a "magical" performance boost to your code. Sometimes serial code will be faster (even by several orders of magnitude) than concurrent one due to the type of calculations, memory access, etc you are doing. Concurrency only makes sense when you have heavy tasks which take much more time doing its job than managing its launching, or to avoid blocking some important thread (like GUI thread in a typical desktop application). Fortunately concurrency module is very unobstructive so you can easily make your code take advantage of its facilities, profile your new code and see if it's worth or not to go concurrent.</p>
 <h2><a class="anchor" id="Implementation"></a>
 Implementation details</h2>
-<p>Concurrency module manages a thread pool under the hood. This pool contains several threads blocked, waiting for new tasks. When launchJob() or concurrentFor() is called, those functions create tasks and enqueue them in the task queue. This way tasks are executed in sequential order (first in first executed) but due to their asynchronous nature they finish in a non-ordered fashion. Be careful: concurrency module is not designed to have nested tasks. In other words, it's dangerous that a function launched by launchJob() makes a call to launchJob(), thread pool could get blocked forever. </p>
+<p>Concurrency module manages a thread pool under the hood. This pool contains several threads blocked, waiting for new tasks. When launchJob() or concurrentFor() is called, those functions create tasks and enqueue them in the task queue. This way tasks are executed in sequential order (first in first executed) but due to their asynchronous nature they finish in a non-ordered fashion. Be careful: concurrency module is not designed to have nested tasks. In other words, it's dangerous that a function launched by launchJob() makes a call to launchJob(), thread pool could get blocked forever.</p>
+<h1><a class="anchor" id="bytestream_sec"></a>
+ByteStream</h1>
+<p>This class provides an easy way to deal extracting and adding different data types from and to a raw byte buffer. Thanks to operator overloading it is very simple to define insertion and extraction means for custom data types. </p>
+<h2><a class="anchor" id="Portability"></a>
+Portability</h2>
+<p>ByteStream class uses only standard C++ so it is portable to a very large number of systems.</p>
+<h2><a class="anchor" id="Installation"></a>
+Installation</h2>
+<p>Class is contained in a .h and a .cpp files. Just copy them in your project and start using the class. There is no need to build a library, configure it or something similar.</p>
+<h2><a class="anchor" id="Examples"></a>
+Examples</h2>
+<p>ByteStream is just a bytes buffer which works like C++ standard streams. When we create one it is empty</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;bytestream.h&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;cassert.h&gt;</span></div>
+<div class="line"></div>
+<div class="line"><a class="code" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">Olagarro::ByteStream</a> data;</div>
+<div class="line"></div>
+<div class="line">assert(data.<a class="code" href="class_olagarro_1_1_byte_stream.html#a43d17d8d939f0e7da9118b34b4e87167" title="size Returns the size ">size</a>() == 0);</div>
+</div><!-- fragment --><p>We can add any POD to it with &lt;&lt; operator</p>
+<div class="fragment"><div class="line"><span class="keywordtype">int</span> a = 10;</div>
+<div class="line"></div>
+<div class="line">data &lt;&lt; a;</div>
+</div><!-- fragment --><p>Now "data" is a buffer big enough to hold an int and it contains a copy of "a" variable's bytes</p>
+<p>It is possible to store raw arrays as any other POD:</p>
+<div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">double</span> b[100] = {...};</div>
+<div class="line"></div>
+<div class="line">data &lt;&lt; b;</div>
+</div><!-- fragment --><p>Now we have an int and then 100 doubles in "data" ByteStream object. We can retrieve this data with &gt;&gt; operator:</p>
+<div class="fragment"><div class="line"><span class="keywordtype">int</span> intValue;</div>
+<div class="line"><span class="keywordtype">double</span> doubleValues[100];</div>
+<div class="line"></div>
+<div class="line">data &gt;&gt; intValue &gt;&gt; doubleValues;</div>
+</div><!-- fragment --><p>Everything shown so far works also with structs and classes which contain PODs. If we need to deal with more elaborated data types we need to provide our own custom &lt;&lt; and &gt;&gt; operators. See ByteStream test file to see one possible implementation of these operators for std::string and std::vector classes</p>
+<p>Finally ByteStream provides a convenience functions to deal with files: loadFromFile() and saveToFile():</p>
+<div class="fragment"><div class="line"><a class="code" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">Olagarro::ByteStream</a> data;</div>
+<div class="line"></div>
+<div class="line">data &lt;&lt; ...</div>
+<div class="line"></div>
+<div class="line">Olagarro::ByteStream::saveToFile(data, <span class="stringliteral">&quot;somedata.bin&quot;</span>);</div>
+<div class="line"></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line">Olagarro::ByteStream fileData;</div>
+<div class="line"></div>
+<div class="line"><a class="code" href="class_olagarro_1_1_byte_stream.html#a0e81a89d50fc98c378ec31848a31e555" title="loadFromFile Loads all the data from a file and sets it to a ByteStream object. That is...">Olagarro::ByteStream::loadFromFile</a>(fileData, <span class="stringliteral">&quot;somedata.bin&quot;</span>);</div>
+<div class="line"></div>
+<div class="line">fileData &gt;&gt; ...</div>
+</div><!-- fragment --><p>Take a look to documentation to see more all the member functions of ByteStream class. </p>
 </div></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Sat Aug 16 2014 19:26:00 for Olagarro by
+    <li class="footer">Generated on Sat Nov 15 2014 18:01:47 for Olagarro by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.4 </li>
   </ul>

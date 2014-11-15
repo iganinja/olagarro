@@ -47,7 +47,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li class="current"><a href="namespaces.html"><span>Namespaces</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
@@ -105,7 +104,9 @@ $(document).ready(function(){initNavTree('namespace_olagarro.html','');});
 
 <div class="header">
   <div class="summary">
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">Olagarro Namespace Reference</div>  </div>
 </div><!--header-->
@@ -119,16 +120,114 @@ Namespaces</h2></td></tr>
 <tr class="memitem:namespace_olagarro_1_1_concurrency"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespace_olagarro_1_1_concurrency.html">Concurrency</a></td></tr>
 <tr class="memdesc:namespace_olagarro_1_1_concurrency"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="namespace_olagarro_1_1_concurrency.html" title="Concurrency module&#39;s namespace: Not all the classes that appear in this documentation are meant to be...">Concurrency</a> module's namespace: Not all the classes that appear in this documentation are meant to be used by client code. In fact, only <a class="el" href="class_olagarro_1_1_concurrency_1_1_future.html" title="Represents a value in the future. ">Future</a>, launchJob and the two versions of concurrentFor are meant to be used by library's client code, all other classes are for internal use. <br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_olagarro_1_1_byte_stream.html">ByteStream</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> class is a wrapper around a vector of bytes which eases the manipulation of the data stored on it. It offers convenient methods to insert and extract data with different data types and to save to and load data from files in a very simple way.  <a href="class_olagarro_1_1_byte_stream.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a97b107e00e6308b4ed9912f7f9a486a3"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a97b107e00e6308b4ed9912f7f9a486a3"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="class_olagarro_1_1_byte_stream.html">ByteStream</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespace_olagarro.html#a97b107e00e6308b4ed9912f7f9a486a3">operator&lt;&lt;</a> (<a class="el" href="class_olagarro_1_1_byte_stream.html">ByteStream</a> &amp;s, const T &amp;value)</td></tr>
+<tr class="memdesc:a97b107e00e6308b4ed9912f7f9a486a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience insertion operator to add arbitrary data to a <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object.  <a href="#a97b107e00e6308b4ed9912f7f9a486a3">More...</a><br/></td></tr>
+<tr class="separator:a97b107e00e6308b4ed9912f7f9a486a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3a56ab9800f4d841f88bbafba2dfc30"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:af3a56ab9800f4d841f88bbafba2dfc30"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="class_olagarro_1_1_byte_stream.html">ByteStream</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespace_olagarro.html#af3a56ab9800f4d841f88bbafba2dfc30">operator&gt;&gt;</a> (<a class="el" href="class_olagarro_1_1_byte_stream.html">ByteStream</a> &amp;s, T &amp;target)</td></tr>
+<tr class="memdesc:af3a56ab9800f4d841f88bbafba2dfc30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convenience extraction operator to load arbitrary data from a <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object.  <a href="#af3a56ab9800f4d841f88bbafba2dfc30">More...</a><br/></td></tr>
+<tr class="separator:af3a56ab9800f4d841f88bbafba2dfc30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="namespace_olagarro.html" title="Olagarro namespace: It contains Olagarro&#39;s all classes, functions, etc. ">Olagarro</a> namespace: It contains <a class="el" href="namespace_olagarro.html" title="Olagarro namespace: It contains Olagarro&#39;s all classes, functions, etc. ">Olagarro</a>'s all classes, functions, etc. </p>
-</div></div><!-- contents -->
+</div><h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="a97b107e00e6308b4ed9912f7f9a486a3"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_olagarro_1_1_byte_stream.html">ByteStream</a>&amp; Olagarro::operator&lt;&lt; </td>
+          <td>(</td>
+          <td class="paramtype">ByteStream &amp;&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Convenience insertion operator to add arbitrary data to a <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">s</td><td>The <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object to append data to </td></tr>
+    <tr><td class="paramname">value</td><td>The data source object: its bytes (sizeof(T) bytes exactly) would be copied at the end of the <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object </dd></dl>
+
+<p>Definition at line <a class="el" href="bytestream_8h_source.html#l00142">142</a> of file <a class="el" href="bytestream_8h_source.html">bytestream.h</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="af3a56ab9800f4d841f88bbafba2dfc30"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_olagarro_1_1_byte_stream.html">ByteStream</a>&amp; Olagarro::operator&gt;&gt; </td>
+          <td>(</td>
+          <td class="paramtype">ByteStream &amp;&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>target</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Convenience extraction operator to load arbitrary data from a <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">s</td><td>The data source <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object </td></tr>
+    <tr><td class="paramname">target</td><td>Target variable to copy bytes to from <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object. The number of bytes copied will be sizeof(T). <a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object's read index will be advanced the same number of bytes. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><a class="el" href="class_olagarro_1_1_byte_stream.html" title="The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data s...">ByteStream</a> object </dd></dl>
+
+<p>Definition at line <a class="el" href="bytestream_8h_source.html#l00155">155</a> of file <a class="el" href="bytestream_8h_source.html">bytestream.h</a>.</p>
+
+</div>
+</div>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespace_olagarro.html">Olagarro</a></li>
-    <li class="footer">Generated on Sat Aug 16 2014 19:25:59 for Olagarro by
+    <li class="footer">Generated on Sat Nov 15 2014 18:01:47 for Olagarro by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.4 </li>
   </ul>

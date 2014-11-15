@@ -9,9 +9,9 @@ var NAVTREE =
         [ "Race conditions", "index.html#raceconds", null ],
         [ "Performance", "index.html#Performance", null ],
         [ "Implementation details", "index.html#Implementation", null ]
-      ] ]
+      ] ],
+      [ "ByteStream", "index.html#bytestream_sec", null ]
     ] ],
-    [ "Olagarro C++ utility library", "md__i_1_proyectos_olagarro__r_e_a_d_m_e.html", null ],
     [ "Namespaces", null, [
       [ "Namespace List", "namespaces.html", "namespaces" ],
       [ "Namespace Members", "namespacemembers.html", [

@@ -1,5 +1,6 @@
 var hierarchy =
 [
+    [ "Olagarro::ByteStream", "class_olagarro_1_1_byte_stream.html", null ],
     [ "Olagarro::Concurrency::Caller< ReturnType >", "class_olagarro_1_1_concurrency_1_1_caller.html", null ],
     [ "Olagarro::Concurrency::Future< T >", "class_olagarro_1_1_concurrency_1_1_future.html", null ],
     [ "Olagarro::Concurrency::Job", "class_olagarro_1_1_concurrency_1_1_job.html", [
