@@ -49,3 +49,35 @@ void otherFunction2()
 ```
 
 For more details take a look at the documentation.
+
+# ByteStream class
+
+The ByteStream class is a wrapper around a vector of bytes which eases the manipulation of the data stored on it. It offers convenient methods to insert and extract data with different data types and to save to and load data from files in a very simple way.
+
+```CPP
+
+#include "olagarro/bytestream.h"
+
+using namespace Olagarro;
+
+int a = 10;
+float b[128];
+SomeStruct c;
+
+Olagarro::ByteStream data;
+
+data << a << b << c;
+
+ByteStream::saveToFile(data, "data.bin");
+
+....
+
+ByteStream fileData;
+
+ByteStream::loadFromFile(fileData, "data.bin");
+
+std::cout << "Loaded bytes = " << fileData.size() << std::endl;
+
+data >> a >> b >> c;
+
+```
