@@ -64,7 +64,7 @@ int a = 10;
 float b[128];
 SomeStruct c;
 
-Olagarro::ByteStream data;
+ByteStream data;
 
 data << a << b << c;
 
