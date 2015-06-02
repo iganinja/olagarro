@@ -3,7 +3,7 @@ Olagarro C++ utility library
 
 ![Olagarro logo](https://raw.githubusercontent.com/iganinja/olagarro/master/doc/logo.png)
 
-Olagarro is a C++ utility library which aims to provide small, easily usable, portable and useful utilities. Currently it only contains the concurrency module.
+Olagarro is a C++ utility library which aims to provide small, easily usable, portable and useful utilities.
 
 License is zlib/libpng (http://opensource.org/licenses/zlib-license.php)
 
@@ -14,7 +14,7 @@ Concurrency module provides some facilities to take advantage of multiple CPUs o
 Module presents basically 2 facilities: launchJob and concurrentFor in various flavours:
 
 ```CPP
-#include "olagarro/concurrency.h"
+#include "olagarro/concurrency/concurrency.h"
 
 using namespace Olagarro;
 
@@ -56,7 +56,7 @@ The ByteStream class is a wrapper around a vector of bytes which eases the manip
 
 ```CPP
 
-#include "olagarro/bytestream.h"
+#include "olagarro/bytestream/bytestream.h"
 
 using namespace Olagarro;
 
@@ -81,3 +81,36 @@ std::cout << "Loaded bytes = " << fileData.size() << std::endl;
 data >> a >> b >> c;
 
 ```
+
+# Signal/slot system
+
+A very simple signal/slot implementation in C++2003 where you can connect events with functions, methods or functors:
+
+```CPP
+
+#include "olagarro/signalslot/signalslot.h"
+
+using namespace Olagarro;
+
+class Observer
+{
+public:
+	void somethingHappened(int withThisId, const std::string& withThisMessage)
+	{
+		std::cout << "Something happened: id = " << withThisId << " message = " << withThisMessage << std::endl;
+	}
+};
+
+Observer observer;
+
+SignalSlot::Signal2<int, const std::string&> enemyDestroyed;
+
+SignalSlot::Slot2<Observer, int, const std::string&> onSomethingHappened(observer, &Observer::somethingHappened);
+
+onSomethingHappened.connect(enemyDestroyed);
+
+enemyDestroyed.fire(123, "An enemy has been destroyed"); --> Calls Observer::somethingHappened with those parameters
+
+```
+
+It allows to connect N signals with M slots, disconnect/connect them in run time and manages automatic disconnection when a signal or a slot is destroyed.

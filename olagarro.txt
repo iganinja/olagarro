@@ -181,6 +181,50 @@
 /// 
 /// 
 /// 
+/// @section signalslot_sec Signal/slot system
+/// This collection of classes implement a very small signal/slot system in C++2003
+///
+/// @subsection Portability
+/// Signal/slot class uses only standard C++ so it is portable to a very large number of systems.
+///
+/// @subsection Installation
+/// Just add signalslot.h to the file you need it
+///
+/// @subsection Examples
+/// Signal/slot system is an implementation of the observer pattern. Signal is the observable object and slot is the observer part. The following example illustrates it:
+/// 
+/// @code
+/// // We have the following function
+/// void onDoorClosed(int doorId)
+/// {
+///     std::cout << "Door " << doorId << " has been closed\n";
+/// }
+/// 
+/// // This signal will be fired when a door is closed
+/// Signal1<int> doorClosedSignal;
+/// 
+/// // Slot links a signal with the receiving end, in this case a free function
+/// Slot1<int> onDoorClosedSlot(onDoorClosed, doorClosedSignal); // Notice how we pass the function (mandatory) and signal (optional)
+/// 
+/// // We can connect signal later, instead of using it in the constructor:
+/// onDoorClosedSlot.connect(doorClosedSignal);
+/// // Somewhere in the code
+/// ...
+/// doorClosedSignal.fire(25); // --> Makes to print "Door 25 has been closed"
+/// 
+/// // We can disconnect slot from signal
+/// doorClosedSlot.disconnect(doorClosedSignal);
+/// // We can disconnect a slot from all of its signals
+/// doorClosedSlot.disconnectAll();
+/// // Also we can disconnect all slots connected to a signal
+/// doorClosedSignal.disconnectAll();
+/// @endcode 
+/// 
+/// Slots can work with free functions, object/method pairs and with functors. A slot can be connected to an arbitrary number of signals and a signal can also be connect to an arbitrary number of slots. When
+/// a slot is destroyed it disconnects itself from all of its connected signals and the opposite is true to, so there is no need to manage manually slot/signal disconnections.
+/// Due to C++2003' limitations (no variadic templates) current implementation only supports from 0 to 5 arguments calls (hence the signal0, signal1, etc names). Also there is no way to recover calls' return values,
+/// system assumes everything returns void. Take into account signal/slot is just like a normal function call, so no threading issue is contemplated at all, system's client is responsible of dealing with synchronization etc.
+/// Look at the test's main.cpp file for more examples.
 
 
 

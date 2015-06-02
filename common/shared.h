@@ -26,8 +26,6 @@ freely, subject to the following restrictions:
 
 #include <cassert>
 
-#include <iostream>
-
 namespace Olagarro
 {
 

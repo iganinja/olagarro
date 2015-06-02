@@ -215,13 +215,50 @@ Examples</h2>
 <div class="line"><a class="code" href="class_olagarro_1_1_byte_stream.html#a0e81a89d50fc98c378ec31848a31e555" title="loadFromFile Loads all the data from a file and sets it to a ByteStream object. That is...">Olagarro::ByteStream::loadFromFile</a>(fileData, <span class="stringliteral">&quot;somedata.bin&quot;</span>);</div>
 <div class="line"></div>
 <div class="line">fileData &gt;&gt; ...</div>
-</div><!-- fragment --><p>Take a look to documentation to see more all the member functions of ByteStream class. </p>
+</div><!-- fragment --><p>Take a look to documentation to see more all the member functions of ByteStream class.</p>
+<h1><a class="anchor" id="signalslot_sec"></a>
+Signal/slot system</h1>
+<p>This collection of classes implement a very small signal/slot system in C++2003</p>
+<h2><a class="anchor" id="Portability"></a>
+Portability</h2>
+<p>Signal/slot class uses only standard C++ so it is portable to a very large number of systems.</p>
+<h2><a class="anchor" id="Installation"></a>
+Installation</h2>
+<p>Just add <a class="el" href="signalslot_8h_source.html">signalslot.h</a> to the file you need it</p>
+<h2><a class="anchor" id="Examples"></a>
+Examples</h2>
+<p>Signal/slot system is an implementation of the observer pattern. Signal is the observable object and slot is the observer part. The following example illustrates it:</p>
+<div class="fragment"><div class="line"><span class="comment">// We have the following function</span></div>
+<div class="line"><span class="keywordtype">void</span> onDoorClosed(<span class="keywordtype">int</span> doorId)</div>
+<div class="line">{</div>
+<div class="line">    std::cout &lt;&lt; <span class="stringliteral">&quot;Door &quot;</span> &lt;&lt; doorId &lt;&lt; <span class="stringliteral">&quot; has been closed\n&quot;</span>;</div>
+<div class="line">}</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// This signal will be fired when a door is closed</span></div>
+<div class="line">Signal1&lt;int&gt; doorClosedSignal;</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Slot links a signal with the receiving end, in this case a free function</span></div>
+<div class="line">Slot1&lt;int&gt; onDoorClosedSlot(onDoorClosed, doorClosedSignal); <span class="comment">// Notice how we pass the function (mandatory) and signal (optional)</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// We can connect signal later, instead of using it in the constructor:</span></div>
+<div class="line">onDoorClosedSlot.connect(doorClosedSignal);</div>
+<div class="line"><span class="comment">// Somewhere in the code</span></div>
+<div class="line">...</div>
+<div class="line">doorClosedSignal.fire(25); <span class="comment">// --&gt; Makes to print &quot;Door 25 has been closed&quot;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// We can disconnect slot from signal</span></div>
+<div class="line">doorClosedSlot.disconnect(doorClosedSignal);</div>
+<div class="line"><span class="comment">// We can disconnect a slot from all of its signals</span></div>
+<div class="line">doorClosedSlot.disconnectAll();</div>
+<div class="line"><span class="comment">// Also we can disconnect all slots connected to a signal</span></div>
+<div class="line">doorClosedSignal.disconnectAll();</div>
+</div><!-- fragment --><p>Slots can work with free functions, object/method pairs and with functors. A slot can be connected to an arbitrary number of signals and a signal can also be connect to an arbitrary number of slots. When a slot is destroyed it disconnects itself from all of its connected signals and the opposite is true to, so there is no need to manage manually slot/signal disconnections. Due to C++2003' limitations (no variadic templates) current implementation only supports from 0 to 5 arguments calls (hence the signal0, signal1, etc names). Also there is no way to recover calls' return values, system assumes everything returns void. Take into account signal/slot is just like a normal function call, so no threading issue is contemplated at all, system's client is responsible of dealing with synchronization etc. Look at the test's main.cpp file for more examples. </p>
 </div></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Sat Nov 15 2014 18:14:10 for Olagarro by
+    <li class="footer">Generated on Tue Jun 2 2015 22:56:00 for Olagarro by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.4 </li>
   </ul>

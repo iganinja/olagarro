@@ -10,7 +10,8 @@ var NAVTREE =
         [ "Performance", "index.html#Performance", null ],
         [ "Implementation details", "index.html#Implementation", null ]
       ] ],
-      [ "ByteStream", "index.html#bytestream_sec", null ]
+      [ "ByteStream", "index.html#bytestream_sec", null ],
+      [ "Signal/slot system", "index.html#signalslot_sec", null ]
     ] ],
     [ "Namespaces", null, [
       [ "Namespace List", "namespaces.html", "namespaces" ],
