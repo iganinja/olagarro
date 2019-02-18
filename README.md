@@ -105,7 +105,7 @@ Observer observer;
 
 SignalSlot::Signal2<int, const std::string&> enemyDestroyed;
 
-SignalSlot::Slot2<Observer, int, const std::string&> onSomethingHappened(observer, &Observer::somethingHappened);
+SignalSlot::MethodSlot2<Observer, int, const std::string&> onSomethingHappened(observer, &Observer::somethingHappened);
 
 onSomethingHappened.connect(enemyDestroyed);
 
