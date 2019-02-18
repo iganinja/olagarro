@@ -84,7 +84,7 @@ data >> a >> b >> c;
 
 # Signal/slot system
 
-A very simple signal/slot implementation in C++2003 where you can connect events with functions, methods or functors:
+A very simple signal/slot implementation where you can connect events with functions, methods or functors:
 
 ```CPP
 
@@ -113,4 +113,4 @@ enemyDestroyed.fire(123, "An enemy has been destroyed"); --> Calls Observer::som
 
 ```
 
-It allows to connect N signals with M slots, disconnect/connect them in run time and manages automatic disconnection when a signal or a slot is destroyed.
+It allows to connect N signals with M slots, disconnect/connect them in run time and manages automatic disconnection when a signal or a slot is destroyed. There are C++2003 and C++11 versions available (last one with variadic arguments templates)
