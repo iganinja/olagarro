@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015 Inaki Griego
+Copyright (c) 2019 Inaki Griego
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -24,10 +24,72 @@ freely, subject to the following restrictions:
 
 
 #include <iostream>
-#include "../../signalslot/signalslot.h"
+
+
+
+#if __cplusplus >= 201103L
+// Horrible alias list in order to use the same code in tests in pre and post C++11 cases
+#include "../../signalslot/signalslot_vt.h"
 
 using namespace Olagarro;
 using namespace SignalSlot;
+
+using Signal0 = Signal<>;
+template<typename ... ParamTypes>
+using Signal1 = Signal<ParamTypes...>;
+template<typename ... ParamTypes>
+using Signal2 = Signal<ParamTypes...>;
+template<typename ... ParamTypes>
+using Signal3 = Signal<ParamTypes...>;
+template<typename ... ParamTypes>
+using Signal4 = Signal<ParamTypes...>;
+template<typename ... ParamTypes>
+using Signal5 = Signal<ParamTypes...>;
+
+template<typename InstanceType>
+using MethodSlot0 = MethodSlot<InstanceType>;
+template<typename InstanceType, typename ... ParamTypes>
+using MethodSlot1 = MethodSlot<InstanceType, ParamTypes...>;
+template<typename InstanceType, typename ... ParamTypes>
+using MethodSlot2 = MethodSlot<InstanceType, ParamTypes...>;
+template<typename InstanceType, typename ... ParamTypes>
+using MethodSlot3 = MethodSlot<InstanceType, ParamTypes...>;
+template<typename InstanceType, typename ... ParamTypes>
+using MethodSlot4 = MethodSlot<InstanceType, ParamTypes...>;
+template<typename InstanceType, typename ... ParamTypes>
+using MethodSlot5 = MethodSlot<InstanceType, ParamTypes...>;
+
+using FunctionSlot0 = FunctionSlot<>;
+template<typename ... ParamTypes>
+using FunctionSlot1 = FunctionSlot<ParamTypes...>;
+template<typename ... ParamTypes>
+using FunctionSlot2 = FunctionSlot<ParamTypes...>;
+template<typename ... ParamTypes>
+using FunctionSlot3 = FunctionSlot<ParamTypes...>;
+template<typename ... ParamTypes>
+using FunctionSlot4 = FunctionSlot<ParamTypes...>;
+template<typename ... ParamTypes>
+using FunctionSlot5 = FunctionSlot<ParamTypes...>;
+
+template<typename CallableType>
+using FunctorSlot0 = FunctorSlot<CallableType>;
+template<typename CallableType, typename ... ParamTypes>
+using FunctorSlot1 = FunctorSlot<CallableType, ParamTypes...>;
+template<typename CallableType, typename ... ParamTypes>
+using FunctorSlot2 = FunctorSlot<CallableType, ParamTypes...>;
+template<typename CallableType, typename ... ParamTypes>
+using FunctorSlot3 = FunctorSlot<CallableType, ParamTypes...>;
+template<typename CallableType, typename ... ParamTypes>
+using FunctorSlot4 = FunctorSlot<CallableType, ParamTypes...>;
+template<typename CallableType, typename ... ParamTypes>
+using FunctorSlot5 = FunctorSlot<CallableType, ParamTypes...>;
+#else
+#include "../../signalslot/signalslot.h"
+using namespace Olagarro;
+using namespace SignalSlot;
+#endif
+
+
 
 class Functor
 {
@@ -178,6 +240,10 @@ void freeFunction(int param1, int param2, int param3, int param4, int param5)
 
 int main()
 {
+#if __cplusplus >= 201103L
+    std::cout << "Using C++11 variadic templates version\n";
+#endif
+
 	std::cout << "Slot destroyed before signal\n";
 	{
 		Signal0 signal0;
