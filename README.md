@@ -113,4 +113,4 @@ enemyDestroyed.fire(123, "An enemy has been destroyed"); --> Calls Observer::som
 
 ```
 
-It allows to connect N signals with M slots, disconnect/connect them in run time and manages automatic disconnection when a signal or a slot is destroyed. There are C++2003 and C++11 versions available (last one with variadic arguments templates)
+It allows to connect N signals with M slots, disconnect/connect them in run time and manages automatic disconnection when a signal or a slot is destroyed. There are C++2003 and C++11 versions available (last one with variadic template arguments)
