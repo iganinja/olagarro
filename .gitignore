@@ -1,0 +1,10 @@
+﻿build-*
+tests/lib/CMakeFiles
+tests/lib/cmake_install.cmake
+tests/lib/libtasks.a
+tests/tasks/lib/CMakeFiles
+tests/tasks/lib/libtasks.a
+tests/tasks/lib/Makefile
+tests/tasks/CMakeLists.txt.user
+tests/tasks/CMakeLists.txt.user.cd89e8f
+tasks/CMakeLists.txt.user
