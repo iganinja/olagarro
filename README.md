@@ -123,17 +123,19 @@ Tasks allow to model complex behavior in a simple and composable way, and in som
 TaskExecutor TE;
 
 TE.addTask(
-             wait(1),
-             execute([]()
-             {
-             	cout << "I waited 1 second!\n";
-             	doSomething();
-             }),
-             waitForSomeConditionToMet(),
-             execute([]()
-             {
-             	cout << "Job finished!\n";
-             })
+             serial(
+                      wait(1),
+                      execute([]()
+                      {
+                      	  cout << "I waited 1 second!\n";
+                      	  doSomething();
+                      }),
+                      waitForSomeConditionToMet(),
+                      execute([]()
+                      {
+                      	  cout << "Job finished!\n";
+                      })
+                    )
 		  );
 
 
