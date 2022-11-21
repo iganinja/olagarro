@@ -114,3 +114,34 @@ enemyDestroyed.fire(123, "An enemy has been destroyed"); --> Calls Observer::som
 ```
 
 It allows to connect N signals with M slots, disconnect/connect them in run time and manages automatic disconnection when a signal or a slot is destroyed. There are C++2003 and C++11 versions available (last one with variadic template arguments)
+
+# Tasks
+
+Tasks allow to model complex behavior in a simple and composable way, and in some cases replace state machines.
+
+```CPP
+TaskExecutor TE;
+
+TE.addTask(
+             wait(1),
+             execute([]()
+             {
+             	cout << "I waited 1 second!\n";
+             	doSomething();
+             }),
+             waitForSomeConditionToMet(),
+             execute([]()
+             {
+             	cout << "Job finished!\n";
+             })
+		  );
+
+
+while(aCondition())
+{
+	TE.update(secondsSinceLastCall());
+}
+
+```
+
+Currently Tasks need more job in memory management, as they way it is now causes a recursive memory releasing, making it possible to get a stack overflow in very deep task trees.
