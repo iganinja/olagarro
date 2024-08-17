@@ -146,7 +146,7 @@ while(aCondition())
 
 ```
 
-Currently Tasks need more job in memory management, as they way it is now causes a recursive memory releasing, making it possible to get a stack overflow in very deep task trees.
+Currently Tasks need more job in memory management, as the way it is now causes a recursive memory releasing, making it possible to get a stack overflow in very deep task trees.
 
 # Compile time tasks
 There is a compile time version of tasks, take a look at its tests.
