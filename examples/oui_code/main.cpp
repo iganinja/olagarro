@@ -49,7 +49,8 @@ int main(int argument_count, char* const* const arguments)
                    "  --no-explorer   Start with the explorer hidden.\n"
                    "  --diff          Compare two files side by side, as git difftool can ask.\n"
 #ifdef OLAGARRO_OUI_CODE_WINDOW
-                   "  --window        Open in a desktop window instead of the terminal.\n"
+                   "  --window        Open in a desktop window instead of the terminal, as it\n"
+                   "                  does when not started from a terminal.\n"
 #endif
 #ifdef OLAGARRO_OUI_CODE_DRM
                    "  --drm           Take the whole screen, with no desktop: for a console.\n"
@@ -74,9 +75,6 @@ int main(int argument_count, char* const* const arguments)
     const auto input_test{command_line.has_option("input-test")};
     const auto key_test{command_line.has_option("key-test")};
     const auto legacy_render{command_line.has_option("legacy-render")};
-#ifdef OLAGARRO_OUI_CODE_WINDOW
-    const auto in_window{command_line.has_option("window")};
-#endif
 #ifdef OLAGARRO_OUI_CODE_DRM
     const auto on_the_screen{command_line.has_option("drm")};
 #endif
@@ -87,6 +85,12 @@ int main(int argument_count, char* const* const arguments)
 #endif
 #endif
     const auto headless_test{smoke_test || stress_test || input_test || key_test};
+#ifdef OLAGARRO_OUI_CODE_WINDOW
+    // Started from a desktop's menu or an icon, with no terminal to show in, it shows in a window unless told where.
+    const auto in_window{command_line.has_option("window") ||
+                         (!headless_test && !command_line.has_option("drm") && !command_line.has_option("desktop") &&
+                          !oui::started_from_terminal())};
+#endif
     // The folder and the files to open, whole, so what is kept of them still holds when OUI Code starts somewhere else.
     std::optional<std::filesystem::path> folder_argument;
     std::vector<std::filesystem::path> file_arguments;

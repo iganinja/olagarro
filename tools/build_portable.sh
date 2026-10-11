@@ -7,17 +7,19 @@
 #                                             any Linux of their processor whatever its C and C++ runtime.
 #                                             oui_code and oui_calc are smallest with clang, libc++, full link-time
 #                                             optimisation, -Oz and identical code folded; oui_run with GCC.
-#   tools/build_portable.sh --gui             Linux, also opening in a desktop window: oui_code_gui and the rest.
+#   tools/build_portable.sh --gui             Linux, also opening in a desktop window, the same three programs.
 #                                             They carry SDL3 and the C++ runtime, and take the C library and the
 #                                             display libraries from the system, so they are built on Ubuntu 22.04
 #                                             to run on that and anything newer.
 #   tools/build_portable.sh --windows         Windows, terminal only: oui_code.exe and the rest, cross-built with
 #                                             llvm-mingw and linked statically.
-#   tools/build_portable.sh --windows --gui   Windows, also opening in a window: oui_code_gui.exe and the rest.
+#   tools/build_portable.sh --windows --gui   Windows, also opening in a window, the same three programs.
 #
 # The Linux ones are for the processor the container runs on: x86_64 here, aarch64 on an ARM machine; the Windows
-# ones are for x86_64. Output: dist/<system>-<processor>-<kind>/, as dist/linux-x86_64-terminal/, with the programs;
-# tools/package_release.sh then makes a release's files of them.
+# ones are for x86_64. Output: dist/<system>-<processor>-<kind>/, as dist/linux-x86_64-terminal/, with the programs,
+# named the same in either kind: a build here names the gui ones apart, oui_code_gui, to keep them beside the
+# terminal ones in bin/, but a system has one or the other. tools/package_release.sh then makes a release's files of
+# them.
 set -euo pipefail
 
 gui=0
@@ -139,6 +141,6 @@ else
 fi
 
 for program in $programs; do
-    cp "$work/$program" "$output/$program"
-    echo "$output/$program: $(stat -c%s "$output/$program") bytes"
+    cp "$work/$program" "$output/${program/_gui/}"
+    echo "$output/${program/_gui/}: $(stat -c%s "$output/${program/_gui/}") bytes"
 done

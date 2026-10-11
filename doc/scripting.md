@@ -29,7 +29,7 @@ done, and where to copy from. [The API reference](oui_api.md) lists every name w
 
 ```sh
 oui_run script.js [arguments...]
-oui_run_gui --window script.js [arguments...]   # a window on the desktop, where the build has one
+oui_run --window script.js [arguments...]       # a window on the desktop, in the gui kind (oui_run_gui here)
 ```
 
 A script is a JavaScript module: `import` works, and so does `await` at the top level. The program ends when the
@@ -249,7 +249,7 @@ oui_run: Error: boom
 ## Windows
 
 `oui.window(title, content)` opens a window: in the terminal as a text interface, or on the desktop with
-`oui_run_gui --window`. The content is widgets, made with `new`, laid out with `oui.column`, `oui.row` and
+`--window` in the `gui` kind, or started with no terminal, from the desktop. The content is widgets, made with `new`, laid out with `oui.column`, `oui.row` and
 `oui.split`, and wired together by their callbacks. The window keeps the program alive until it closes, with
 Ctrl+Q or the window's close button, or with `oui.quit()`.
 

@@ -6,6 +6,8 @@
 //     oui_run script.js [arguments...]
 //     oui_run_gui --window script.js [arguments...]
 //
+// Started with no terminal, from a desktop's menu or a file manager, the windows it opens are desktop windows too.
+//
 // Scripts are modules: `import {x} from "./tools.js"` reads tools.js from beside the importing file. What they
 // can use, besides JavaScript itself, is in oui/oui.d.ts, which tools/extract_api.js makes from the comments marked
 // "api" in prelude.js and the library.
@@ -36,11 +38,15 @@ int main(int argc, char** argv)
         desktop_window = true;
         arguments.erase(arguments.begin());
     }
+    else
+    {
+        desktop_window = !oui::started_from_terminal();
+    }
 #endif
     if(arguments.empty())
     {
 #ifdef OLAGARRO_OUI_RUN_WINDOW
-        write_to(stderr, "usage: oui_run_gui [--window] script.js [arguments...]\n");
+        write_to(stderr, "usage: oui_run [--window] script.js [arguments...]\n");
 #else
         write_to(stderr, "usage: oui_run script.js [arguments...]\n");
 #endif

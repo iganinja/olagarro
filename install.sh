@@ -8,8 +8,8 @@
 #
 #   oui_code, oui_run or oui_calc   that program alone (oui_code unless one is given with the others)
 #   --all                           the three
-#   --gui                           those that also open in a window of their own, oui_code_gui and the rest,
-#                                   rather than those for the terminal only
+#   --gui                           those that also open in a window of their own, under the same names, rather
+#                                   than those for the terminal only
 #   --package                       the whole package, the three with LICENSE and THIRD_PARTY_NOTICES.txt, unpacked
 #                                   into the folder it is run from rather than installed
 #   --apt                           the three from the project's APT repository, on Debian, Ubuntu and the like, so
@@ -198,7 +198,6 @@ mkdir -p "$target"
 installed=""
 for program in $programs; do
     name=$program
-    [ "$kind" = gui ] && name=${program}_gui
     chmod +x "$work/$program-linux-$processor-$kind"
     mv "$work/$program-linux-$processor-$kind" "$target/$name"
     echo "Installed $target/$name"

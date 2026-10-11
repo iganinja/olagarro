@@ -64,4 +64,10 @@ bool open_externally(std::string_view target);
 // The command that runs `command_line` in the system's shell: sh -c on POSIX, cmd /c on Windows.
 [[nodiscard]] std::vector<std::string> shell_command(std::string command_line);
 
+// Whether the program was started from a terminal, which it can show in: false when a desktop started it, from its
+// menu, an icon or a file manager. A program that can show in either goes to a window then. On Windows a console that
+// opened for this program alone, as one opens for a console program started from Explorer, is no terminal it was
+// started from: it is closed, so the program goes on without it.
+[[nodiscard]] bool started_from_terminal();
+
 } // namespace olagarro::oui

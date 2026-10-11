@@ -6,7 +6,8 @@
 #       THIRD_PARTY_NOTICES.txt, the licences of what they carry;
 #   <program>-<system>-<processor>-<kind>, with .exe for Windows: each program alone, as oui_code-linux-x86_64-gui;
 #   oui-pack-linux-<processor>-<kind>.deb: the Linux programs of a kind as a Debian package, installed in /usr/bin
-#       with sudo dpkg -i, and upgraded by installing a newer one the same way;
+#       with sudo dpkg -i, and upgraded by installing a newer one the same way; the gui one also puts OUI Code and
+#       OUI Calc in the desktop's menu, with their icons, from tools/linux_desktop;
 #   THIRD_PARTY_NOTICES.txt: every licence any of them carries, for whoever downloads one program alone;
 #   SHA256SUMS: the sum of each of those files.
 #
@@ -80,7 +81,6 @@ for built in "$root"/dist/*-*-terminal "$root"/dist/*-*-gui; do
         extension=""
         [[ "$file" == *.exe ]] && extension=.exe
         base="${file%.exe}"
-        base="${base%_gui}"
         cp "$program" "$release/$base-$name$extension"
         chmod +x "$release/$base-$name$extension"
     done
@@ -108,12 +108,19 @@ for built in "$root"/dist/linux-*-terminal "$root"/dist/linux-*-gui; do
     package=oui-pack
     summary="OUI Code, oui_run and oui_calc, for the terminal"
     depends=""
+    conflicts="Conflicts: oui-pack-gui
+Replaces: oui-pack-gui
+"
     notice_system=linux
     if [[ "$kind" == gui ]]; then
         package=oui-pack-gui
         summary="OUI Code, oui_run and oui_calc, for the terminal and GUI"
         # Built on Ubuntu 22.04: its C library or a newer one; the display libraries SDL3 opens as it starts.
         depends="Depends: libc6 (>= 2.35)
+"
+        # The same programs under the same names: one package or the other, the one installed taking the other's place.
+        conflicts="Conflicts: oui-pack
+Replaces: oui-pack
 "
         notice_system=none
     fi
@@ -123,6 +130,15 @@ for built in "$root"/dist/linux-*-terminal "$root"/dist/linux-*-gui; do
         install -m 0755 "$program" "$tree/usr/bin/$(basename "$program")"
     done
     { cat "$root/LICENSE"; printf '\n\n'; notices "$notice_system" "$kind"; } > "$tree/usr/share/doc/$package/copyright"
+    # Started from the desktop's menu, the gui programs open in their window.
+    if [[ "$kind" == gui ]]; then
+        mkdir -p "$tree/usr/share/applications" "$tree/usr/share/icons/hicolor/128x128/apps"
+        for program in oui_code oui_calc; do
+            install -m 0644 "$root/tools/linux_desktop/$program.desktop" "$tree/usr/share/applications/$program.desktop"
+            install -m 0644 "$root/tools/linux_desktop/$program.png" \
+                "$tree/usr/share/icons/hicolor/128x128/apps/$program.png"
+        done
+    fi
     # The changelog Debian asks every package for: which version, from where, and when.
     {
         printf '%s (%s) unstable; urgency=medium\n\n' "$package" "$version"
@@ -135,6 +151,7 @@ for built in "$root"/dist/linux-*-terminal "$root"/dist/linux-*-gui; do
         printf 'Package: %s\nVersion: %s\nArchitecture: %s\n' "$package" "$version" "$architecture"
         printf 'Maintainer: iganinja <iganinja@users.noreply.github.com>\n'
         printf '%s' "$depends"
+        printf '%s' "$conflicts"
         printf 'Installed-Size: %s\n' "$size"
         printf 'Section: editors\nPriority: optional\nHomepage: https://github.com/iganinja/olagarro\n'
         printf 'Description: %s\n' "$summary"

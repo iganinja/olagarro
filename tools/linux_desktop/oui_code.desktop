@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=OUI Code
+GenericName=Text Editor
+GenericName[es]=Editor de texto
+Comment=Edit text files and browse folders
+Comment[es]=Edita ficheros de texto y recorre carpetas
+Exec=oui_code --window %F
+Icon=oui_code
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/plain;
+StartupWMClass=oui_code

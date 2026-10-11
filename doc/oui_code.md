@@ -319,7 +319,8 @@ language, every open text) and calls `after_event` after each event, from its ev
 
 The same sources build `oui_code` and, with `OLAGARRO_OUI_WINDOW=ON`, `oui_code_gui`, which links
 `olagarro::OUIWindow` and defines `OLAGARRO_OUI_CODE_WINDOW`. Both use the settings named `oui_code`, so they share
-them when they sit side by side. `OLAGARRO_OUI_DRM` adds `--drm` and `OLAGARRO_OUI_CODE_DRM`; on Linux, the build
+them when they sit side by side. The window build goes to its window with `--window`, and without it when nothing
+else says where and it was not started from a terminal (`oui::started_from_terminal`): from the desktop's menu. `OLAGARRO_OUI_DRM` adds `--drm` and `OLAGARRO_OUI_CODE_DRM`; on Linux, the build
 with OUI's desktop adds `--desktop` (`OLAGARRO_OUI_CODE_DESKTOP`, and `OLAGARRO_OUI_CODE_DESKTOP_PIXELS` when the
 desktop can draw in pixels).
 See [building](building.md).

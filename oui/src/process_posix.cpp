@@ -288,4 +288,16 @@ std::vector<std::string> shell_command(std::string command_line)
     return {"/bin/sh", "-c", std::move(command_line)};
 }
 
+bool started_from_terminal()
+{
+    // The controlling terminal, which a program started from a terminal has whatever its input and output are.
+    const int terminal{open("/dev/tty", O_RDWR | O_NOCTTY | O_CLOEXEC)};
+    if(terminal < 0)
+    {
+        return false;
+    }
+    close(terminal);
+    return true;
+}
+
 } // namespace olagarro::oui

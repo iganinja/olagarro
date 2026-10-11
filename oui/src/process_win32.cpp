@@ -285,4 +285,20 @@ std::vector<std::string> shell_command(std::string command_line)
     return {"cmd.exe", "/d", "/s", "/c", std::move(command_line)};
 }
 
+bool started_from_terminal()
+{
+    // A console this program shares with another, as the shell it was typed in.
+    DWORD processes[2];
+    const auto attached{GetConsoleProcessList(processes, 2)};
+    if(attached >= 2)
+    {
+        return true;
+    }
+    if(attached == 1)
+    {
+        FreeConsole();
+    }
+    return false;
+}
+
 } // namespace olagarro::oui

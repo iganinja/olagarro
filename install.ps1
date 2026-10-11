@@ -8,8 +8,8 @@
 #
 #   -Program oui_code, oui_run or oui_calc   those programs (oui_code unless given)
 #   -All                                     the three
-#   -Gui                                     those that also open in a window of their own, oui_code_gui.exe and the
-#                                            rest, rather than those for the terminal only
+#   -Gui                                     those that also open in a window of their own, under the same names,
+#                                            rather than those for the terminal only
 #   -Package                                 the whole package, the three with LICENSE and THIRD_PARTY_NOTICES.txt,
 #                                            unpacked into the folder it is run from rather than installed
 #
@@ -154,7 +154,6 @@ Olagarro: what would you like?
         $installed = @()
         foreach ($each in $programs) {
             $name = $each
-            if ($kind -eq "gui") { $name = "${each}_gui" }
             Move-Item -Force -Path $downloaded[$each] -Destination (Join-Path $target "$name.exe")
             Write-Host "Installed $(Join-Path $target "$name.exe")"
             $installed += $name

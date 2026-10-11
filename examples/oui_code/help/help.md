@@ -418,10 +418,11 @@ line; what is selected is copied when the button is let go, and with **Ctrl+Shif
 
 ## In a window
 
-The build of OUI Code named `oui_code_gui` also opens in a desktop window: start it as `oui_code_gui --window`.
+OUI Code in its GUI kind also opens in a desktop window: from the desktop's menu, or typing `oui_code --window` in
+a terminal.
 Everything works as in the terminal, and the keys a terminal keeps for itself reach it. **View > Theme** picks its
 look, and **Ctrl++**, **Ctrl+-** and **Ctrl+0** make the text bigger, smaller or as it was; it keeps both for the
-next time. Tabs can be dragged by their title, to another place among their group's or to another group. Without `--window` it runs in the terminal, like `oui_code`.
+next time. Tabs can be dragged by their title, to another place among their group's or to another group. Typed in a terminal without `--window`, it runs in the terminal, like the terminal kind.
 
 ## Terminals
 

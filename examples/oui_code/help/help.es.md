@@ -436,12 +436,12 @@ El clic derecho pega.
 
 ## En una ventana
 
-La versión de OUI Code llamada `oui_code_gui` se abre también en una ventana del escritorio: arráncala como
-`oui_code_gui --window`. Todo funciona como en la terminal, y le llegan las teclas que una terminal se queda para
+OUI Code en su variante GUI se abre también en una ventana del escritorio: desde el menú del escritorio, o
+escribiendo `oui_code --window` en una terminal. Todo funciona como en la terminal, y le llegan las teclas que una terminal se queda para
 sí. **Ver > Tema** elige su aspecto, y **Ctrl++**, **Ctrl+-** y **Ctrl+0** agrandan el texto, lo encogen o lo dejan
 como estaba; las dos cosas se guardan para la próxima vez. Las pestañas se pueden arrastrar por su título, a otro
-sitio de su grupo o a otro grupo. Sin `--window` funciona en la terminal, como
-`oui_code`.
+sitio de su grupo o a otro grupo. Escrito en una terminal sin `--window`, funciona en la terminal, como
+la variante de terminal.
 
 ## Terminales
 

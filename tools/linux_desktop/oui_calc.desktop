@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=OUI Calc
+Name[es]=Calculadora OUI
+GenericName=Calculator
+GenericName[es]=Calculadora
+Comment=Write an expression and press Enter
+Comment[es]=Escribe una expresión y pulsa Intro
+Exec=oui_calc --window
+Icon=oui_calc
+Terminal=false
+Categories=Utility;Calculator;
+StartupWMClass=oui_calc

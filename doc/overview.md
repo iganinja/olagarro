@@ -50,8 +50,9 @@ in sources beside it or in OUI itself. All of them land in `bin/` (see [Building
 | `oui_desktop` | `examples/oui_desktop` | OUI's own desktop, Linux only: a task bar that starts the other programs and shows their windows. |
 | `olagarro_oui_terminal_demo` | `examples/oui/terminal_demo.cpp` | A small OUI program that the tests run as a smoke test. |
 
-Built with the window module, each program but the demo has a `_gui` name (`oui_code_gui`, and so on) and
-accepts `--window`. Built with `OLAGARRO_OUI_DRM=ON`, `oui_code`, `oui_term`, `oui_calc` and `oui_desktop` accept
+Built with the window module, each program but the demo has a `_gui` name (`oui_code_gui`, and so on), to sit
+beside the terminal one, and accepts `--window`; started with no terminal, from the desktop's menu or an icon, it
+opens its window without it. A release's `gui` kind names them as the terminal ones. Built with `OLAGARRO_OUI_DRM=ON`, `oui_code`, `oui_term`, `oui_calc` and `oui_desktop` accept
 `--drm`, the whole screen of a Linux console. On Linux, `oui_code`, `oui_term` and `oui_calc` accept `--desktop`, to
 show in a window on OUI's desktop, and `oui_desktop` runs in characters with `--terminal`.
 

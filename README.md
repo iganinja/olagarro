@@ -1,5 +1,7 @@
 # Olagarro
 
+![Olagarro](doc/logo.png)
+
 Olagarro is a small, portable C++17 utility library for games and applications.
 Its documentation is in [doc](doc/README.md), in Markdown: OUI Code shows it, its links followed.
 
@@ -31,8 +33,9 @@ curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh
 irm https://raw.githubusercontent.com/iganinja/olagarro/master/install.ps1 | iex
 ```
 
-Each program comes in two kinds: for the terminal, and `gui`, which also opens in a window of its own with
-`--window`, as `oui_code_gui`. The installers can also get the whole package, the three programs with their licences,
+Each program comes in two kinds, under the same name: for the terminal, and `gui`, which also opens in a window of
+its own. Typed in a terminal it stays there, and `--window` opens its window; started from the desktop's menu or an
+icon, with no terminal, it opens its window. The installers can also get the whole package, the three programs with their licences,
 and take options to choose without asking: `sh -s -- --all --gui` on Linux, `-All -Gui` on Windows, as the head of
 each script tells.
 
@@ -47,8 +50,8 @@ echo "deb [signed-by=/etc/apt/keyrings/olagarro.gpg] https://iganinja.github.io/
 sudo apt update && sudo apt install oui-pack
 ```
 
-`oui-pack` has the three for the terminal and `oui-pack-gui` the `gui` ones, in `/usr/bin`; `apt upgrade` brings each
-new release. Each release also carries them as `.deb` files, for `sudo dpkg -i`.
+`oui-pack` has the three for the terminal and `oui-pack-gui` the `gui` ones, which also puts OUI Code and OUI Calc in
+the desktop's menu; one or the other, in `/usr/bin`. `apt upgrade` brings each new release. Each release also carries them as `.deb` files, for `sudo dpkg -i`.
 
 ## Build
 

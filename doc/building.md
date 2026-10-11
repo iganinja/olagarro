@@ -146,7 +146,9 @@ It always uses Ninja, and runs `ctest --output-on-failure` with as many jobs as 
 ## Release binaries
 
 A release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64, in two kinds: `terminal`, the
-programs as the terminal build makes them, and `gui`, those that also open in a window, `oui_code_gui` and the rest.
+programs as the terminal build makes them, and `gui`, those that also open in a window. Both kinds name them the
+same, `oui_code` and the rest: a system has one or the other, and the `_gui` names of a window build here are only
+so the two sit side by side in `bin/`.
 Two scripts make them, the same on a developer's machine as on GitHub's.
 
 `tools/build_portable.sh` builds one system and kind in a container, with podman or docker, mounting the repository
@@ -154,9 +156,9 @@ read-only, and writes the programs to `dist/<system>-<processor>-<kind>/`:
 
 ```sh
 tools/build_portable.sh                   # dist/linux-x86_64-terminal: oui_code, oui_run, oui_calc
-tools/build_portable.sh --gui             # dist/linux-x86_64-gui: oui_code_gui, oui_run_gui, oui_calc_gui
+tools/build_portable.sh --gui             # dist/linux-x86_64-gui: oui_code, oui_run, oui_calc
 tools/build_portable.sh --windows         # dist/windows-x86_64-terminal: oui_code.exe and the rest
-tools/build_portable.sh --windows --gui   # dist/windows-x86_64-gui: oui_code_gui.exe and the rest
+tools/build_portable.sh --windows --gui   # dist/windows-x86_64-gui: oui_code.exe and the rest
 ```
 
 All are MinSizeRel, with tests off, `OLAGARRO_STATIC_LINK=ON` and link-time optimisation, and stripped.
@@ -167,12 +169,12 @@ All are MinSizeRel, with tests off, `OLAGARRO_STATIC_LINK=ON` and link-time opti
   lld and identical code folding (`-Wl,--icf=all`); `oui_run` with GCC, which makes it smaller. `oui_code` comes out
   at about 2.1 MB.
 - **Linux gui.** In Ubuntu 22.04: SDL3 and the C++ runtime go inside, the C library and the display libraries come
-  from the system, so they run on Ubuntu 22.04 (glibc 2.35) and anything newer. `oui_code_gui` is about 3.6 MB.
+  from the system, so they run on Ubuntu 22.04 (glibc 2.35) and anything newer. `oui_code` is about 3.6 MB.
   Ubuntu 22.04's GCC 11 warns of uninitialised values where there are none, so that one warning is not an error
   there.
 - **Windows.** Cross-built in Ubuntu 22.04 with [llvm-mingw](https://github.com/mstorsjo/llvm-mingw), a fixed
   version checked against its SHA-256 sum, and linked statically: the `.exe` needs only the system's DLLs.
-  `oui_code.exe` is about 2.5 MB, `oui_code_gui.exe` about 4.1 MB.
+  `oui_code.exe` is about 2.5 MB, or 4.1 MB in the `gui` kind.
 
 `tools/package_release.sh` then makes the release's files of whatever `dist/` holds, in `dist/release/`:
 

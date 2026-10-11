@@ -40,7 +40,8 @@ int main(int argument_count, char* const* const arguments)
                    "Options:\n"
                    "  --help          Show this help text.\n"
 #ifdef OLAGARRO_OUI_CALC_WINDOW
-                   "  --window        Open in a desktop window instead of the terminal.\n"
+                   "  --window        Open in a desktop window instead of the terminal, as it\n"
+                   "                  does when not started from a terminal.\n"
 #endif
 #ifdef OLAGARRO_OUI_CALC_DRM
                    "  --drm           Take the whole screen, with no desktop: for a console.\n"
@@ -57,7 +58,15 @@ int main(int argument_count, char* const* const arguments)
     std::unique_ptr<oui::Backend> backend;
     // In characters, Turbo's look, as OUI Code's; the graphical one where there are pixels.
     auto theme{oui::TurboCTheme::make()};
-    if(command_line.has_option("window"))
+#ifdef OLAGARRO_OUI_CALC_WINDOW
+    // Started from a desktop's menu or an icon, with no terminal to show in, it shows in a window unless told where.
+    const auto in_window{command_line.has_option("window") ||
+                         (!command_line.has_option("drm") && !command_line.has_option("desktop") &&
+                          !oui::started_from_terminal())};
+#else
+    const auto in_window{command_line.has_option("window")};
+#endif
+    if(in_window)
     {
 #ifdef OLAGARRO_OUI_CALC_WINDOW
         oui::WindowOptions window_options;
