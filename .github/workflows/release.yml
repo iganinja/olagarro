@@ -66,6 +66,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The whole history and its tags: the Debian packages take their version from git describe.
+          fetch-depth: 0
       - uses: actions/download-artifact@v8
         with:
           path: dist

@@ -34,7 +34,8 @@ irm https://raw.githubusercontent.com/iganinja/olagarro/master/install.ps1 | iex
 Each program comes in two kinds: for the terminal, and `gui`, which also opens in a window of its own with
 `--window`, as `oui_code_gui`. The installers can also get the whole package, the three programs with their licences,
 and take options to choose without asking: `sh -s -- --all --gui` on Linux, `-All -Gui` on Windows, as the head of
-each script tells.
+each script tells. On Debian and Ubuntu, the release's `oui-pack-linux-x86_64-terminal.deb` and
+`oui-pack-linux-x86_64-gui.deb` install the three with `sudo dpkg -i`, and a newer one upgrades them.
 
 ## Build
 

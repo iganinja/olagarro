@@ -180,6 +180,7 @@ All are MinSizeRel, with tests off, `OLAGARRO_STATIC_LINK=ON` and link-time opti
 |------|------------|
 | `olagarro-<system>-x86_64-<kind>.tar.gz`, `.zip` for Windows | the three programs of that kind, with `LICENSE` and `THIRD_PARTY_NOTICES.txt` |
 | `<program>-<system>-x86_64-<kind>`, `.exe` for Windows | each program alone, as `oui_code-linux-x86_64-gui` |
+| `oui-pack-linux-x86_64-<kind>.deb` | the three Linux programs of that kind as a Debian package, `oui-pack` or `oui-pack-gui`, in `/usr/bin` |
 | `THIRD_PARTY_NOTICES.txt` | the licences of everything any of them carries, for whoever downloads one program alone |
 | `SHA256SUMS` | the sum of each file |
 
@@ -187,6 +188,13 @@ All are MinSizeRel, with tests off, `OLAGARRO_STATIC_LINK=ON` and link-time opti
 Jersey 10 in all, SDL3 in the `gui` ones, musl in the Linux terminal ones, and the mingw-w64 runtime and winpthreads
 in the Windows ones. Those the source does not keep beside its code are in `licenses/`, whose README says where each
 comes from.
+
+The Debian packages take their version from the tag, `0.1.0` from `v0.1.0`, or from `git describe` between tags,
+`0.1.0+3.ged0fda3`, which Debian orders after it; `OLAGARRO_VERSION` sets it. `sudo dpkg -i` installs one, and a newer
+one upgrades it the same way. The `gui` one depends on `libc6 (>= 2.35)`, as its programs do. They carry the licences
+as Debian keeps them, in `/usr/share/doc/<package>/copyright`, and a changelog saying where they were built from.
+`lintian` finds them as they are meant to be: statically linked, and without position-independent code in the `gui`
+programs, which make them run anywhere and small; it also notes they have no manual pages.
 
 The names carry no version, so a release's files are always at the same address: GitHub's
 `https://github.com/iganinja/olagarro/releases/latest/download/<file>` is the latest release's. The installers download
