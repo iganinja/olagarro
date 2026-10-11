@@ -123,22 +123,25 @@ for built in "$root"/dist/linux-*-terminal "$root"/dist/linux-*-gui; do
         install -m 0755 "$program" "$tree/usr/bin/$(basename "$program")"
     done
     { cat "$root/LICENSE"; printf '\n\n'; notices "$notice_system" "$kind"; } > "$tree/usr/share/doc/$package/copyright"
-    {
-        printf 'Package: %s\nVersion: %s\nArchitecture: %s\n' "$package" "$version" "$architecture"
-        printf 'Maintainer: iganinja <iganinja@users.noreply.github.com>\n'
-        printf '%s' "$depends"
-        printf 'Section: editors\nPriority: optional\nHomepage: https://github.com/iganinja/olagarro\n'
-        printf 'Description: %s\n' "$summary"
-        printf ' OUI Code is a text editor and file explorer, oui_run runs JavaScript programs\n'
-        printf " with OUI's widgets, and oui_calc is a calculator, all made with OUI, a user\n"
-        printf ' interface toolkit for the terminal and the desktop.\n'
-    } > "$tree/DEBIAN/control"
     # The changelog Debian asks every package for: which version, from where, and when.
     {
         printf '%s (%s) unstable; urgency=medium\n\n' "$package" "$version"
         printf '  * Built from https://github.com/iganinja/olagarro, version %s.\n\n' "$version"
         printf ' -- iganinja <iganinja@users.noreply.github.com>  %s\n' "$(LC_ALL=C date -u -R)"
     } | gzip -9 -n > "$tree/usr/share/doc/$package/changelog.gz"
+    # What it takes on disk once installed, in KiB, which apt tells before installing it.
+    size="$(du -sk --apparent-size "$tree/usr" | cut -f1)"
+    {
+        printf 'Package: %s\nVersion: %s\nArchitecture: %s\n' "$package" "$version" "$architecture"
+        printf 'Maintainer: iganinja <iganinja@users.noreply.github.com>\n'
+        printf '%s' "$depends"
+        printf 'Installed-Size: %s\n' "$size"
+        printf 'Section: editors\nPriority: optional\nHomepage: https://github.com/iganinja/olagarro\n'
+        printf 'Description: %s\n' "$summary"
+        printf ' OUI Code is a text editor and file explorer, oui_run runs JavaScript programs\n'
+        printf " with OUI's widgets, and oui_calc is a calculator, all made with OUI, a user\n"
+        printf ' interface toolkit for the terminal and the desktop.\n'
+    } > "$tree/DEBIAN/control"
     # Writable by root alone, whatever the umask of the machine that builds them.
     chmod -R u=rwX,go=rX "$tree"
     dpkg-deb --build --root-owner-group -Zxz "$tree" "$release/oui-pack-$name.deb" >/dev/null

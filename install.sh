@@ -12,15 +12,20 @@
 #                                   rather than those for the terminal only
 #   --package                       the whole package, the three with LICENSE and THIRD_PARTY_NOTICES.txt, unpacked
 #                                   into the folder it is run from rather than installed
+#   --apt                           the three from the project's APT repository, on Debian, Ubuntu and the like, so
+#                                   apt upgrade keeps them up to date: it adds the repository and its key, with sudo,
+#                                   and installs the package oui-pack, or oui-pack-gui with --gui, in /usr/bin
 #
 #   curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh -s -- --all --gui
 #
 # Every download is checked against the release's SHA256SUMS before it is used. OUI_INSTALL_DIR says where programs
-# go, ~/.local/bin unless set; OUI_DOWNLOAD_URL where they come from, the latest release unless set.
+# go, ~/.local/bin unless set; OUI_DOWNLOAD_URL where they come from, the latest release unless set; OUI_APT_URL the
+# APT repository, https://iganinja.github.io/olagarro unless set.
 set -eu
 
 source=${OUI_DOWNLOAD_URL:-https://github.com/iganinja/olagarro/releases/latest/download}
 target=${OUI_INSTALL_DIR:-$HOME/.local/bin}
+apt_source=${OUI_APT_URL:-https://iganinja.github.io/olagarro}
 
 fail() {
     echo "$*" >&2
@@ -39,6 +44,7 @@ esac
 programs=""
 kind=terminal
 package=0
+apt=0
 asked=0
 for argument in "$@"; do
     case "$argument" in
@@ -46,7 +52,8 @@ for argument in "$@"; do
         --all) programs="oui_code oui_run oui_calc" ;;
         --gui) kind=gui ;;
         --package) package=1 ;;
-        *) fail "Unknown option: $argument. It takes oui_code, oui_run, oui_calc, --all, --gui and --package." ;;
+        --apt) apt=1 ;;
+        *) fail "Unknown option: $argument. It takes oui_code, oui_run, oui_calc, --all, --gui, --package and --apt." ;;
     esac
     asked=1
 done
@@ -74,6 +81,10 @@ Olagarro: what would you like?
    9) All three                                    terminal
   10) All three                                    terminal and GUI
 
+  Through apt, which keeps them up to date (Debian, Ubuntu and the like; asks for sudo):
+  11) All three                                    terminal
+  12) All three                                    terminal and GUI
+
    0) Nothing
 
 EOF
@@ -91,8 +102,10 @@ EOF
             8) programs="oui_code oui_run oui_calc"; kind=gui ;;
             9) package=1 ;;
             10) package=1; kind=gui ;;
+            11) apt=1 ;;
+            12) apt=1; kind=gui ;;
             0) echo "Nothing installed."; exit 0 ;;
-            *) echo "That is no choice: a number from 0 to 10." > /dev/tty; continue ;;
+            *) echo "That is no choice: a number from 0 to 12." > /dev/tty; continue ;;
         esac
         break
     done
@@ -130,6 +143,32 @@ fi
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+
+# The repository's key and its line among apt's sources, once; apt installs the package, and upgrades it from then on.
+if [ $apt -eq 1 ]; then
+    command -v apt-get >/dev/null 2>&1 || fail "There is no apt here: install the programs themselves, without --apt."
+    if [ "$(id -u)" -eq 0 ]; then
+        as_root() { "$@"; }
+    elif command -v sudo >/dev/null 2>&1; then
+        as_root() { sudo "$@"; }
+    else
+        fail "Adding the APT repository takes root, and there is no sudo here."
+    fi
+    deb_package=oui-pack
+    [ "$kind" = gui ] && deb_package=oui-pack-gui
+    fetch "$apt_source/olagarro.gpg" "$work/olagarro.gpg" || fail "The repository's key could not be downloaded from $apt_source."
+    echo "Adding the APT repository $apt_source, with sudo..."
+    as_root mkdir -p /etc/apt/keyrings
+    as_root install -m 0644 "$work/olagarro.gpg" /etc/apt/keyrings/olagarro.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/olagarro.gpg] $apt_source stable main" > "$work/olagarro.list"
+    as_root install -m 0644 "$work/olagarro.list" /etc/apt/sources.list.d/olagarro.list
+    # Through a pipe the script is what comes in: apt must not read the rest of it as answers.
+    as_root apt-get update < /dev/null
+    as_root apt-get install -y "$deb_package" < /dev/null
+    echo "Installed $deb_package: apt upgrade keeps it up to date."
+    exit 0
+fi
+
 fetch "$source/SHA256SUMS" "$work/SHA256SUMS" || fail "The release's SHA256SUMS could not be downloaded from $source."
 
 # A file of the release, downloaded and checked against its sum.

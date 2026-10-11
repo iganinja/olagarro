@@ -1,7 +1,9 @@
 # Makes a release from a version's tag, as v0.1.0: the tests first, in the terminal build and in the one with the
 # window module, then the programs of each system and kind with tools/build_portable.sh, then the release's files
 # with tools/package_release.sh, published as the tag's release. Started by hand from the Actions tab, it does the
-# same and leaves the files as the run's artifact instead of publishing them.
+# same and leaves the files as the run's artifact instead of publishing them. A tag's Debian packages then go to the
+# APT repository on GitHub Pages, made and signed by tools/apt_repository.sh with the key in the APT_SIGNING_KEY
+# secret.
 name: Release
 
 on:
@@ -85,3 +87,33 @@ jobs:
         with:
           name: release
           path: dist/release
+
+  apt-repository:
+    name: APT repository
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Take the release's Debian packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "$GITHUB_REF_NAME" --pattern "*.deb" --dir debs
+      - name: Make the signed repository
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
+          tools/apt_repository.sh debs site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5

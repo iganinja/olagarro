@@ -196,6 +196,12 @@ as Debian keeps them, in `/usr/share/doc/<package>/copyright`, and a changelog s
 `lintian` finds them as they are meant to be: statically linked, and without position-independent code in the `gui`
 programs, which make them run anywhere and small; it also notes they have no manual pages.
 
+The same packages are in an APT repository at `https://iganinja.github.io/olagarro`, suite `stable`, component
+`main`, so `apt upgrade` brings each release. `tools/apt_repository.sh <folder with the .deb files> <folder to make>`
+makes it: the packages in `pool/main`, `Packages` for each architecture, and `Release` signed as `Release.gpg` and as
+`InRelease` with the secret key in gpg's keyring, whose public part goes beside them as `olagarro.gpg` for systems to
+trust. It holds one release only; older ones stay in GitHub's releases. `install.sh --apt` adds it to a system.
+
 The names carry no version, so a release's files are always at the same address: GitHub's
 `https://github.com/iganinja/olagarro/releases/latest/download/<file>` is the latest release's. The installers download
 from there: `install.sh` on Linux and `install.ps1` on Windows show a menu of the programs and kinds, or take options to
@@ -206,7 +212,22 @@ folder they run in. `OUI_INSTALL_DIR` and `OUI_DOWNLOAD_URL` change where the pr
 GitHub makes the releases with `.github/workflows/release.yml`. Pushing a version's tag, as `v0.1.0`, runs the tests
 in a terminal build and in a `gui` one, then builds the four kinds with `tools/build_portable.sh` in parallel, then
 makes the files with `tools/package_release.sh` and publishes them as the tag's release. Nothing is published when a
-test fails. Started by hand from the Actions tab, it does the same and leaves the files as the run's artifact.
+test fails. Then a tag's Debian packages become the APT repository, published on GitHub Pages, signed with the key in
+the repository's `APT_SIGNING_KEY` secret. Started by hand from the Actions tab, it makes the same files and leaves them
+as the run's artifact, publishing nothing and leaving the APT repository as it was.
+
+That needs, once: GitHub Pages published by GitHub Actions (Settings, Pages, Source), tags allowed to deploy to the
+`github-pages` environment (Settings, Environments, `github-pages`, a tag rule `v*`), and the signing key as the
+secret, made with no passphrase, its armoured secret part as the value:
+
+```sh
+export GNUPGHOME="$(mktemp -d)"
+gpg --batch --passphrase '' --quick-generate-key "olagarro APT repository" ed25519 sign never
+gpg --armor --export-secret-keys > olagarro-apt-signing-key.asc
+```
+
+The file is the only way to sign new releases for systems that already trust the key: kept somewhere safe, it lets
+the secret be made again; lost, a new key means each system adding the repository again.
 
 ## Building for Windows
 

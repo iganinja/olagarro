@@ -34,8 +34,21 @@ irm https://raw.githubusercontent.com/iganinja/olagarro/master/install.ps1 | iex
 Each program comes in two kinds: for the terminal, and `gui`, which also opens in a window of its own with
 `--window`, as `oui_code_gui`. The installers can also get the whole package, the three programs with their licences,
 and take options to choose without asking: `sh -s -- --all --gui` on Linux, `-All -Gui` on Windows, as the head of
-each script tells. On Debian and Ubuntu, the release's `oui-pack-linux-x86_64-terminal.deb` and
-`oui-pack-linux-x86_64-gui.deb` install the three with `sudo dpkg -i`, and a newer one upgrades them.
+each script tells.
+
+On Debian, Ubuntu and the like, apt can keep them up to date: `install.sh` adds the project's APT repository, with
+`--apt` or from its menu, or by hand:
+
+```sh
+sudo mkdir -p /etc/apt/keyrings
+sudo curl -fsSL https://iganinja.github.io/olagarro/olagarro.gpg -o /etc/apt/keyrings/olagarro.gpg
+echo "deb [signed-by=/etc/apt/keyrings/olagarro.gpg] https://iganinja.github.io/olagarro stable main" \
+    | sudo tee /etc/apt/sources.list.d/olagarro.list
+sudo apt update && sudo apt install oui-pack
+```
+
+`oui-pack` has the three for the terminal and `oui-pack-gui` the `gui` ones, in `/usr/bin`; `apt upgrade` brings each
+new release. Each release also carries them as `.deb` files, for `sudo dpkg -i`.
 
 ## Build
 
