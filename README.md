@@ -3,6 +3,10 @@
 Olagarro is a small, portable C++17 utility library for games and applications.
 Its documentation is in [doc](doc/README.md), in Markdown: OUI Code shows it, its links followed.
 
+![OUI Code with its File menu open, in a terminal on the left and in its own window on the right](doc/images/oui_code_terminal_and_window.png)
+
+OUI Code, the text editor built on OUI, the same program in a terminal and in a window of its own.
+
 ## Modules
 
 - `ByteStream`: binary serialization and file I/O.
