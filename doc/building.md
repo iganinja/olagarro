@@ -189,7 +189,11 @@ in the Windows ones. Those the source does not keep beside its code are in `lice
 comes from.
 
 The names carry no version, so a release's files are always at the same address: GitHub's
-`https://github.com/iganinja/olagarro/releases/latest/download/<file>` is the latest release's.
+`https://github.com/iganinja/olagarro/releases/latest/download/<file>` is the latest release's. The installers download
+from there: `install.sh` on Linux and `install.ps1` on Windows show a menu of the programs and kinds, or take options to
+choose without asking, check each file against `SHA256SUMS`, and install the programs, in `~/.local/bin` or in
+`%LOCALAPPDATA%\Programs\olagarro`, which `install.ps1` adds to the user's `PATH`; or unpack a whole package into the
+folder they run in. `OUI_INSTALL_DIR` and `OUI_DOWNLOAD_URL` change where the programs go and where they come from.
 
 GitHub makes the releases with `.github/workflows/release.yml`. Pushing a version's tag, as `v0.1.0`, runs the tests
 in a terminal build and in a `gui` one, then builds the four kinds with `tools/build_portable.sh` in parallel, then

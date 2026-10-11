@@ -106,6 +106,7 @@ them, for its widgets' signals, such as `Button::clicked`.
 | `third_party/` | QuickJS-ng and stb_truetype, as upstream wrote them. |
 | `modules/` | The C++20 module adapters. |
 | `doc/` | This documentation; `oui_api.md` is generated. |
+| `install.sh`, `install.ps1` | Install the released programs on Linux and on Windows, from a menu or with options. |
 | `licenses/` | The licences of what the released programs carry that the source does not keep beside its code. |
 | `.github/workflows/` | `release.yml`, which builds and publishes a release from a version's tag. |
 

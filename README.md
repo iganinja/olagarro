@@ -13,6 +13,25 @@ Its documentation is in [doc](doc/README.md), in Markdown: OUI Code shows it, it
 - `OUI`: a small UI toolkit for terminals, desktop windows and the whole screen.
 - `OUIScript`: JavaScript for OUI programs, run by QuickJS.
 
+## Install
+
+OUI Code, oui_run and oui_calc come ready to run from the [releases](https://github.com/iganinja/olagarro/releases),
+for Linux and Windows on x86-64. An installer shows what there is and asks, then downloads it, checks it against the
+release's sums and installs it, with no root and no administrator:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh
+```
+
+```powershell
+irm https://raw.githubusercontent.com/iganinja/olagarro/master/install.ps1 | iex
+```
+
+Each program comes in two kinds: for the terminal, and `gui`, which also opens in a window of its own with
+`--window`, as `oui_code_gui`. The installers can also get the whole package, the three programs with their licences,
+and take options to choose without asking: `sh -s -- --all --gui` on Linux, `-All -Gui` on Windows, as the head of
+each script tells.
+
 ## Build
 
 ```sh
