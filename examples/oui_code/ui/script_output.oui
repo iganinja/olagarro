@@ -1,0 +1,6 @@
+# Under the documents, what a script run from Tools prints, under its title and a button that stops it.
+Grid context=ScriptRun rows=content,flex
+  Grid columns=fill,content gap=tight
+    Label id=title bold
+    Button "Stop" id=stop compact flat tooltip="Stops the script"
+  TextEdit id=text read_only

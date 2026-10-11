@@ -1,0 +1,14 @@
+# Tools > Interactive UI: a description on the left and what it builds on the right, built again a moment after each
+# change; why it does not build, along the bottom, when it does not. Over what it builds, a button that writes code to
+# start from, in the language beside it, and the script that runs after it for that language, if any.
+Grid context=InteractiveUi rows=flex,content
+  Split ratio=0.45
+    Slot id=code
+    Grid rows=content,flex
+      Grid columns=fill,content,content,content gap=tight
+        Label "Preview" bold
+        ComboBox id=language tooltip="What Generate writes in: a script for oui_run, or C++ for a program"
+        Button "Generate" id=generate compact flat tooltip="Code that opens this window, each widget with an id wired, in a new tab"
+        ComboBox id=script tooltip="A script that gets what Generate writes, to save it or build with it: one for each language"
+      Slot id=preview
+  Slot id=error_line

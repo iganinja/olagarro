@@ -1,0 +1,16 @@
+# The find bar under the document, and the options its * button opens over it. The column only holds the two for the
+# find bar to take: it shows the first and opens the second as a popup.
+Column context=FindBar
+  Grid id=bar columns=content,fill,content,content,content,content,0 gap=tight
+    Label "Find:"
+    LineEdit id=query placeholder="Text to find" background=table_background
+    # How many matches there are, and which one is selected.
+    Label id=count
+    Button "↑" id=previous untranslated compact flat tooltip="Previous match (Shift+F3)"
+    Button "↓" id=next untranslated compact flat tooltip="Next match (F3)"
+    Button "*" id=options untranslated compact flat tooltip="Whole word, regular expression, match case"
+    HSpacer width=0
+  Column id=options_panel
+    CheckButton "Whole word" id=whole_word background=menu_background
+    CheckButton "Regular expression" id=regex background=menu_background
+    CheckButton "Match case" id=match_case background=menu_background

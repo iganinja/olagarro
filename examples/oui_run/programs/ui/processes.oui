@@ -1,0 +1,12 @@
+# The window of processes.js: a filter over the table of programs, which takes the room there is, and what to do
+# with the one chosen under it.
+Window "Processes" width=72 height_share=0.8
+  Grid rows=content,flex,content
+    Grid columns=content,fill gap=tight
+      Label "&Filter:" buddy=filter
+      LineEdit id=filter placeholder="Part of a program's name"
+    Slot id=table
+    Grid columns=fill,content,content gap=tight
+      Label id=status
+      Button "&Kill" id=kill compact tooltip="Ends the program chosen, once asked"
+      Button "Close" id=close compact

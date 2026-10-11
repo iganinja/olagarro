@@ -1,0 +1,15 @@
+BasedOnStyle: LLVM
+BreakBeforeBraces: Allman
+ColumnLimit: 120
+IndentWidth: 4
+ContinuationIndentWidth: 4
+PointerAlignment: Left
+ReferenceAlignment: Left
+SpaceBeforeParens: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+SortIncludes: Never
+# A comment marked "api" holds a declaration on one line, however long, for tools/extract_api.js: left as it is.
+CommentPragmas: "^ api\\("

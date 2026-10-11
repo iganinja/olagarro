@@ -1,0 +1,11 @@
+{
+  "contexts": {
+    "Calculator": {
+      "Calculator": "Calculadora",
+      "Help": "Ayuda",
+      "Quit": "Salir"
+    }
+  },
+  "language": "es",
+  "name": "Español"
+}

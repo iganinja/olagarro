@@ -1,0 +1,13 @@
+build/
+build-*/
+bin/
+bin-debug/
+dist/
+.env
+*.log
+*.dmp
+# Qt Creator's settings for a project.
+*.user
+*.user.*
+opencode.json
+backup_opencode.json

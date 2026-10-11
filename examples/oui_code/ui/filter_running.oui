@@ -1,0 +1,4 @@
+# Tools > Filter Through Command, while the command runs: what runs, and how to stop it.
+Window "Filter Through Command" context=Filter
+  Label id=running
+  Label "Esc stops it."

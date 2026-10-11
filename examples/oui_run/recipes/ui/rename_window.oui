@@ -1,0 +1,17 @@
+# rename_window.js: what to rename and what to call it, then what that comes to, file by file, before anything is
+# renamed. The list is the script's, in the slot.
+Window "Rename Files"
+  Grid rows=content,content,flex,content
+    # A column apart between the names and the fields, and no row between them.
+    Grid columns=content,1,fill
+      Label "&Pattern:" buddy=pattern
+      HSpacer
+      LineEdit id=pattern placeholder="A regular expression, as ^IMG_(.*)"
+      Label "Replace &with:" buddy=replacement
+      HSpacer
+      LineEdit id=replacement placeholder="What the names become, $1 for what ( ) took"
+    Label "Type a pattern: the names it would change show here, and nothing is renamed until Rename." id=status
+    Slot id=preview
+    Row centered gap=tight
+      Button "&Rename" id=rename
+      Button "Close" id=close

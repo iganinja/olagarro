@@ -1,0 +1,14 @@
+# Edit > Find in Files: what to look for, where, and how.
+Window "Find in Files" context=FindInFiles width=60
+  Label "&Find:" buddy=query
+  LineEdit id=query placeholder="Text to find"
+  Label "&In files:" buddy=files
+  LineEdit id=files placeholder="Every file, or patterns such as *.cpp *.h"
+  CheckButton "&Whole word" id=whole_word
+  CheckButton "&Regular expression" id=regex
+  CheckButton "&Match case" id=match_case
+  # Why Find did not start, when it does not.
+  Label id=problem
+  Row centered gap=tight
+    Button "Find" id=find default
+    Button "Cancel" id=cancel

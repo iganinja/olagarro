@@ -1,0 +1,3 @@
+# --key-test: a bare editor every key goes to, while what arrives is printed.
+Window "Key Test" untranslated border=none keep_on_escape
+  TextEdit id=editor

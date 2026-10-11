@@ -1,0 +1,12 @@
+# Edit > Replace: what to find, what to put instead, and which of the two to do.
+Window "Replace" context=ReplaceDialog
+  Label "&Find text:" buddy=query
+  LineEdit id=query placeholder="Text to find"
+  Label "Replace &with:" buddy=replacement
+  LineEdit id=replacement
+  # What the last button did, when it did not close the dialog.
+  Label id=outcome
+  Row gap=tight
+    Button "&Replace" id=replace default
+    Button "Replace &All" id=replace_all
+    Button "Cancel" id=cancel

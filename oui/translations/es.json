@@ -1,0 +1,154 @@
+{
+  "contexts": {
+    "Application": {
+      "&Normal Size": "Tamaño &normal",
+      "Zoom &In": "&Ampliar",
+      "Zoom &Out": "&Reducir"
+    },
+    "CalculatorView": {
+      "Angles in degrees.": "Ángulos en grados.",
+      "Angles in degrees: click, or F2, for radians": "Ángulos en grados: pulsa, o F2, para radianes",
+      "Angles in radians.": "Ángulos en radianes.",
+      "Angles in radians: click, or F2, for degrees": "Ángulos en radianes: pulsa, o F2, para grados",
+      "Calculator Help": "Ayuda de la calculadora",
+      "Calculator Options": "Opciones de la calculadora",
+      "Constants:": "Constantes:",
+      "Measure angles in &degrees": "Medir los ángulos en &grados",
+      "Write an expression, as (800*0.16) - (0.32*500), and press Enter; help lists the rest.": "Escribe una expresión, como (800*0.16) - (0.32*500), y pulsa Intro; help enseña el resto.",
+      "Write as on paper: + - * / ^ ( ), 16% for a percentage, 5! for a factorial, x = 2 to keep a value; F1 explains it all.\nCommands: deg, rad, clear, help, exit.\nFunctions:": "Se escribe como en papel: + - * / ^ ( ), 16% para un porcentaje, 5! para un factorial, x = 2 para guardar un valor; F1 lo explica todo.\nÓrdenes: deg, rad, clear, help, exit.\nFunciones:"
+    },
+    "CommandPalette": {
+      "(off)": "(no)",
+      "(on)": "(sí)",
+      "Command Palette": "Paleta de comandos",
+      "Filter commands": "Filtrar comandos"
+    },
+    "Dialogs": {
+      "Cancel": "Cancelar",
+      "OK": "Aceptar"
+    },
+    "DiffView": {
+      "1 difference": "1 diferencia",
+      "Difference {0} of {1}": "Diferencia {0} de {1}",
+      "F7 next, Shift+F7 previous": "F7 siguiente, Mayús+F7 anterior",
+      "The two texts are the same.": "Los dos textos son iguales.",
+      "{0} differences": "{0} diferencias"
+    },
+    "Expression": {
+      "! takes a whole number, 0 or more": "! necesita un número entero, 0 o más",
+      "A ) is missing": "Falta un )",
+      "Division by zero": "División entre cero",
+      "Not a number in base {0}: {1}": "No es un número en base {0}: {1}",
+      "Not a real number": "No es un número real",
+      "Something is missing at the end": "Falta algo al final",
+      "The result is too large": "El resultado es demasiado grande",
+      "There is no answer yet": "Todavía no hay resultado",
+      "Unexpected {0}": "No se esperaba {0}",
+      "Unknown name {0}": "Nombre desconocido: {0}",
+      "at least {0}": "al menos {0}",
+      "{0} is a constant": "{0} es una constante",
+      "{0} is a function": "{0} es una función",
+      "{0} is a function: write {0}(...)": "{0} es una función: escribe {0}(...)",
+      "{0} is a word of the calculator's own": "{0} es una palabra de la calculadora",
+      "{0} or {1}": "{0} o {1}",
+      "{0} takes {1} value, not {2}": "{0} toma {1} valor, no {2}",
+      "{0} takes {1} values, not {2}": "{0} toma {1} valores, no {2}",
+      "{0}({1}) is not a real number": "{0}({1}) no es un número real",
+      "{0}({1}) is not defined": "{0}({1}) no está definido"
+    },
+    "FileDialog": {
+      "A file with that name exists. Press again to overwrite.": "Ya existe un archivo con ese nombre. Pulsa otra vez para sobrescribirlo.",
+      "All files (*)": "Todos los archivos (*)",
+      "Cancel": "Cancelar",
+      "Desktop": "Escritorio",
+      "Documents": "Documentos",
+      "Downloads": "Descargas",
+      "Enter a file name.": "Escribe un nombre de archivo.",
+      "File &name:": "&Nombre:",
+      "File not found: {0}": "No existe el archivo: {0}",
+      "File &type:": "&Tipo:",
+      "Folder not found: {0}": "No existe la carpeta: {0}",
+      "Home": "Carpeta personal",
+      "&Location:": "&Ubicación:",
+      "Name": "Nombre",
+      "&Open": "&Abrir",
+      "Open File": "Abrir archivo",
+      "Open Folder": "Abrir carpeta",
+      "Overwrite File?": "¿Sobrescribir el archivo?",
+      "Places": "Lugares",
+      "&Save": "&Guardar",
+      "Save As": "Guardar como",
+      "&Select Folder": "&Seleccionar carpeta",
+      "Size": "Tamaño",
+      "Type": "Tipo",
+      "[..]": "[..]",
+      "[D] ": "[C] ",
+      "untitled.txt": "sin_titulo.txt",
+      "New &Folder": "Nueva &carpeta",
+      "New Folder": "Nueva carpeta",
+      "Folder &name:": "&Nombre de la carpeta:",
+      "Could not make the folder {0}: {1}": "No se pudo crear la carpeta {0}: {1}"
+    },
+    "FileError": {
+      "it is a folder, not a file": "es una carpeta, no un archivo",
+      "the file does not exist": "el archivo no existe",
+      "the text has characters that {0} cannot store": "el texto tiene caracteres que {0} no puede guardar"
+    },
+    "FolderView": {
+      "Explorer": "Explorador",
+      "Open a folder": "Abre una carpeta",
+      "Project": "Proyecto"
+    },
+    "GraphicalTheme": {
+      "Classic": "Clásico",
+      "Night": "Noche",
+      "Ocean": "Océano"
+    },
+    "QuickPick": {
+      "Type to filter": "Escribe para filtrar"
+    },
+    "Script": {
+      "No": "No",
+      "Yes": "Sí"
+    },
+    "Shortcut": {
+      "Alt+": "Alt+",
+      "Backspace": "Retroceso",
+      "Ctrl+": "Ctrl+",
+      "Del": "Supr",
+      "Down": "Abajo",
+      "End": "Fin",
+      "Enter": "Intro",
+      "Esc": "Esc",
+      "Home": "Inicio",
+      "Ins": "Insert",
+      "Left": "Izquierda",
+      "PgDn": "AvPág",
+      "PgUp": "RePág",
+      "Right": "Derecha",
+      "Shift+": "Mayús+",
+      "Shift+Tab": "Mayús+Tab",
+      "Space": "Espacio",
+      "Tab": "Tab",
+      "Up": "Arriba"
+    },
+    "TabSwitcher": {
+      "Tab List": "Lista de pestañas"
+    },
+    "TerminalTheme": {
+      "Amber": "Ámbar",
+      "Commander": "Commander",
+      "Light": "Claro",
+      "Monochrome": "Monocromo",
+      "Night": "Noche",
+      "Phosphor": "Fósforo",
+      "Turbo C++": "Turbo C++"
+    },
+    "Window": {
+      "Move: ←↑→↓ · Keep: Enter · Put back: Esc": "Mover: ←↑→↓ · Dejar: Intro · Devolver: Esc",
+      "Move: ←↑→↓ · Resize: Ctrl+←↑→↓ · Keep: Enter · Put back: Esc": "Mover: ←↑→↓ · Tamaño: Ctrl+←↑→↓ · Dejar: Intro · Devolver: Esc"
+    }
+  },
+  "language": "es",
+  "name": "Español"
+}

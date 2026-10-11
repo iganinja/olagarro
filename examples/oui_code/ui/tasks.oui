@@ -1,0 +1,26 @@
+# A task list: on the left the tasks, pending or done; on the right the one chosen, its title, priority and note.
+Split id=split context=Tasks ratio=0.4
+  Grid rows=content,content,flex,content
+    # The tabs only choose what the one list shows, so they hold nothing of their own.
+    Tabs id=tabs fixed
+      Tab "Pending"
+      Tab "Done"
+    LineEdit id=search placeholder="Find in titles and notes"
+    Slot id=list
+    # A button that adds a task, for whoever looks for one rather than a key. In a terminal it keeps a column clear
+    # of either side, rather than run from edge to edge; the code takes the columns away where panels have gaps.
+    Grid id=add_row columns=1,fill,1
+      Label
+      Button "+ Add Task" id=add
+      Label
+  Grid rows=content,flex
+    # A column apart between the names and the fields, and no row between them.
+    Grid columns=content,1,fill
+      Label "Title:"
+      HSpacer
+      LineEdit id=title
+      Label "Priority:"
+      HSpacer
+      Grid columns=content,fill
+        ComboBox id=priority
+    TextEdit id=note wrap

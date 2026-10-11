@@ -1,0 +1,5 @@
+# A Markdown document to read, apart from the documents as a manual page is: a preview, the help of a script. Its
+# title and the name its place is remembered under are the code's. Wide enough for a table of keys, narrow enough to
+# read; as tall as the screen allows.
+Window width=100 max_width=110 height_share=0.9 min_width=40 min_height=10 resizable
+  MarkdownView id=view background=reading_background foreground=reading_foreground

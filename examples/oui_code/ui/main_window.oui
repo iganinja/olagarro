@@ -1,0 +1,4 @@
+# OUI Code's own window, the whole screen: the code fills the workspace with the menu bar, the side panels, the
+# documents, the find bar and the status bar. Escape is the documents', not a way out.
+Window "OUI Code" untranslated border=none keep_on_escape
+  Dock id=workspace

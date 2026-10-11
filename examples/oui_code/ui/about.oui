@@ -1,0 +1,8 @@
+# Help > About.
+Window "About OUI Code" context=About
+  Label "OUI Code" untranslated
+  Label id=version
+  Label "Copyright 2026 iganinja" untranslated
+  VSpacer
+  Row centered gap=tight
+    Button "OK" id=ok default

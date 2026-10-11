@@ -1,0 +1,27 @@
+# Edit > Preferences. Check buttons go straight in the window's column, which gives them the whole width: the focus
+# highlight then spans the dialog rather than the text alone.
+Window "Preferences" context=Preferences
+  Label "Interface" heading
+  Grid columns=content,fill gap=tight
+    Label "&Language:" buddy=language
+    ComboBox id=language
+  Label "The language changes the next time OUI Code starts."
+  VSpacer
+  Label "Editor" heading
+  CheckButton "&Use spaces for Tab" id=use_spaces
+  CheckButton "Su&ggest words as you type" id=suggest
+  Grid columns=content,fill gap=tight
+    Label "&Spaces per Tab:" buddy=spaces
+    LineEdit id=spaces
+  VSpacer
+  Label "Files" heading
+  CheckButton "&Reload files changed on disk automatically" id=reload
+  CheckButton "&Keep unsaved changes on exit and reopen them next time" id=hot_exit
+  CheckButton "&Back up unsaved changes, to survive a crash" id=backup
+  Grid columns=content,fill gap=tight
+    Label "Back up &every (seconds):" buddy=backup_interval
+    LineEdit id=backup_interval
+  VSpacer
+  Row centered gap=tight
+    Button "OK" id=ok default
+    Button "Cancel" id=cancel

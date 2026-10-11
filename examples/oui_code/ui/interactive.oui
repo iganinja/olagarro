@@ -1,0 +1,22 @@
+# The interactive script: its code beside what it gives, the result over the log, and under all the line of its
+# error, which shows when there is one and goes to it when clicked. Over the result, the text it runs on, when that
+# is text pasted in the tab rather than a document.
+Grid context=Interactive rows=flex,content
+  Split
+    Slot id=code
+    Split vertical ratio=0.35
+      Grid id=input_pane rows=content,flex hidden
+        Label "Input" bold
+        TextEdit id=input
+      Split vertical ratio=0.65
+        Grid rows=content,flex
+          Grid columns=fill,content,content gap=tight
+            Label "Result" id=result_title bold
+            Button "Apply" id=apply compact flat hidden tooltip="Puts the result in place of what it ran on, a change undo takes back"
+            # The log comes and goes with a button of its own, as it is wanted or the room is.
+            Button "Log" id=show_log compact flat tooltip="Shows or hides what the script printed"
+          TextEdit id=result read_only
+        Grid id=log rows=content,flex
+          Label "Log" bold
+          TextEdit id=log_text read_only
+  Slot id=error_line

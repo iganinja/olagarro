@@ -1,0 +1,24 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/OlagarroTargets.cmake")
+
+set(Olagarro_ByteStream_FOUND TRUE)
+set(Olagarro_SignalSlot_FOUND TRUE)
+set(Olagarro_Tasks_FOUND TRUE)
+set(Olagarro_CTTasks_FOUND TRUE)
+set(Olagarro_Concurrency_FOUND TRUE)
+set(Olagarro_OUI_FOUND TRUE)
+set(Olagarro_OUIScript_FOUND TRUE)
+set(Olagarro_OUIGraphics_FOUND TRUE)
+set(Olagarro_QuickJS_FOUND TRUE)
+# The C++20 modules, when the package was built with them.
+foreach(module Module ModuleByteStream ModuleSignalSlot ModuleTasks ModuleCTTasks ModuleConcurrency ModuleOUI)
+    if(TARGET olagarro::${module})
+        set(Olagarro_${module}_FOUND TRUE)
+    endif()
+endforeach()
+
+check_required_components(Olagarro)

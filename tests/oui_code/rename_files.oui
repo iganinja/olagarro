@@ -1,0 +1,8 @@
+Window "Rename Files"
+  LineEdit id=pattern
+  CheckButton "&Dry run" id=dry
+  ComboBox id=case
+  Label id=status
+  Row centered
+    Button "&Rename" id=go default
+    Button "Cancel"

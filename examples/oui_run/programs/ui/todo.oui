@@ -1,0 +1,13 @@
+# The window of todo.js: what to add over the list, which takes the room there is, and what to do with the one
+# chosen under it.
+Window "To Do" width=56 min_height=16
+  Grid rows=content,flex,content,content
+    Grid columns=fill,content gap=tight
+      LineEdit id=entry placeholder="Something to do, and Enter"
+      Button "&Add" id=add compact
+    Slot id=list
+    Label id=status
+    Row centered gap=tight
+      Button "&Done" id=done tooltip="Marks the one chosen done, or not done again; a click on its box, or Space, does it too"
+      Button "D&elete" id=remove tooltip="Takes the one chosen off the list"
+      Button "Close" id=close

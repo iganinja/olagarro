@@ -1,0 +1,9 @@
+{
+  "contexts": {
+    "Runner": {
+      "Quit": "Salir"
+    }
+  },
+  "language": "es",
+  "name": "Español"
+}

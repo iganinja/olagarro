@@ -1,0 +1,84 @@
+# Makes a release from a version's tag, as v0.1.0: the tests first, in the terminal build and in the one with the
+# window module, then the programs of each system and kind with tools/build_portable.sh, then the release's files
+# with tools/package_release.sh, published as the tag's release. Started by hand from the Actions tab, it does the
+# same and leaves the files as the run's artifact instead of publishing them.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Tests (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - name: terminal
+            options: ""
+          - name: gui
+            options: --gui
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install what the build needs
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y cmake ninja-build g++ libgtest-dev libgmock-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libwayland-dev libwayland-bin wayland-protocols libegl-dev libgl-dev libdrm-dev \
+            libgbm-dev
+      - name: Build and test
+        run: tools/build.sh ${{ matrix.options }}
+
+  build:
+    name: Build (${{ matrix.name }})
+    needs: test
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - name: linux-x86_64-terminal
+            options: ""
+          - name: linux-x86_64-gui
+            options: --gui
+          - name: windows-x86_64-terminal
+            options: --windows
+          - name: windows-x86_64-gui
+            options: --windows --gui
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the programs
+        run: tools/build_portable.sh ${{ matrix.options }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: dist/${{ matrix.name }}
+          if-no-files-found: error
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Make the release's files
+        run: tools/package_release.sh
+      - name: Publish the tag's release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/release/* --title "$GITHUB_REF_NAME" --generate-notes
+      - name: Keep the files of a run started by hand
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: dist/release
