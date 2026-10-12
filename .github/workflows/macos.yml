@@ -36,6 +36,22 @@ jobs:
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ${{ matrix.options }}
       - name: Build, past every error
         run: cmake --build build -- -k 0
+      # What the end-to-end tests do, step by step and told: a terminal by script(1) reading its keys from a named pipe.
+      - name: How script(1) takes keys from a pipe here
+        continue-on-error: true
+        run: |
+          perl -e 'alarm 20; exec @ARGV' sh -c '
+            rm -f /tmp/keys; mkfifo /tmp/keys
+            (sleep 15 > /tmp/keys & exec 3< /tmp/keys
+             echo "pipe open to read"
+             script -q /dev/null /bin/sh -c "stty cols 40 rows 10; stty size; echo inside; read key; echo got \$key; sleep 1" <&3
+             echo "script ended with $?") &
+            sleep 2
+            echo "writing a key"
+            printf "x\n" > /tmp/keys
+            echo "key written"
+            wait
+            echo "all ended"'
       # Four at a time, and none longer than five minutes: one that hangs says so without holding the rest.
       - name: Test
         run: ctest --test-dir build --output-on-failure -j4 --timeout 300
