@@ -1,0 +1,40 @@
+# Builds and tests olagarro on macOS, on Apple's processors and on Intel's, to see what it lacks there. It runs on
+# every push to the branch macos, where olagarro is made to build on a Mac, and keeps building past an error so each
+# run shows them all.
+name: macOS
+
+on:
+  push:
+    branches: [macos]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: macOS ${{ matrix.machine }} (${{ matrix.kind }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - machine: arm64
+            runner: macos-15
+            kind: terminal
+            options: ""
+          - machine: arm64
+            runner: macos-15
+            kind: gui
+            options: -DOLAGARRO_OUI_WINDOW=ON
+          - machine: x86_64
+            runner: macos-15-intel
+            kind: terminal
+            options: ""
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install what the build needs
+        run: brew install ninja googletest
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ${{ matrix.options }}
+      - name: Build, past every error
+        run: cmake --build build -- -k 0
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
