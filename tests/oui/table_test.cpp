@@ -47,7 +47,7 @@ TEST_F(TableTest, CreateTableWithHeaders)
 {
     auto table_widget{table({"Name", "Value"})};
     EXPECT_TRUE(table_widget->headers_visible());
-    EXPECT_EQ(table_widget->column_count(), 2);
+    EXPECT_EQ(table_widget->column_count(), 2u);
 }
 
 TEST_F(TableTest, AddLineCreatesLabels)

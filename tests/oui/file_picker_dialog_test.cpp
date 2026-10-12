@@ -122,7 +122,8 @@ TEST(OuiFilePickerDialogTests, AFolderGivenAsDotDotStillHasAParent)
     std::filesystem::current_path(previous);
     std::filesystem::remove_all(top);
 
-    // The location shows the folder whole, and the list starts with the way up from it.
+    // The dialog is in the folder above, whose list starts with the way up from it. Its location is not looked for: on
+    // macOS the temporary folder is /private/var/folders/..., longer than the field shows.
     ASSERT_FALSE(recorder.frames().empty());
     const auto& frame{recorder.frames().front()};
     std::string text;
@@ -135,7 +136,8 @@ TEST(OuiFilePickerDialogTests, AFolderGivenAsDotDotStillHasAParent)
         }
         text += '\n';
     }
-    EXPECT_NE(text.find(oui::utf8_of(top / "inner")), std::string::npos) << text;
+    EXPECT_NE(text.find("[..]"), std::string::npos) << text;
+    EXPECT_NE(text.find("deepest"), std::string::npos) << text;
 }
 
 #ifndef _WIN32

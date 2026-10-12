@@ -2,7 +2,7 @@
 // Each case is a script run by the oui_run given, in a folder of its own, and what it prints and the code it ends
 // with are compared with what they should be.
 
-import {capture, expect, place, quote, run} from "../lib/terminal_session.js";
+import {capture, endedAfter, expect, inPseudoTerminal, place, quote, run} from "../lib/terminal_session.js";
 
 const [ouiRun] = oui.args;
 if (!ouiRun) {
@@ -88,7 +88,7 @@ async function inTerminal(script) {
     const folder = await scratch();
     oui.writeFile(`${folder}/main.js`, `${script}\nsetTimeout(() => oui.quit(), 300);\n`);
     const inner = `stty cols 40 rows 10; ${quote(ouiRun)} main.js`;
-    const {output} = await capture(`script -qec ${quote(inner)} /dev/null`, {cwd: folder});
+    const {output} = await capture(inPseudoTerminal(inner), {cwd: folder});
     await capture(`rm -rf ${quote(folder)}`);
     return output;
 }
@@ -204,7 +204,7 @@ test("a window whose terminal goes away ends the program, rather than spin", asy
     oui.writeFile(`${folder}/main.js`, `oui.window("T", new oui.Label("waiting"));\n`);
     // The terminal is killed under it, as a dropped SSH connection or a closed terminal window leaves it.
     const inner = `stty cols 40 rows 10; ${quote(ouiRun)} ${quote(`${folder}/main.js`)}`;
-    await capture(`(sleep 1.5 | timeout -s KILL 1 script -qec ${quote(inner)} /dev/null) >/dev/null 2>&1`);
+    await capture(`(sleep 1.5 | ${endedAfter(1, inPseudoTerminal(inner))}) >/dev/null 2>&1`);
     await capture("sleep 1");
     // What is still running the script, found apart from the command that looks, as pgrep -f would find itself.
     const {output} = await capture("ps -eo pid=,args=");

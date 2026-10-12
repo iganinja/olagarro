@@ -1,5 +1,7 @@
 #include <oui/process.h>
 
+#include "descriptor.h"
+
 #include <oui/application.h>
 
 #include <atomic>
@@ -35,7 +37,7 @@ struct Pipe
     Pipe()
     {
         int ends[2];
-        if(pipe2(ends, O_CLOEXEC) != 0)
+        if(!open_pipe(ends, false))
         {
             throw std::system_error{errno, std::generic_category(), "pipe"};
         }

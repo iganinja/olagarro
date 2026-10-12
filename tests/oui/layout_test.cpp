@@ -204,7 +204,7 @@ TEST(OuiLayoutTests, ParentAwareButtonFactoryOwnsTheCallback)
     auto calls{0};
     auto& cancel{oui::button("Cancel", *actions, [&calls] { ++ calls; })};
 
-    EXPECT_EQ(actions->child_count(), 1);
+    EXPECT_EQ(actions->child_count(), 1u);
     cancel.click();
 
     EXPECT_EQ(calls, 1);
