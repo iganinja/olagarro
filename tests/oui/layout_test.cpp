@@ -940,6 +940,18 @@ TEST(OuiWidgetTests, LineEditExtendsItsSelectionWhileDraggingTheMouse)
     EXPECT_EQ(edit.selected_text(), "ello");
 }
 
+TEST(OuiWidgetTests, AnEditorsCursorInATerminalIsItsCharacterReversed)
+{
+    oui::CellBuffer buffer{4, 1};
+    oui::CellBufferPainter painter{buffer};
+    const oui::Color text{200, 200, 200};
+    const oui::Color background{10, 20, 30};
+    painter.draw_text_cursor({1, 0}, "a", {text, background});
+    EXPECT_EQ(buffer.cell_at(1, 0).glyph, U'a');
+    EXPECT_EQ(buffer.cell_at(1, 0).foreground, background);
+    EXPECT_EQ(buffer.cell_at(1, 0).background, text);
+}
+
 TEST(OuiWidgetTests, LineEditPaintsABlockCursorWhenFocused)
 {
     auto backend{std::make_unique<MemoryBackend>()};

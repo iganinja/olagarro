@@ -235,6 +235,9 @@ class Painter
     virtual void draw_marker(Point position, const Marker& marker, const TextStyle& style);
     // The mark before a checkable entry, as in a menu: four cells, "[■] " or "[ ] " in a terminal.
     virtual void draw_check_mark(Point position, bool checked, const TextStyle& style);
+    // An editor's cursor at a cell, over the `character` already drawn there in `style`: in a terminal the character
+    // reversed, a block; in a window a thin bar at the cell's left, as a text field's.
+    virtual void draw_text_cursor(Point position, std::string_view character, const TextStyle& style);
     // The text of a text field, with its selection and its cursor, over the whole field.
     virtual void draw_text_field(const Rect& bounds, const TextFieldLook& look, const Theme& theme);
     // A tooltip over everything else, its lines in `bounds`: in a terminal, the cells on the menu's colours; in pixels,

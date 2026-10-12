@@ -107,6 +107,7 @@ class GraphicalPainter final : public Painter
     void draw_text_field(const Rect& bounds, const TextFieldLook& look, const Theme& theme) override;
     void draw_field_frame(const Rect& bounds, bool focused, const Theme& theme) override;
     void draw_progress(const Rect& bounds, const ProgressLook& look, const Theme& theme) override;
+    void draw_text_cursor(Point position, std::string_view character, const TextStyle& style) override;
     void draw_image(const Rect& bounds, const PixelImage& image, const Theme& theme) override;
     void draw_mnemonic_label(Point position, std::string_view text, std::size_t mnemonic, const TextStyle& style,
                              Color mnemonic_color, Align align) override;

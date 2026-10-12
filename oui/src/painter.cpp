@@ -290,6 +290,11 @@ void Painter::draw_scrollbar(const Rect& track, const ScrollbarLook& look, const
     draw_text(at(std::clamp(place, 0, length - 1)), "■", style);
 }
 
+void Painter::draw_text_cursor(Point position, std::string_view character, const TextStyle& style)
+{
+    draw_text(position, character, {style.background, style.foreground, style.attributes});
+}
+
 void Painter::draw_progress(const Rect& bounds, const ProgressLook& look, const Theme& theme)
 {
     // The track in whole cells, what is done of it filled, and the cell it ends in filled by eighths, as far as it goes.

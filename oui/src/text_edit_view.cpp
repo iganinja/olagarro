@@ -596,7 +596,7 @@ void TextEdit::paint(Painter& painter, const Theme& theme) const
             const auto under_cursor{offset < m_text.size() ? m_text.at(offset) : '\n'};
             const auto cursor_char{
                 under_cursor == '\n' || under_cursor == '\t' ? " " : encode_utf8(decode_utf8(m_text, cursor_index))};
-            painter.draw_text(cursor_point, cursor_char, {theme.editor_background, theme.editor_foreground});
+            painter.draw_text_cursor(cursor_point, cursor_char, {theme.editor_foreground, theme.editor_background});
         }};
     paint_cursor(m_cursor);
     for(const auto& caret : m_carets)

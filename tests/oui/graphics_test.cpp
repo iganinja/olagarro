@@ -379,6 +379,25 @@ TEST(OuiGraphicsTests, DrawsTheSquareRootTheFontsLack)
     EXPECT_EQ(inked(half, root.height * 2 / 3, root.width, root.height), 0) << "nothing low on the right";
 }
 
+TEST(OuiGraphicsTests, AnEditorsCursorInPixelsIsABarBeforeItsCharacterNotABlock)
+{
+    // In a terminal the character under the cursor shows reversed; in a window the cursor is a thin bar at the cell's
+    // left, as in a text field, and the character keeps its colours.
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{48, 24};
+    const Color text{200, 200, 200};
+    const Color background{10, 20, 30};
+    canvas.fill({0, 0, 48, 24}, background);
+    const auto style{classic_style()};
+    GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    painter.draw_text_cursor({1, 0}, " ", {text, background});
+    EXPECT_TRUE(same(canvas.pixel_at(12, 12), text));
+    EXPECT_TRUE(same(canvas.pixel_at(18, 12), background));
+    EXPECT_TRUE(same(canvas.pixel_at(22, 12), background));
+}
+
 TEST(OuiGraphicsTests, AProgressBarInPixelsFillsItsTrackAsFarAsIsDone)
 {
     auto cell{default_cell_font()};

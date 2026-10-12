@@ -939,6 +939,14 @@ void GraphicalPainter::draw_file_icon(Icon icon, PixelPoint at, float size)
     }
 }
 
+void GraphicalPainter::draw_text_cursor(Point position, std::string_view, const TextStyle& style)
+{
+    // Two pixels wide at cells 24 high, as wide again for every 24 more, a pixel short of the cell above and below.
+    const auto area{pixels({position.x, position.y, 1, 1})};
+    const auto width{std::max(2, static_cast<int>(std::lround(2.0f * unit())))};
+    m_canvas.fill({area.x, area.y + 1, width, area.height - 2}, style.foreground);
+}
+
 void GraphicalPainter::draw_progress(const Rect& bounds, const ProgressLook& look, const Theme&)
 {
     // A sunken track along the middle of the row, filled in the title's colour as far as is done, and the text after
