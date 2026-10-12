@@ -44,6 +44,8 @@ std::optional<std::size_t> message_box(Application& application, std::string_vie
     content->add(vspacer(1));
     auto& actions{row(*content)};
     actions.set_gap(Spacing::tight);
+    // Under the message, in the middle, as a message box's answers are.
+    actions.set_centered(true);
     Widget* first_button{};
     for(std::size_t index{}; index < buttons.size(); ++ index)
     {

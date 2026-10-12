@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <optional>
 #include <string>
 #include <vector>
@@ -76,6 +77,8 @@ class ReplayBackend final : public oui::Backend
         return false;
     }
 
+    [[nodiscard]] const std::vector<oui::CellBuffer>& frames() const { return m_all; }
+
   private:
     std::vector<oui::Event> m_events;
     std::size_t m_next{};
@@ -122,6 +125,42 @@ TEST(OuiDialogTests, AMessageLineWiderThanTheScreenWrapsAndKeepsItsEnd)
     const std::string path{"/home/someone/projects/a/rather/deep/folder/structure/that/goes/on/target_file.txt"};
     static_cast<void>(oui::message_box(application, "Delete", "Delete this file?\n" + path, {"Delete"}));
     EXPECT_TRUE(recorder.showed(U"target_file.txt"));
+}
+
+TEST(OuiDialogTests, AMessageBoxCentresItsButtons)
+{
+    auto backend{std::make_unique<ReplayBackend>(std::vector<oui::Event>{key(oui::Key::escape)})};
+    const auto& recorder{*backend};
+    oui::Application application{std::move(backend)};
+    application.set_content(oui::window("Background"));
+    static_cast<void>(
+        oui::message_box(application, "oui_run", "Publish v0.1.7 on the minipc and GitHub?", {"Yes", "No"}));
+    ASSERT_FALSE(recorder.frames().empty());
+    const auto& frame{recorder.frames().front()};
+    for(int y{}; y < frame.height(); ++ y)
+    {
+        std::u32string row;
+        for(int x{}; x < frame.width(); ++ x)
+        {
+            row += frame.cell_at(x, y).glyph;
+        }
+        const auto yes{row.find(U"Yes")};
+        if(yes == std::u32string::npos)
+        {
+            continue;
+        }
+        // The dialog's frame on that row, either side, and the room between it and the buttons.
+        const auto left{row.rfind(U'\u2551', yes)};
+        const auto no_end{row.find(U"No", yes) + 2};
+        const auto right{row.find(U'\u2551', no_end)};
+        ASSERT_NE(left, std::u32string::npos);
+        ASSERT_NE(right, std::u32string::npos);
+        const auto before{static_cast<int>(yes - left)};
+        const auto after{static_cast<int>(right - no_end)};
+        EXPECT_LE(std::abs(before - after), 3) << "before " << before << ", after " << after;
+        return;
+    }
+    ADD_FAILURE() << "no row with the buttons";
 }
 
 TEST(OuiDialogTests, MessageBoxDismissedWithEscapeAnswersNothing)
