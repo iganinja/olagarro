@@ -4250,6 +4250,64 @@ TEST(OuiApplicationTests, CtrlCAndCtrlVPreserveSpecialCharacters)
     EXPECT_EQ(editor_reference->text(), original);
 }
 
+// A backend that keeps the clipboard itself, so the tests never reach the system's.
+class ClipboardKeepingBackend final : public oui::Backend
+{
+  public:
+    [[nodiscard]] oui::Size size() const override { return {40, 6}; }
+    std::optional<oui::Event> poll_event() override { return std::nullopt; }
+    void present(const oui::CellBuffer&) override {}
+    [[nodiscard]] bool keeps_clipboard() const override { return true; }
+    [[nodiscard]] std::string clipboard_text() const override { return *m_clipboard; }
+    void set_clipboard_text(std::string_view text) override { *m_clipboard = text; }
+
+    std::shared_ptr<std::string> m_clipboard{std::make_shared<std::string>()};
+};
+
+TEST(OuiApplicationTests, ATextEditCopiesThroughTheClipboardWhereNoCommandDoes)
+{
+    // As a script's read-only log in oui_run, which registers no edit commands: copying out of it must still work.
+    auto backend{std::make_unique<ClipboardKeepingBackend>()};
+    const auto clipboard{backend->m_clipboard};
+    oui::Application application{std::move(backend)};
+    auto log{oui::text_edit()};
+    auto* const log_reference{log.get()};
+    log->set_text("first ñ\nsecond");
+    log->set_read_only(true);
+    application.set_content(std::move(log));
+    application.focus(*log_reference);
+    application.render();
+
+    application.dispatch_event(oui::Event{oui::TextEvent{U'a', true}});
+    application.dispatch_event(oui::Event{oui::TextEvent{U'c', true}});
+    EXPECT_EQ(*clipboard, "first ñ\nsecond");
+
+    *clipboard = "pasted";
+    application.dispatch_event(oui::Event{oui::TextEvent{U'x', true}});
+    EXPECT_EQ(*clipboard, "first ñ\nsecond") << "cutting from a read-only text copies";
+    EXPECT_EQ(log_reference->text(), "first ñ\nsecond") << "and leaves it whole";
+    application.dispatch_event(oui::Event{oui::TextEvent{U'v', true}});
+    EXPECT_EQ(log_reference->text(), "first ñ\nsecond");
+
+    log_reference->set_read_only(false);
+    *clipboard = "pasted";
+    application.dispatch_event(oui::Event{oui::TextEvent{U'v', true}});
+    EXPECT_EQ(log_reference->text(), "pasted");
+}
+
+TEST(OuiApplicationTests, TheClipboardFollowsTheBackendToTheOneThatReplacedIt)
+{
+    // As oui_run's, which starts in one backend and opens its window in another: the first is gone by the copy.
+    oui::Application application{std::make_unique<ClipboardKeepingBackend>()};
+    auto window{std::make_unique<ClipboardKeepingBackend>()};
+    const auto clipboard{window->m_clipboard};
+    application.set_backend(std::move(window));
+
+    EXPECT_TRUE(application.clipboard().set_text("copied"));
+    EXPECT_EQ(*clipboard, "copied");
+    EXPECT_EQ(application.clipboard().text(), "copied");
+}
+
 TEST(OuiTabSwitcherTests, IsInitiallyClosed)
 {
     oui::TabSwitcher switcher;

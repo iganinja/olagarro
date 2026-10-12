@@ -19,6 +19,9 @@ class Clipboard
   public:
     explicit Clipboard(Backend* terminal = nullptr);
 
+    // The backend it offers copied text to from now on, as when the application's is replaced by another.
+    void set_backend(Backend* terminal);
+
     [[nodiscard]] bool set_text(std::string_view text);
     [[nodiscard]] std::string text() const;
 

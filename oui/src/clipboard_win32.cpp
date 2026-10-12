@@ -37,6 +37,11 @@ Clipboard::Clipboard(Backend* const terminal) : m_terminal{terminal}
 {
 }
 
+void Clipboard::set_backend(Backend* const terminal)
+{
+    m_terminal = terminal;
+}
+
 const std::optional<Clipboard::Tool>& Clipboard::tool() const
 {
     // Windows has one clipboard API and needs no helper program.

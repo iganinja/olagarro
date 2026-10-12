@@ -27,6 +27,11 @@ Clipboard::Clipboard(Backend* const terminal) : m_terminal{terminal}
 {
 }
 
+void Clipboard::set_backend(Backend* const terminal)
+{
+    m_terminal = terminal;
+}
+
 const std::optional<Clipboard::Tool>& Clipboard::tool() const
 {
     if(!m_tool)

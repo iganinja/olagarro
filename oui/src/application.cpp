@@ -3,6 +3,7 @@
 #include <oui/check_button.h>
 #include <oui/label.h>
 #include <oui/line_edit.h>
+#include <oui/text_edit.h>
 #include <oui/text_metrics.h>
 #include <oui/terminal_backend.h>
 #include <oui/text_layout.h>
@@ -597,6 +598,8 @@ void Application::set_backend(std::unique_ptr<Backend> backend)
         std::lock_guard<std::mutex> lock{m_post_mutex};
         previous = std::exchange(m_backend, std::move(backend));
     }
+    // The clipboard offers copied text to the backend, so it goes on to the new one before the old is gone.
+    m_clipboard.set_backend(m_backend.get());
     // A new backend starts with its own arrow.
     m_pointer = Pointer::arrow;
     offer_zoom();
@@ -1180,45 +1183,64 @@ void Application::paint_key_mode_hint(Painter& painter, Size size) const
         painter.draw_label({1, y}, lines[index], style);
     }
 }
-// Ctrl+A, Ctrl+C, Ctrl+X and Ctrl+V in a text field nobody else took, as in a dialog, where the application's
-// shortcuts wait: they select, copy, cut and paste through the clipboard, as everywhere.
-bool Application::edit_focused_field(const Event& event)
+namespace
 {
-    const auto* const text{std::get_if<TextEvent>(&event)};
-    auto* const field{dynamic_cast<LineEdit*>(m_focused)};
-    if(text == nullptr || field == nullptr || !text->control || text->alt || text->shift)
-    {
-        return false;
-    }
-    switch(text->codepoint)
+
+// Ctrl and a, c, x or v in a field: select, copy, cut or paste, through the clipboard; false for other letters.
+template<typename Field> bool edit_field(Field& field, char32_t letter, Clipboard& clipboard)
+{
+    switch(letter)
     {
     case U'a':
-        field->select_all();
+        field.select_all();
         return true;
     case U'c':
     case U'x':
     {
         std::string copied;
-        if(text->codepoint == U'c')
+        if(letter == U'c')
         {
-            field->copy_selection(copied);
+            field.copy_selection(copied);
         }
         else
         {
-            field->cut_selection(copied);
+            field.cut_selection(copied);
         }
         if(!copied.empty())
         {
-            static_cast<void>(m_clipboard.set_text(copied));
+            static_cast<void>(clipboard.set_text(copied));
         }
         return true;
     }
     case U'v':
-        field->paste(m_clipboard.text());
+        field.paste(clipboard.text());
         return true;
     default:
         return false;
     }
+}
+
+} // namespace
+
+// Ctrl+A, Ctrl+C, Ctrl+X and Ctrl+V in a text field or text nobody else took, as in a dialog, where the
+// application's shortcuts wait, or in a program that binds no edit commands, as a script's read-only log in oui_run:
+// they select, copy, cut and paste through the clipboard, as everywhere. Read-only text copies but changes not.
+bool Application::edit_focused_field(const Event& event)
+{
+    const auto* const text{std::get_if<TextEvent>(&event)};
+    if(text == nullptr || !text->control || text->alt || text->shift)
+    {
+        return false;
+    }
+    if(auto* const field{dynamic_cast<LineEdit*>(m_focused)})
+    {
+        return edit_field(*field, text->codepoint, m_clipboard);
+    }
+    if(auto* const edit{dynamic_cast<TextEdit*>(m_focused)})
+    {
+        return edit_field(*edit, text->codepoint, m_clipboard);
+    }
+    return false;
 }
 // A capture only exists between a press and its release, so losing it means a click is still in progress.
 // Its drag and release would otherwise land on whatever now lies under the pointer, such as the editor
