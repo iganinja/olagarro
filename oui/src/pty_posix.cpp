@@ -1,5 +1,7 @@
 #include <oui/pty.h>
 
+#include "descriptor.h"
+
 #include <oui/application.h>
 #include <oui/file_system.h>
 
@@ -80,7 +82,7 @@ class Pty::Impl
             fail("ptsname");
         }
         resize(options.columns, options.rows);
-        if(pipe2(m_wake, O_CLOEXEC | O_NONBLOCK) != 0)
+        if(!open_pipe(m_wake, true))
         {
             fail("pipe");
         }
