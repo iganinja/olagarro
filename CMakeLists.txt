@@ -657,16 +657,22 @@ if(OLAGARRO_BUILD_EXAMPLES)
     # oui_run's own behaviour and the recipes in examples/oui_run/recipes, each run on files made for it. They run
     # shell commands (mktemp, mv, printf), so not on Windows.
     if(NOT WIN32)
-        add_test(NAME Olagarro.OuiRunScripts
-            COMMAND olagarro_oui_run tests/oui_run/run_tests.js $<TARGET_FILE:olagarro_oui_run>
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-        set_tests_properties(Olagarro.OuiRunScripts PROPERTIES TIMEOUT 600)
+        # In three parts that run side by side, every third case each: the whole takes some three minutes.
+        foreach(part 1 2 3)
+            add_test(NAME Olagarro.OuiRunScripts.${part}
+                COMMAND olagarro_oui_run tests/oui_run/run_tests.js $<TARGET_FILE:olagarro_oui_run> "part ${part} of 3"
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+            set_tests_properties(Olagarro.OuiRunScripts.${part} PROPERTIES TIMEOUT 300)
+        endforeach()
         # OUI Code as a person uses it, in a pseudo terminal, from a copy of its own beside which it keeps its settings.
-        add_test(NAME Olagarro.OuiCodeEndToEnd
-            COMMAND olagarro_oui_run tests/oui_code/end_to_end.js $<TARGET_FILE:olagarro_oui_code>
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-        # Each case runs OUI Code for a few seconds of keys: they take about four minutes, more on a slower machine.
-        set_tests_properties(Olagarro.OuiCodeEndToEnd PROPERTIES TIMEOUT 600)
+        # Each case runs OUI Code for a few seconds of keys: they take about four minutes, more on a slower machine, so
+        # they run as four parts side by side, every fourth case each.
+        foreach(part 1 2 3 4)
+            add_test(NAME Olagarro.OuiCodeEndToEnd.${part}
+                COMMAND olagarro_oui_run tests/oui_code/end_to_end.js $<TARGET_FILE:olagarro_oui_code> "part ${part} of 4"
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+            set_tests_properties(Olagarro.OuiCodeEndToEnd.${part} PROPERTIES TIMEOUT 300)
+        endforeach()
         add_test(NAME Olagarro.OuiCalcEndToEnd
             COMMAND olagarro_oui_run tests/oui_calc/end_to_end.js $<TARGET_FILE:olagarro_oui_calc>
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

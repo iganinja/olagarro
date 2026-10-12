@@ -56,8 +56,8 @@ The build treats warnings as errors, tests included.
 | `Olagarro.OuiCodeInput` | `oui_code --input-test` | dead-key accents typed into a document come out as the expected text |
 | `Olagarro.OuiCodeHelp`, `Olagarro.OuiDesktopHelp` | `--help` | the options print as `--help`, never as `-- help` |
 | `Olagarro.OuiScriptApi` | `oui_run tools/extract_api.js --check` | `oui/oui.d.ts` and `doc/oui_api.md` match the `api` comments, and `oui` has no name without one |
-| `Olagarro.OuiRunScripts` | `oui_run tests/oui_run/run_tests.js` | oui_run itself and the recipes |
-| `Olagarro.OuiCodeEndToEnd` | `oui_run tests/oui_code/end_to_end.js` | OUI Code in a pseudo terminal, keys pressed |
+| `Olagarro.OuiRunScripts.1` to `.3` | `oui_run tests/oui_run/run_tests.js` | oui_run itself and the recipes, every third case each |
+| `Olagarro.OuiCodeEndToEnd.1` to `.4` | `oui_run tests/oui_code/end_to_end.js` | OUI Code in a pseudo terminal, keys pressed, every fourth case each |
 | `Olagarro.OuiCalcEndToEnd` | `oui_run tests/oui_calc/end_to_end.js` | OUI Calc the same way |
 
 Some are left out where they cannot run:
@@ -67,8 +67,9 @@ Some are left out where they cannot run:
   `ASAN_OPTIONS=detect_leaks=1`: a callback a signal never destroys fails it. `Olagarro.OuiSanitized` turns leak
   detection off; it is there for memory used after it is freed.
 - The three script-driven suites (`OuiRunScripts`, `OuiCodeEndToEnd`, `OuiCalcEndToEnd`) need `script(1)`,
-  `mkfifo`, `mktemp` and a POSIX shell, so they are not registered on Windows. Their time limits are 300 s, 300 s
-  and 120 s: each end-to-end case runs the program for a few seconds of keys.
+  `mkfifo`, `mktemp` and a POSIX shell, so they are not registered on Windows. The two long ones run as parts side
+  by side, each given its part as `"part 2 of 4"` after the program, as a name given there runs the cases that have
+  it; each part has 300 s, and OuiCalcEndToEnd 120 s: each end-to-end case runs the program for a few seconds of keys.
 - `tests/oui/pty_test.cpp`, `terminal_view_pty_test.cpp`, `keyboard_layout_test.cpp` and `desktop_test.cpp` join
   `olagarro_oui_tests` on Linux only; `pty_win32_test.cpp` on Windows only.
 - OUI Code's suites and the program tests need `OLAGARRO_BUILD_EXAMPLES`, on by default.
