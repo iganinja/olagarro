@@ -64,9 +64,11 @@ export async function place(program, files = {}) {
             const running = oui.run(
                 // In a shell of its own whose errors go nowhere: the one that saw it stopped says so, over what it
                 // drew. A sleep holds the pipe open to write, so it stays open however the keys are written to it: a
-                // pipe opened to read and write at once is Linux's, which macOS does not open.
+                // pipe opened to read and write at once is Linux's, which macOS does not open. cat hands the keys on
+                // through a plain pipe: macOS's script stops at once when its input is a named pipe, which is a socket
+                // there, and asked whether it is a terminal answers that a socket cannot be asked.
                 `(sleep 86400 > ${quote(keys)} & exec 3< ${quote(keys)}; ` +
-                    `LANGUAGE=en LC_ALL=C LANG=C ${inPseudoTerminal(inner)} <&3) 2>/dev/null`,
+                    `cat <&3 | LANGUAGE=en LC_ALL=C LANG=C ${inPseudoTerminal(inner)}) 2>/dev/null`,
                 {cwd: folder, output: (text) => {
                     drawn.text += text;
                     drawn.writes += 1;
