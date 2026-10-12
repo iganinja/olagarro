@@ -188,7 +188,7 @@ list; everything that offers themes reads that list.
    ```
 
    The id is lower case, one word, and never changes once released: OUI Code keeps it in its settings and scripts
-   name it in `oui.theme(...)`. The name goes through `translate` with string literals and the context
+   name it in `oui.setTheme(...)`. The name goes through `translate` with string literals and the context
    `TerminalTheme`, so the [catalog check](translations.md#tests-that-check-catalogs) can find it. Keep `turbo` first:
    it is the default, and a test checks it.
 3. **Translate the name.** Add it under `"TerminalTheme"` in every catalog of OUI's, today
@@ -202,7 +202,7 @@ list; everything that offers themes reads that list.
    ```
 
    The test `OuiTranslationTests.OuisCatalogsCoverItsTexts` fails while any catalog lacks it.
-4. **Name it for scripts.** The `api(oui_run)` comment of `oui.theme` in
+4. **Name it for scripts.** The `api(oui_run)` comment of `oui.setTheme` in
    [examples/oui_run/prelude.js](../examples/oui_run/prelude.js) lists the ids; add the new one, then run
    `oui_run tools/extract_api.js` from the repository to regenerate `oui/oui.d.ts` and `doc/oui_api.md` (the test
    `Olagarro.OuiScriptApi` fails while they are out of date). [Scripting](scripting.md#windows) lists the ids in a
@@ -217,7 +217,7 @@ list; everything that offers themes reads that list.
 
    When it fails, the message names the theme and the pair: `amber: menu shortcut`.
 
-Nothing else changes. OUI Code's **View > Theme** submenu in characters and `oui.theme()` in oui_run both walk
+Nothing else changes. OUI Code's **View > Theme** submenu in characters and `oui.setTheme()` in oui_run both walk
 `terminal_themes()`, so the new look shows in the menu and answers to its id at once.
 
 ## Worked example: the amber theme
@@ -350,8 +350,8 @@ std::vector<TerminalTheme> terminal_themes()
 ```
 
 Its name has `"Amber": "Ámbar"` under `"TerminalTheme"` in `oui/translations/es.json`, and `"amber"` is in the
-`oui.theme` comment of `prelude.js`, from which `oui_run tools/extract_api.js` makes the declarations. A script says
-`oui.theme("amber")`, and OUI Code shows **Amber** under **View > Theme** when it runs in a terminal.
+`oui.setTheme` comment of `prelude.js`, from which `oui_run tools/extract_api.js` makes the declarations. A script says
+`oui.setTheme("amber")`, and OUI Code shows **Amber** under **View > Theme** when it runs in a terminal.
 
 ## Graphical themes
 
@@ -403,7 +403,7 @@ other way round. A window, a DRM screen and a desktop client take their first st
 `desktop` to `face` in each, which is what shows at the right and bottom edges of a window that is not a whole number
 of cells. Adding a graphical look is the same as a terminal one: a style in `graphical_themes()` with an id and
 `translate("GraphicalTheme", "...")`, its name in the `"GraphicalTheme"` context of OUI's catalogs, and it shows in
-OUI Code's **View > Theme** in a window. `oui.theme()` in scripts knows only `classic` among the graphical looks.
+OUI Code's **View > Theme** in a window. `oui.setTheme()` in scripts knows only `classic` among the graphical looks.
 
 The graphical look need not be a dark-on-light Windows clone: the colours of a terminal theme also work in a window,
 since a `Theme` is only colours, but the frames and bevels then stay in the style's shades.
@@ -459,7 +459,7 @@ meant to look right in every theme names the theme's colours.
 
 ## Themes in oui_run scripts
 
-`oui.theme(name)` sets the look of the script's window by id: one of `terminal_themes()`, `turbo`, `night`, `light`
+`oui.setTheme(name)` sets the look of the script's window by id: one of `terminal_themes()`, `turbo`, `night`, `light`
 `monochrome`, `amber`, `phosphor` or `commander`, or `classic`, the graphical one, in a build with the window module (`oui_run_gui`). Any other name
 throws, listing the ids. It may be called before or after `oui.window()`.
 
@@ -468,11 +468,11 @@ Without a call, the window opens with `TurboCTheme::make()` in a terminal and `c
 not undo it).
 
 ```js
-oui.theme("night");
+oui.setTheme("night");
 const win = oui.window("Notes");
 ```
 
-`oui.theme("classic")` sets `classic_theme()` only; the window keeps the style it opened with, which is the classic
+`oui.setTheme("classic")` sets `classic_theme()` only; the window keeps the style it opened with, which is the classic
 one. A terminal theme in a desktop window colours the widgets' content in its colours over the classic style's
 frames.
 

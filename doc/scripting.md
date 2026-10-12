@@ -190,8 +190,8 @@ holds. It is saved as it is set, in `<script>.ini` in the user's configuration f
 `~/.config/oui_run` on Linux, so scripts of the same name share it.
 
 ```js
-const size = oui.settings.get("size", [80, 24]);  // what was set, or the fallback
-oui.settings.set("size", [100, 30]);
+const size = oui.settings.value("size", [80, 24]);  // what was set, or the fallback
+oui.settings.setValue("size", [100, 30]);
 oui.settings.remove("size");
 ```
 
@@ -341,22 +341,30 @@ it, the first time too:
 ```js
 const board = new oui.Canvas({
     onResize: (width, height) => board.clear().fill(0, 0, width, 1, "#0000aa").text(1, 0, "Score: 0", {bold: true}),
-    onMouse: (mouse) => { if (mouse.kind === "press") oui.status(`${mouse.x}, ${mouse.y}`); },
+    onMouse: (mouse) => { if (mouse.kind === "press") oui.setStatus(`${mouse.x}, ${mouse.y}`); },
 });
 ```
 
 The window can have menus along its top and a status line along its bottom, before or after it opens:
 
 ```js
-oui.menuBar([{title: "&File", items: [{title: "&Open...", keys: "Ctrl+O", run: openFile}, "-",
+oui.setMenuBar([{title: "&File", items: [{title: "&Open...", keys: "Ctrl+O", run: openFile}, "-",
                                       {title: "&Quit", keys: "Ctrl+Q", run: () => oui.quit()}]}]);
-oui.status("Ready", "12 files");                                 // the text, and what goes at its right end
+oui.setStatus("Ready", "12 files");                                 // the text, and what goes at its right end
 ```
 
-`oui.theme(name)` changes the look: `"turbo"`, `"night"`, `"light"`, `"monochrome"`, `"amber"`, `"phosphor"` or
+`oui.setTheme(name)` changes the look: `"turbo"`, `"night"`, `"light"`, `"monochrome"`, `"amber"`, `"phosphor"` or
 `"commander"`, and `"classic"` in a desktop
-window. On the desktop the window opens at the size of what it holds, and its width is a description's `width=` when it
+window; `oui.theme()` says the one in use. On the desktop the window opens at the size of what it holds, and its width is a description's `width=` when it
 has one.
+
+OUI's own texts, as a dialog's buttons, the file dialog or a text field's menu, come in the system's language. A
+script written in one language says so first, before its window, so everything it shows is in that one:
+
+```js
+oui.setLanguage("en");          // "en" or "es"; another names those there are
+const shown = oui.language();   // the language OUI's texts are in now
+```
 
 Callbacks can be `async`, and can ask with `oui.confirm` and the rest, which open as dialogs over the window.
 

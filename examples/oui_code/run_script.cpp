@@ -47,7 +47,7 @@ void Workbench::run_script(bool dry_run, bool choose)
     }
     const auto document_path{has_document ? group.documents[index].path : std::nullopt};
     std::optional<std::filesystem::path> script;
-    if(const auto kept{m_settings.get("run_script")}; !kept.empty() && !choose)
+    if(const auto kept{m_settings.value("run_script")}; !kept.empty() && !choose)
     {
         script = oui::path_from_utf8(kept);
     }
@@ -76,7 +76,7 @@ void Workbench::run_script(bool dry_run, bool choose)
     }
     if(chosen_now)
     {
-        m_settings.set("run_script", oui::utf8_of(*script));
+        m_settings.set_value("run_script", oui::utf8_of(*script));
     }
     const auto script_name{oui::utf8_of(script->filename())};
     if(runner->kind() == ScriptRun::Kind::on_generated_code)

@@ -145,7 +145,7 @@ int main(int argument_count, char* const* const arguments)
     std::string interface_language{"en"};
     if(!headless_test)
     {
-        const std::string language{settings.get("language", "auto")};
+        const std::string language{settings.value("language", "auto")};
         interface_language = language == "auto" ? oui::system_language() : language;
         oui::install_language(interface_language, oui_code_translations());
     }

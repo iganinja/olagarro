@@ -99,7 +99,7 @@ void Workbench::open_comparison(ComparedSide left, ComparedSide right, bool agai
     auto& group{m_editors.active()};
     auto view{oui::diff_view()};
     auto& view_reference{*view};
-    view->set_tab_width(m_settings.get_int("tab_space_count", 4));
+    view->set_tab_width(m_settings.int_value("tab_space_count", 4));
     view->set_titles(left.title, right.title);
     view->set_texts(left.current_text(), right.current_text());
 

@@ -80,9 +80,9 @@ std::unique_ptr<oui::TextEdit> make_editor()
 
 void apply_tab_settings(oui::TextEdit& editor, oui::Settings& settings)
 {
-    editor.set_use_spaces(settings.get_bool("tab_use_spaces", false));
-    editor.set_tab_spaces(settings.get_int("tab_space_count", 4));
-    editor.set_word_wrap(settings.get_bool("word_wrap", false));
+    editor.set_use_spaces(settings.bool_value("tab_use_spaces", false));
+    editor.set_tab_spaces(settings.int_value("tab_space_count", 4));
+    editor.set_word_wrap(settings.bool_value("word_wrap", false));
 }
 
 bool save_document(oui::Application& application, Document& document, oui::TextEdit& editor,

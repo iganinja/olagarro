@@ -419,7 +419,7 @@ void Workbench::register_view_commands()
                                                   if(auto* const current{selected_document_editor(tabs_reference)})
                                                   {
                                                       const auto enabled{!current->word_wrap()};
-                                                      m_settings.set_bool("word_wrap", enabled);
+                                                      m_settings.set_bool_value("word_wrap", enabled);
                                                       m_application.commands().set_checked("view.word_wrap", enabled);
                                                       static_cast<void>(m_settings.save());
                                                       for(auto& each : m_editors.groups())
@@ -435,7 +435,7 @@ void Workbench::register_view_commands()
                                                       }
                                                   }
                                               });
-    m_application.commands().set_checked("view.word_wrap", m_settings.get_bool("word_wrap", false));
+    m_application.commands().set_checked("view.word_wrap", m_settings.bool_value("word_wrap", false));
     m_application.commands().register_command("help.shortcuts", oui::translate("Commands", "Keyboard Shortcuts"),
                                               [this] { show_palette(m_application); });
     m_application.commands().register_command(
@@ -594,7 +594,7 @@ void Workbench::register_view_commands()
         m_application.on_zoomed(
             [this]
             {
-                m_settings.set("window_zoom", std::to_string(m_options.window_screen->zoom()));
+                m_settings.set_value("window_zoom", std::to_string(m_options.window_screen->zoom()));
                 static_cast<void>(m_settings.save());
             });
     }
@@ -629,7 +629,7 @@ std::vector<oui::MenuItem> Workbench::view_menu()
                                                [this]
                                                {
                                                    std::vector<oui::MenuItem> items;
-                                                   const auto current{m_settings.get("window_theme", "classic")};
+                                                   const auto current{m_settings.value("window_theme", "classic")};
                                                    for(const auto& theme : oui::graphical_themes())
                                                    {
                                                        items.push_back(oui::menu_action(
@@ -637,7 +637,7 @@ std::vector<oui::MenuItem> Workbench::view_menu()
                                                            [this, id{theme.id}]
                                                            {
                                                                use_window_theme(id);
-                                                               m_settings.set("window_theme", id);
+                                                               m_settings.set_value("window_theme", id);
                                                                static_cast<void>(m_settings.save());
                                                            },
                                                            true, theme.id == current));
@@ -654,7 +654,7 @@ std::vector<oui::MenuItem> Workbench::view_menu()
                                                [this]
                                                {
                                                    std::vector<oui::MenuItem> items;
-                                                   const auto current{m_settings.get("terminal_theme", "turbo")};
+                                                   const auto current{m_settings.value("terminal_theme", "turbo")};
                                                    for(const auto& theme : oui::terminal_themes())
                                                    {
                                                        items.push_back(oui::menu_action(
@@ -662,7 +662,7 @@ std::vector<oui::MenuItem> Workbench::view_menu()
                                                            [this, id{theme.id}]
                                                            {
                                                                use_terminal_theme(id);
-                                                               m_settings.set("terminal_theme", id);
+                                                               m_settings.set_value("terminal_theme", id);
                                                                static_cast<void>(m_settings.save());
                                                            },
                                                            true, theme.id == current));

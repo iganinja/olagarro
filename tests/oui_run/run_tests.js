@@ -434,12 +434,12 @@ async function pressing(script, keys, files = {}) {
 test("a widget hides, a disabled one answers nothing, and a button's text changes", async () => {
     const shown = await pressing(`
 const hidden = new oui.Label("not shown");
-const go = new oui.Button("&Go", () => oui.status("went"));
+const go = new oui.Button("&Go", () => oui.setStatus("went"));
 const rename = new oui.Button("Rename", () => { rename.text = "Renamed"; });
 oui.window("T", oui.column([hidden, go, rename]));
 hidden.visible = false;
 go.enabled = false;
-oui.status(go.enabled ? "enabled" : "disabled", hidden.visible ? "shown" : "hidden");
+oui.setStatus(go.enabled ? "enabled" : "disabled", hidden.visible ? "shown" : "hidden");
 rename.focus();
 `, ["\x1bg", "\r", ""]);
     expect("hidden", shown.find("not shown"), null);
@@ -454,20 +454,43 @@ const bar = new oui.ProgressBar({value: 0.5, text: "4 of 8"});
 const ui = oui.ui("Column\\n  ProgressBar id=described value=0.25 text=\\"1 of 4\\"\\n");
 oui.window("T", oui.column([bar, ui.root]));
 bar.value = 2;
-oui.status(\`\${bar.value} \${ui.described.value} \${bar.text}\`);
+oui.setStatus(\`\${bar.value} \${ui.described.value} \${bar.text}\`);
 `, [""]);
     expect("its text", shown.find("4 of 8") !== null, true);
     expect("the described one's", shown.find("1 of 4") !== null, true);
     expect("the values", shown.find("1 0.25 4 of 8") !== null, true);
 });
 
+test("oui.setLanguage puts OUI's own texts in that language, and oui.language says which", async () => {
+    const shown = await pressing(`
+oui.window("T", new oui.Label("body"));
+const before = oui.language();
+oui.setLanguage("es");
+oui.setStatus(before + " then " + oui.language());
+oui.confirm("Go?");
+`, [""]);
+    expect("the answers", shown.find("Sí") !== null && shown.find("Yes") === null, true);
+    expect("the languages", shown.find("en then es") !== null, true);
+});
+
+test("oui.theme says the look in use: Turbo's in a terminal until oui.setTheme chooses another", async () => {
+    // In a terminal: a build with the window module started with none opens a window, classic.
+    const output = await inTerminal(`console.log(oui.theme());\noui.setTheme("night");\nconsole.log(oui.theme());\n`);
+    expect("the looks", output.replace(/\r/g, ""), "turbo\nnight\n");
+});
+
+test("oui.setLanguage names the languages there are when given one there is not", async () => {
+    const {output} = await runScript(`try { oui.setLanguage("xx"); } catch (error) { console.log(error.message); }\n`);
+    expect("the message", output, "there are no texts in xx: en or es\n");
+});
+
 test("a password field shows dots for what is typed, and the script gets the text", async () => {
     const shown = await pressing(`
-const secret = new oui.LineEdit({password: true, onChange: (text) => oui.status(text === "s3cret" ? "right" : text.length + " typed")});
+const secret = new oui.LineEdit({password: true, onChange: (text) => oui.setStatus(text === "s3cret" ? "right" : text.length + " typed")});
 const plain = new oui.LineEdit();
 oui.window("T", oui.column([secret, plain]));
 plain.password = true;
-oui.status(secret.password && plain.password ? "both" : "not both");
+oui.setStatus(secret.password && plain.password ? "both" : "not both");
 secret.focus();
 `, ["s3cret", ""]);
     expect("the text", shown.find("s3cret"), null);
@@ -486,10 +509,10 @@ console.log(answer === "s3cret" ? "got it" : "got " + answer);
 
 test("a menu bar runs its entries, from the menu and by their keys, and the status line says what they do", async () => {
     const script = `
-oui.menuBar([{title: "&File", items: [{title: "&Say", keys: "Ctrl+T", run: () => oui.status("said")}, "-",
+oui.setMenuBar([{title: "&File", items: [{title: "&Say", keys: "Ctrl+T", run: () => oui.setStatus("said")}, "-",
                                       {title: "&Quit", run: () => oui.quit()}]}]);
 oui.window("T", new oui.Label("body"));
-oui.status("ready");
+oui.setStatus("ready");
 `;
     const start = await pressing(script, [""]);
     const menu = await pressing(script, ["\x1bf", "s", ""]);
@@ -504,7 +527,7 @@ test("a tree opens, says where the node chosen is, and a list's boxes tick", asy
     const tree = await pressing(`
 const tree = new oui.Tree([{text: "fruit", expanded: true, children: [{text: "apples"}, {text: "pears"}]},
                            {text: "vegetables"}],
-                          {onSelect: (path) => oui.status(JSON.stringify(path))});
+                          {onSelect: (path) => oui.setStatus(JSON.stringify(path))});
 oui.window("T", tree);
 tree.focus();
 `, ["\x1b[B", "\x1b[B", ""]);
@@ -512,7 +535,7 @@ tree.focus();
     expect("where", tree.row(13).includes("[0,1]"), true);
     const list = await pressing(`
 const list = new oui.List(["bread", "milk"], {checks: true,
-                                              onToggle: (index, checked) => oui.status(\`\${index} \${checked}\`)});
+                                              onToggle: (index, checked) => oui.setStatus(\`\${index} \${checked}\`)});
 oui.window("T", list);
 list.checked = [false, true];
 list.focus();
@@ -525,7 +548,7 @@ test("the file dialog asks for a file in a window, and on the terminal without o
     const dialog = await pressing(`
 oui.window("T", new oui.Label("body"));
 oui.openFile({title: "Pick a file", filters: [{name: "Texts", patterns: "*.txt"}]})
-    .then((path) => oui.status(path ?? "none"));
+    .then((path) => oui.setStatus(path ?? "none"));
 `, [""], {"notes.txt": "x"});
     expect("the dialog", dialog.find("Pick a file") !== null, true);
     expect("its file", dialog.find("notes.txt") !== null, true);
@@ -560,9 +583,9 @@ test("a right click opens a widget's own menu, and a key handler hears keys firs
     const script = `
 const field = new oui.LineEdit();
 const seen = [];
-field.onKey = (key, text) => { seen.push(key); oui.status(seen.join(" ")); return text === "x"; };
+field.onKey = (key, text) => { seen.push(key); oui.setStatus(seen.join(" ")); return text === "x"; };
 const label = new oui.Label("click me");
-label.contextMenu = [{title: "&Hello", run: () => oui.status("hello")}];
+label.contextMenu = [{title: "&Hello", run: () => oui.setStatus("hello")}];
 oui.window("T", oui.column([label, field]));
 field.focus();
 `;
@@ -576,7 +599,7 @@ field.focus();
 });
 
 test("a theme changes the look, and widgets take colours by name", async () => {
-    const screen = await inTerminal(`oui.theme("light");\nconst go = new oui.Button("Go");\n` +
+    const screen = await inTerminal(`oui.setTheme("light");\nconst go = new oui.Button("Go");\n` +
         `oui.window("T", oui.column([new oui.LineEdit({text: "fieldtext"}), go]));\ngo.focus();`);
     expect("not Turbo's blue", sgrBefore(screen, "fieldtext") === "0;97;44", false);
     const named = await runScriptWith(`const label = new oui.Label("x");\nlabel.background = "table_background";\n` +
@@ -589,7 +612,7 @@ test("a comparison, a folder view, a calculator and a terminal run in a script's
 const comparison = new oui.Comparison({left: "same\\nleft only\\n", right: "same\\nright only\\n",
                                        leftTitle: "before", rightTitle: "after"});
 oui.window("T", comparison);
-oui.status(comparison.differences + " difference");
+oui.setStatus(comparison.differences + " difference");
 `, [""]);
     expect("the titles", compared.find("before") !== null && compared.find("after") !== null, true);
     expect("how many", compared.row(13).includes("1 difference"), true);
@@ -615,7 +638,7 @@ let asked = 0;
 const ask = async () => {
     ++asked;
     const answer = await dialog.show();
-    oui.status(\`\${asked}: \${answer}\`);
+    oui.setStatus(\`\${asked}: \${answer}\`);
 };
 oui.window("T", oui.column([new oui.Button("&Ask", ask)]));
 oui.shortcut("Ctrl+T", ask);
@@ -638,7 +661,7 @@ test("a description's Window is a dialog too, with its title and its width, kept
 const ui = oui.uiFromFile("ui/rename.oui");
 const dialog = new oui.Dialog(ui);
 ui.ok.onClick = () => dialog.close(ui.name.text);
-const ask = async () => oui.status(\`got \${await dialog.show()}\`);
+const ask = async () => oui.setStatus(\`got \${await dialog.show()}\`);
 oui.window("T", new oui.Label("main"));
 oui.shortcut("Ctrl+T", ask);
 `;
@@ -755,7 +778,7 @@ oui.window("T", tabs);
     expect("a close mark", mark !== null, true);
     const closed = await pressing(script, [`\x1b[<0;${mark.column + 1};${mark.row + 1}M`, `\x1b[<0;${mark.column + 1};${mark.row + 1}m`, ""]);
     expect("closed", closed.find("One") === null && closed.find("Two") !== null, true);
-    const kept = await pressing(script + `tabs.onClose = (index) => oui.status("asked " + index);\n`,
+    const kept = await pressing(script + `tabs.onClose = (index) => oui.setStatus("asked " + index);\n`,
                                 [`\x1b[<0;${mark.column + 1};${mark.row + 1}M`, `\x1b[<0;${mark.column + 1};${mark.row + 1}m`, ""]);
     expect("kept", kept.find("One") !== null && kept.row(13).includes("asked 0"), true);
 });
@@ -780,7 +803,7 @@ const canvas = new oui.Canvas({
     onResize: (width, height) => {
         canvas.clear("#000000").fill(2, 1, 4, 2, "#ff0000").text(1, 4, \`\${width}x\${height}\`, {color: "#ffff00", bold: true});
     },
-    onMouse: (mouse) => { if (mouse.kind === "press") oui.status(\`at \${mouse.x},\${mouse.y} \${mouse.clicks}\`); },
+    onMouse: (mouse) => { if (mouse.kind === "press") oui.setStatus(\`at \${mouse.x},\${mouse.y} \${mouse.clicks}\`); },
 });
 oui.window("T", oui.column([new oui.Label("above"), oui.fill(canvas)]));
 canvas.focus();
@@ -804,12 +827,12 @@ test("a script's settings last from one run to the next, kept as JSON by name", 
         return (await capture(`XDG_CONFIG_HOME=${quote(`${folder}/config`)} ${quote(ouiRun)} keep.js </dev/null`,
                               {cwd: folder})).output;
     };
-    const first = await run(`console.log(JSON.stringify(oui.settings.get("size", [80, 24])));\n` +
-                            `oui.settings.set("size", [100, 30]);\noui.settings.set("name", "ñandú = sí");\n` +
-                            `try { oui.settings.set("a=b", 1); } catch (error) { console.log(error.message); }\n`);
-    const second = await run(`console.log(JSON.stringify(oui.settings.get("size")), oui.settings.get("name"));\n` +
+    const first = await run(`console.log(JSON.stringify(oui.settings.value("size", [80, 24])));\n` +
+                            `oui.settings.setValue("size", [100, 30]);\noui.settings.setValue("name", "ñandú = sí");\n` +
+                            `try { oui.settings.setValue("a=b", 1); } catch (error) { console.log(error.message); }\n`);
+    const second = await run(`console.log(JSON.stringify(oui.settings.value("size")), oui.settings.value("name"));\n` +
                              `oui.settings.remove("name");\n`);
-    const third = await run(`console.log(oui.settings.get("name", "gone"));\n`);
+    const third = await run(`console.log(oui.settings.value("name", "gone"));\n`);
     const file = oui.readFile(`${folder}/config/oui_run/keep.ini`);
     await capture(`rm -rf ${quote(folder)}`);
     expect("first", first, "[80,24]\n\"a=b\" cannot be a setting's name: one with no =, no line break, and no blank or # at its start\n");
@@ -819,7 +842,7 @@ test("a script's settings last from one run to the next, kept as JSON by name", 
 });
 
 test("a theme that is not there is told with those the build has", async () => {
-    const {output} = await runScript(`try { oui.theme("nope"); } catch (error) { console.log(error.message); }\n`);
+    const {output} = await runScript(`try { oui.setTheme("nope"); } catch (error) { console.log(error.message); }\n`);
     // classic is the desktop window's, and only a build with windows has it.
     const themes = ouiRun.includes("gui") ? "turbo, night, light, monochrome, amber, phosphor, commander or classic" :
         "turbo, night, light, monochrome, amber, phosphor or commander";
@@ -842,9 +865,9 @@ ${lines}
 ## Far away
 
 the end`)},
-                                  {onLink: (target) => oui.status("link " + target)});
+                                  {onLink: (target) => oui.setStatus("link " + target)});
 oui.window("T", view);
-oui.shortcut("Ctrl+T", () => oui.status("went " + view.goTo("#far-away") + " " + view.goTo("nowhere")));
+oui.shortcut("Ctrl+T", () => oui.setStatus("went " + view.goTo("#far-away") + " " + view.goTo("nowhere")));
 `;
     const start = await pressing(script, [""]);
     const outward = start.find("outward");

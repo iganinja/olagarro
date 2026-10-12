@@ -213,6 +213,8 @@ class Canvas final : public oui::Widget
 
 // Defined in the source CMake generates from examples/oui_run/prelude.js.
 std::vector<std::string_view> embedded_oui_run_prelude();
+// Defined in the source CMake generates from examples/oui_run/translations.
+std::vector<std::string_view> embedded_oui_run_catalogs();
 
 namespace
 {
@@ -1390,6 +1392,53 @@ void Host::define_everything()
                }
                return Value{};
            });
+    // The language OUI's own texts are in, as a dialog's answers: English, or one there are texts in, as Spanish.
+    define("setLanguage",
+           [](const Arguments& a)
+           {
+               const auto language{text_of(argument(a, 0))};
+               const auto translations{oui::embedded_translations(embedded_oui_run_catalogs())};
+               std::vector<std::string> languages{"en"};
+               for(const auto* const list : {&oui::oui_translations(), &translations})
+               {
+                   for(const auto& translation : *list)
+                   {
+                       if(std::find(languages.begin(), languages.end(), translation.language()) == languages.end())
+                       {
+                           languages.push_back(translation.language());
+                       }
+                   }
+               }
+               if(std::find(languages.begin(), languages.end(), language) == languages.end())
+               {
+                   std::string listed;
+                   for(std::size_t index{}; index < languages.size(); ++ index)
+                   {
+                       listed += (index == 0 ? "" : index + 1 == languages.size() ? " or " : ", ") + languages[index];
+                   }
+                   throw ScriptError{"there are no texts in " + language + ": " + listed};
+               }
+               oui::install_language(language, translations);
+               return Value{};
+           });
+    define("language", [this](const Arguments&) { return m_engine.string(oui::installed_language()); });
+    // The look in use: the one chosen, or the one the window has unless told, classic in a desktop window and Turbo's
+    // in a terminal.
+    define("themeName",
+           [this](const Arguments&)
+           {
+               if(!m_theme_name.empty())
+               {
+                   return m_engine.string(m_theme_name);
+               }
+#ifdef OLAGARRO_OUI_RUN_WINDOW
+               if(m_desktop_window)
+               {
+                   return m_engine.string("classic");
+               }
+#endif
+               return m_engine.string("turbo");
+           });
     // The look: one of the terminal's themes by its id, or "classic", the graphical one.
     define("theme",
            [this](const Arguments& a)
@@ -1400,6 +1449,7 @@ void Host::define_everything()
                {
                    m_application.set_theme(oui::classic_theme());
                    m_theme_chosen = true;
+                   m_theme_name = name;
                    return Value{};
                }
 #endif
@@ -1410,6 +1460,7 @@ void Host::define_everything()
                    {
                        m_application.set_theme(theme.theme);
                        m_theme_chosen = true;
+                       m_theme_name = name;
                        return Value{};
                    }
                    names.push_back(theme.id);
@@ -2250,7 +2301,7 @@ void Host::define_everything()
     define("settingGet",
            [this](const Arguments& a)
            {
-               const auto value{settings().get(setting_key(argument(a, 0)))};
+               const auto value{settings().value(setting_key(argument(a, 0)))};
                return value.empty() ? m_engine.null() : m_engine.string(value);
            });
     define("settingSet",
@@ -2259,7 +2310,7 @@ void Host::define_everything()
                auto& kept{settings()};
                const auto key{setting_key(argument(a, 0))};
                const auto value{argument(a, 1)};
-               value.is_null() ? kept.remove(key) : kept.set(key, value.to_string());
+               value.is_null() ? kept.remove(key) : kept.set_value(key, value.to_string());
                if(!kept.save())
                {
                    throw ScriptError{"the settings could not be saved in " + oui::utf8_of(kept.file_path())};

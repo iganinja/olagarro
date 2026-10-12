@@ -106,6 +106,8 @@ class Host
     bool m_in_desktop_window{false};
     // Whether the script chose the colours, which the window then keeps rather than its own.
     bool m_theme_chosen{false};
+    // The theme the script chose, by its id; nothing until it chooses.
+    std::string m_theme_name;
 #ifdef OLAGARRO_OUI_RUN_WINDOW
     // Whether a window opens on the desktop, as --window asks: only the build that can open one has it.
     bool m_desktop_window{false};

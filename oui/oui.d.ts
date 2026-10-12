@@ -46,7 +46,7 @@ declare namespace oui {
      * name share it.
      * In: oui_run.
      */
-    const settings: {get(key: string, fallback?: any): any, set(key: string, value: any): void, remove(key: string): void};
+    const settings: {value(key: string, fallback?: any): any, setValue(key: string, value: any): void, remove(key: string): void};
 
     /**
      * Asks to pick one of options, and gives its label; null when cancelled. Not in an interactive script.
@@ -97,18 +97,16 @@ declare namespace oui {
     function fill(widget: oui.Widget): {fill: oui.Widget};
 
     /**
+     * The language OUI's own texts are in, as "en" or "es".
+     * In: oui_run.
+     */
+    function language(): string;
+
+    /**
      * The names in a folder, in order; a folder's ends in "/".
      * In: oui_run, and OUI Code's Tools > Run Script and Tools > Interactive Script.
      */
     function listDir(path: string): string[];
-
-    /**
-     * The window's menus along its top, each a title and its entries: an entry a title, the keys that run it too, as
-     * "Ctrl+O", and what it runs; "-" a line between entries. & marks the letter Alt goes with. Before or after
-     * oui.window; asked again, the new menus take the old ones' place.
-     * In: oui_run.
-     */
-    function menuBar(menus: {title: string, items: ({title: string, keys?: string, run: () => void} | "-")[]}[]): void;
 
     /**
      * Tells something, in a window when there is one and on the terminal when not. Not in an interactive script.
@@ -176,6 +174,35 @@ declare namespace oui {
     function saveFile(options?: {title?: string, folder?: string, name?: string, filters?: {name: string, patterns: string}[]}): Promise<string | null>;
 
     /**
+     * The language OUI's own texts are in, as a dialog's buttons and the file dialog: "en" or "es", the system's until
+     * told. A script written in one language says it first, before its window, so all it shows is in that one.
+     * In: oui_run.
+     */
+    function setLanguage(language: string): void;
+
+    /**
+     * The window's menus along its top, each a title and its entries: an entry a title, the keys that run it too, as
+     * "Ctrl+O", and what it runs; "-" a line between entries. & marks the letter Alt goes with. Before or after
+     * oui.window; asked again, the new menus take the old ones' place.
+     * In: oui_run.
+     */
+    function setMenuBar(menus: {title: string, items: ({title: string, keys?: string, run: () => void} | "-")[]}[]): void;
+
+    /**
+     * What the line along the bottom of the window says, and what it says at its right end; the line shows from the
+     * first time.
+     * In: oui_run.
+     */
+    function setStatus(text: string, right?: string): void;
+
+    /**
+     * The look: "turbo", "night", "light", "monochrome", "amber", "phosphor" or "commander" in a terminal, and "classic"
+     * in a window too.
+     * In: oui_run.
+     */
+    function setTheme(name: string): void;
+
+    /**
      * Calls fn when keys are pressed in the window, written as "Ctrl+S" or "Alt+Shift+F2".
      * In: oui_run.
      */
@@ -188,18 +215,10 @@ declare namespace oui {
     function split(first: oui.Widget, second: oui.Widget, options?: {vertical?: boolean, ratio?: number}): oui.Split;
 
     /**
-     * What the line along the bottom of the window says, and what it says at its right end; the line shows from the
-     * first time.
+     * The look in use, by its name: the one chosen, or "classic" in a desktop window and "turbo" in a terminal.
      * In: oui_run.
      */
-    function status(text: string, right?: string): void;
-
-    /**
-     * The look: "turbo", "night", "light", "monochrome", "amber", "phosphor" or "commander" in a terminal, and "classic"
-     * in a window too.
-     * In: oui_run.
-     */
-    function theme(name: string): void;
+    function theme(): string;
 
     /**
      * Builds the widgets a description says, as a .oui file of OUI's writes them: a widget a line, what goes in it

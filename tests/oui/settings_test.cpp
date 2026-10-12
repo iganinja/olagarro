@@ -43,12 +43,12 @@ TEST(OuiSettingsTests, CanLiveAtAPathTheApplicationChooses)
     std::filesystem::remove(path);
     {
         oui::Settings settings{path};
-        settings.set("key", "value");
+        settings.set_value("key", "value");
         EXPECT_TRUE(settings.save());
     }
     oui::Settings reloaded{path};
     EXPECT_TRUE(reloaded.load());
-    EXPECT_EQ(reloaded.get("key"), "value");
+    EXPECT_EQ(reloaded.value("key"), "value");
     EXPECT_EQ(reloaded.file_path(), path);
     std::filesystem::remove(path);
 }
@@ -70,28 +70,28 @@ TEST(OuiSettingsTests, RoundTripsIntegers)
     ScopedSettingsFile scope;
     auto& settings{scope.get()};
 
-    settings.set_int("tab_space_count", 2);
-    EXPECT_EQ(settings.get_int("tab_space_count", 4), 2);
+    settings.set_int_value("tab_space_count", 2);
+    EXPECT_EQ(settings.int_value("tab_space_count", 4), 2);
 
-    settings.set_int("single_digit", 1);
-    EXPECT_EQ(settings.get_int("single_digit", 0), 1);
+    settings.set_int_value("single_digit", 1);
+    EXPECT_EQ(settings.int_value("single_digit", 0), 1);
 
-    settings.set_int("large", 123456789);
-    EXPECT_EQ(settings.get_int("large", 0), 123456789);
+    settings.set_int_value("large", 123456789);
+    EXPECT_EQ(settings.int_value("large", 0), 123456789);
 
-    settings.set_int("negative", -7);
-    EXPECT_EQ(settings.get_int("negative", 0), -7);
+    settings.set_int_value("negative", -7);
+    EXPECT_EQ(settings.int_value("negative", 0), -7);
 }
 
 TEST(OuiSettingsTests, PersistsIntegersAcrossSaveAndLoad)
 {
     ScopedSettingsFile scope;
-    scope.get().set_int("tab_space_count", 6);
+    scope.get().set_int_value("tab_space_count", 6);
     ASSERT_TRUE(scope.get().save());
 
     oui::Settings reloaded{oui::SettingsLocation::next_to_executable, "oui_settings_tests"};
     ASSERT_TRUE(reloaded.load());
-    EXPECT_EQ(reloaded.get_int("tab_space_count", 4), 6);
+    EXPECT_EQ(reloaded.int_value("tab_space_count", 4), 6);
 }
 
 TEST(OuiSettingsTests, ReturnsDefaultsForMissingKeys)
@@ -99,10 +99,10 @@ TEST(OuiSettingsTests, ReturnsDefaultsForMissingKeys)
     ScopedSettingsFile scope;
     const auto& settings{scope.get()};
 
-    EXPECT_EQ(settings.get_int("missing", 4), 4);
-    EXPECT_TRUE(settings.get_bool("missing", true));
-    EXPECT_EQ(settings.get("missing", "fallback"), "fallback");
-    EXPECT_TRUE(settings.get_list("missing").empty());
+    EXPECT_EQ(settings.int_value("missing", 4), 4);
+    EXPECT_TRUE(settings.bool_value("missing", true));
+    EXPECT_EQ(settings.value("missing", "fallback"), "fallback");
+    EXPECT_TRUE(settings.list_value("missing").empty());
 }
 
 TEST(OuiSettingsTests, RoundTripsBooleansAndLists)
@@ -110,13 +110,13 @@ TEST(OuiSettingsTests, RoundTripsBooleansAndLists)
     ScopedSettingsFile scope;
     auto& settings{scope.get()};
 
-    settings.set_bool("tab_use_spaces", true);
-    EXPECT_TRUE(settings.get_bool("tab_use_spaces", false));
-    settings.set_bool("tab_use_spaces", false);
-    EXPECT_FALSE(settings.get_bool("tab_use_spaces", true));
+    settings.set_bool_value("tab_use_spaces", true);
+    EXPECT_TRUE(settings.bool_value("tab_use_spaces", false));
+    settings.set_bool_value("tab_use_spaces", false);
+    EXPECT_FALSE(settings.bool_value("tab_use_spaces", true));
 
-    settings.set_list("recent_files", {"a.cpp", "b.txt"});
-    const auto files{settings.get_list("recent_files")};
+    settings.set_list_value("recent_files", {"a.cpp", "b.txt"});
+    const auto files{settings.list_value("recent_files")};
     ASSERT_EQ(files.size(), 2u);
     EXPECT_EQ(files.front(), "a.cpp");
     EXPECT_EQ(files.back(), "b.txt");
@@ -241,15 +241,15 @@ TEST(OuiSettingsTests, ARemovedKeyIsGoneFromTheSavedFile)
     std::filesystem::remove(path);
     {
         oui::Settings settings{path};
-        settings.set("kept", "1");
-        settings.set("dropped", "2");
+        settings.set_value("kept", "1");
+        settings.set_value("dropped", "2");
         settings.remove("dropped");
         EXPECT_TRUE(settings.save());
     }
     oui::Settings reloaded{path};
     EXPECT_TRUE(reloaded.load());
-    EXPECT_EQ(reloaded.get("kept"), "1");
-    EXPECT_EQ(reloaded.get("dropped", "absent"), "absent");
+    EXPECT_EQ(reloaded.value("kept"), "1");
+    EXPECT_EQ(reloaded.value("dropped", "absent"), "absent");
     std::filesystem::remove(path);
 }
 
@@ -258,10 +258,10 @@ TEST(OuiSettingsTests, AValueKeepsWhatEndsItThroughSaveAndLoad)
     // A list's last entry can end in a tab, as a session's tab with an empty last part does: cut, the tab came back
     // with a part missing, and did not come back at all.
     ScopedSettingsFile scope;
-    scope.get().set_list("tabs", {"one\t", "two\t"});
+    scope.get().set_list_value("tabs", {"one\t", "two\t"});
     ASSERT_TRUE(scope.get().save());
 
     oui::Settings reloaded{oui::SettingsLocation::next_to_executable, "oui_settings_tests"};
     ASSERT_TRUE(reloaded.load());
-    EXPECT_EQ(reloaded.get_list("tabs"), (std::vector<std::string>{"one\t", "two\t"}));
+    EXPECT_EQ(reloaded.list_value("tabs"), (std::vector<std::string>{"one\t", "two\t"}));
 }

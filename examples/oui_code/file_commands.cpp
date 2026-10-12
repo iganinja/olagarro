@@ -328,7 +328,7 @@ void Workbench::register_file_commands()
         [this]
         {
             // Keeping unsaved changes, as Sublime Text does: nothing to ask, everything comes back next time.
-            if(!m_options.headless && m_settings.get_bool("hot_exit", false))
+            if(!m_options.headless && m_settings.bool_value("hot_exit", false))
             {
                 m_unsaved_backup.keep(false);
                 m_window->close(oui::DialogResult::cancelled);

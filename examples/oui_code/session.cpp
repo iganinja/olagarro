@@ -142,23 +142,23 @@ void save_recent(oui::Settings& settings, const std::vector<std::filesystem::pat
     {
         files_str.push_back(oui::utf8_of(f));
     }
-    settings.set_list("recent_files", files_str);
+    settings.set_list_value("recent_files", files_str);
     std::vector<std::string> folders_str;
     for(const auto& f : recent_folders)
     {
         folders_str.push_back(oui::utf8_of(f));
     }
-    settings.set_list("recent_folders", folders_str);
+    settings.set_list_value("recent_folders", folders_str);
     settings.save();
 }
 
 void save_panels(oui::Settings& settings, const std::optional<std::filesystem::path>& project,
                  const oui::FolderView& project_tree, const oui::FolderView& file_explorer)
 {
-    settings.set("project_folder", project ? oui::utf8_of(*project) : "");
-    settings.set_bool("project_tree_visible", project_tree.is_visible());
-    settings.set("explorer_folder", oui::utf8_of(file_explorer.current_path()));
-    settings.set_bool("explorer_visible", file_explorer.is_visible());
+    settings.set_value("project_folder", project ? oui::utf8_of(*project) : "");
+    settings.set_bool_value("project_tree_visible", project_tree.is_visible());
+    settings.set_value("explorer_folder", oui::utf8_of(file_explorer.current_path()));
+    settings.set_bool_value("explorer_visible", file_explorer.is_visible());
     static_cast<void>(settings.save());
 }
 
@@ -168,7 +168,7 @@ oui::WindowGeometry window_geometry_from(const oui::Settings& settings)
     oui::WindowGeometry geometry;
     const auto number{[&settings](std::string_view key) -> std::optional<int>
                       {
-                          const std::string text{settings.get(key, "")};
+                          const std::string text{settings.value(key, "")};
                           if(text.empty())
                           {
                               return std::nullopt;
@@ -183,7 +183,7 @@ oui::WindowGeometry window_geometry_from(const oui::Settings& settings)
     }
     geometry.size.width = number("window_width").value_or(geometry.size.width);
     geometry.size.height = number("window_height").value_or(geometry.size.height);
-    geometry.maximized = settings.get_bool("window_maximized", false);
+    geometry.maximized = settings.bool_value("window_maximized", false);
     return geometry;
 }
 
@@ -196,19 +196,19 @@ void save_window_geometry(oui::Settings& settings, const oui::DesktopWindow* win
     const auto geometry{window->geometry()};
     if(geometry.position)
     {
-        settings.set("window_x", std::to_string(geometry.position->x));
-        settings.set("window_y", std::to_string(geometry.position->y));
+        settings.set_value("window_x", std::to_string(geometry.position->x));
+        settings.set_value("window_y", std::to_string(geometry.position->y));
     }
-    settings.set("window_width", std::to_string(geometry.size.width));
-    settings.set("window_height", std::to_string(geometry.size.height));
-    settings.set_bool("window_maximized", geometry.maximized);
+    settings.set_value("window_width", std::to_string(geometry.size.width));
+    settings.set_value("window_height", std::to_string(geometry.size.height));
+    settings.set_bool_value("window_maximized", geometry.maximized);
 }
 #endif
 
 void save_open_session(oui::Settings& settings, Editors& editors)
 {
     std::vector<const EditorGroup*> order;
-    settings.set("layout", editors.layout(order));
+    settings.set_value("layout", editors.layout(order));
     const auto& active{editors.active()};
     for(std::size_t index{}; index < order.size(); ++ index)
     {
@@ -229,20 +229,20 @@ void save_open_session(oui::Settings& settings, Editors& editors)
             files.push_back(session_entry(*kept));
         }
         const auto prefix{"layout.group." + std::to_string(index) + "."};
-        settings.set_list(prefix + "files", files);
-        settings.set_int(prefix + "selected", selected);
+        settings.set_list_value(prefix + "files", files);
+        settings.set_int_value(prefix + "selected", selected);
         if(&group == &active)
         {
-            settings.set_int("layout.active", static_cast<int>(index));
+            settings.set_int_value("layout.active", static_cast<int>(index));
         }
     }
     // The groups a bigger layout left behind go.
-    for(auto index{order.size()}; index < static_cast<std::size_t>(settings.get_int("layout.groups", 0)); ++ index)
+    for(auto index{order.size()}; index < static_cast<std::size_t>(settings.int_value("layout.groups", 0)); ++ index)
     {
         const auto prefix{"layout.group." + std::to_string(index) + "."};
         settings.remove(prefix + "files");
         settings.remove(prefix + "selected");
     }
-    settings.set_int("layout.groups", static_cast<int>(order.size()));
+    settings.set_int_value("layout.groups", static_cast<int>(order.size()));
     settings.save();
 }

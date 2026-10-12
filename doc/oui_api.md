@@ -12,7 +12,7 @@ Not every script has every name: each entry ends saying which have it.
 
 - [Globals](#globals): [clearInterval](#clearinterval), [clearTimeout](#cleartimeout), [setInterval](#setinterval), [setTimeout](#settimeout)
 - [console](#console): [log](#consolelog)
-- [oui](#oui): [args](#ouiargs), [settings](#ouisettings), [choose](#ouichoose), [chooseFolder](#ouichoosefolder), [column](#ouicolumn), [confirm](#ouiconfirm), [copy](#ouicopy), [exists](#ouiexists), [exit](#ouiexit), [fill](#ouifill), [listDir](#ouilistdir), [menuBar](#ouimenubar), [message](#ouimessage), [openExternally](#ouiopenexternally), [openFile](#ouiopenfile), [paste](#ouipaste), [prompt](#ouiprompt), [quit](#ouiquit), [readFile](#ouireadfile), [row](#ouirow), [run](#ouirun), [saveFile](#ouisavefile), [shortcut](#ouishortcut), [split](#ouisplit), [status](#ouistatus), [theme](#ouitheme), [ui](#ouiui), [uiFromFile](#ouiuifromfile), [window](#ouiwindow), [window](#ouiwindow), [words](#ouiwords), [writeFile](#ouiwritefile), [Box](#ouibox), [Button](#ouibutton), [Calculator](#ouicalculator), [Canvas](#ouicanvas), [CheckButton](#ouicheckbutton), [ComboBox](#ouicombobox), [Comparison](#ouicomparison), [Dialog](#ouidialog), [Dock](#ouidock), [FolderView](#ouifolderview), [Grid](#ouigrid), [HSpacer](#ouihspacer), [Label](#ouilabel), [LineEdit](#ouilineedit), [List](#ouilist), [MarkdownView](#ouimarkdownview), [Panel](#ouipanel), [ProgressBar](#ouiprogressbar), [ScrollView](#ouiscrollview), [Split](#ouisplit-1), [Table](#ouitable), [Tabs](#ouitabs), [Terminal](#ouiterminal), [TextEdit](#ouitextedit), [Tree](#ouitree), [Ui](#ouiui-1), [VSpacer](#ouivspacer), [Widget](#ouiwidget)
+- [oui](#oui): [args](#ouiargs), [settings](#ouisettings), [choose](#ouichoose), [chooseFolder](#ouichoosefolder), [column](#ouicolumn), [confirm](#ouiconfirm), [copy](#ouicopy), [exists](#ouiexists), [exit](#ouiexit), [fill](#ouifill), [language](#ouilanguage), [listDir](#ouilistdir), [message](#ouimessage), [openExternally](#ouiopenexternally), [openFile](#ouiopenfile), [paste](#ouipaste), [prompt](#ouiprompt), [quit](#ouiquit), [readFile](#ouireadfile), [row](#ouirow), [run](#ouirun), [saveFile](#ouisavefile), [setLanguage](#ouisetlanguage), [setMenuBar](#ouisetmenubar), [setStatus](#ouisetstatus), [setTheme](#ouisettheme), [shortcut](#ouishortcut), [split](#ouisplit), [theme](#ouitheme), [ui](#ouiui), [uiFromFile](#ouiuifromfile), [window](#ouiwindow), [window](#ouiwindow), [words](#ouiwords), [writeFile](#ouiwritefile), [Box](#ouibox), [Button](#ouibutton), [Calculator](#ouicalculator), [Canvas](#ouicanvas), [CheckButton](#ouicheckbutton), [ComboBox](#ouicombobox), [Comparison](#ouicomparison), [Dialog](#ouidialog), [Dock](#ouidock), [FolderView](#ouifolderview), [Grid](#ouigrid), [HSpacer](#ouihspacer), [Label](#ouilabel), [LineEdit](#ouilineedit), [List](#ouilist), [MarkdownView](#ouimarkdownview), [Panel](#ouipanel), [ProgressBar](#ouiprogressbar), [ScrollView](#ouiscrollview), [Split](#ouisplit-1), [Table](#ouitable), [Tabs](#ouitabs), [Terminal](#ouiterminal), [TextEdit](#ouitextedit), [Tree](#ouitree), [Ui](#ouiui-1), [VSpacer](#ouivspacer), [Widget](#ouiwidget)
 - [oui.commands](#ouicommands): [register](#ouicommandsregister)
 - [oui.languages](#ouilanguages): [register](#ouilanguagesregister)
 
@@ -85,7 +85,7 @@ The arguments after the script's name.
 ### oui.settings
 
 ```ts
-oui.settings: {get(key: string, fallback?: any): any, set(key: string, value: any): void, remove(key: string): void}
+oui.settings: {value(key: string, fallback?: any): any, setValue(key: string, value: any): void, remove(key: string): void}
 ```
 
 What the script keeps from one run to the next, by names of its choosing: any value JSON holds. In <script>.ini, in the user's configuration folder for oui_run, ~/.config/oui_run on Linux; scripts with the same name share it.
@@ -172,6 +172,16 @@ A widget that takes the room a column or a row leaves.
 
 *In: oui_run.*
 
+### oui.language
+
+```ts
+oui.language(): string
+```
+
+The language OUI's own texts are in, as "en" or "es".
+
+*In: oui_run.*
+
 ### oui.listDir
 
 ```ts
@@ -181,16 +191,6 @@ oui.listDir(path: string): string[]
 The names in a folder, in order; a folder's ends in "/".
 
 *In: oui_run, and OUI Code's Tools > Run Script and Tools > Interactive Script.*
-
-### oui.menuBar
-
-```ts
-oui.menuBar(menus: {title: string, items: ({title: string, keys?: string, run: () => void} | "-")[]}[]): void
-```
-
-The window's menus along its top, each a title and its entries: an entry a title, the keys that run it too, as "Ctrl+O", and what it runs; "-" a line between entries. & marks the letter Alt goes with. Before or after oui.window; asked again, the new menus take the old ones' place.
-
-*In: oui_run.*
 
 ### oui.message
 
@@ -292,6 +292,46 @@ As oui.openFile, for a file to save as, name offered: it asks before one that is
 
 *In: oui_run, and OUI Code's Tools > Run Script and Tools > Interactive Script.*
 
+### oui.setLanguage
+
+```ts
+oui.setLanguage(language: string): void
+```
+
+The language OUI's own texts are in, as a dialog's buttons and the file dialog: "en" or "es", the system's until told. A script written in one language says it first, before its window, so all it shows is in that one.
+
+*In: oui_run.*
+
+### oui.setMenuBar
+
+```ts
+oui.setMenuBar(menus: {title: string, items: ({title: string, keys?: string, run: () => void} | "-")[]}[]): void
+```
+
+The window's menus along its top, each a title and its entries: an entry a title, the keys that run it too, as "Ctrl+O", and what it runs; "-" a line between entries. & marks the letter Alt goes with. Before or after oui.window; asked again, the new menus take the old ones' place.
+
+*In: oui_run.*
+
+### oui.setStatus
+
+```ts
+oui.setStatus(text: string, right?: string): void
+```
+
+What the line along the bottom of the window says, and what it says at its right end; the line shows from the first time.
+
+*In: oui_run.*
+
+### oui.setTheme
+
+```ts
+oui.setTheme(name: string): void
+```
+
+The look: "turbo", "night", "light", "monochrome", "amber", "phosphor" or "commander" in a terminal, and "classic" in a window too.
+
+*In: oui_run.*
+
 ### oui.shortcut
 
 ```ts
@@ -312,23 +352,13 @@ new oui.Split, as a function beside oui.column and oui.row.
 
 *In: oui_run.*
 
-### oui.status
-
-```ts
-oui.status(text: string, right?: string): void
-```
-
-What the line along the bottom of the window says, and what it says at its right end; the line shows from the first time.
-
-*In: oui_run.*
-
 ### oui.theme
 
 ```ts
-oui.theme(name: string): void
+oui.theme(): string
 ```
 
-The look: "turbo", "night", "light", "monochrome", "amber", "phosphor" or "commander" in a terminal, and "classic" in a window too.
+The look in use, by its name: the one chosen, or "classic" in a desktop window and "turbo" in a terminal.
 
 *In: oui_run.*
 

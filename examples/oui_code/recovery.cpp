@@ -21,7 +21,7 @@ std::filesystem::path recovery_folder(const oui::Settings& settings)
 // Drops the kept copy of the unsaved documents, from the settings and the disk, without saving the settings.
 void forget_unsaved_documents(oui::Settings& settings)
 {
-    const auto count{settings.get_int("recovery.count", 0)};
+    const auto count{settings.int_value("recovery.count", 0)};
     for(int n{}; n < count; ++ n)
     {
         const auto prefix{"recovery." + std::to_string(n) + "."};
@@ -43,7 +43,7 @@ void forget_unsaved_documents(oui::Settings& settings)
 // fails has nobody to tell either.
 void keep_unsaved_documents(oui::Settings& settings, const Editors& editors, bool announce)
 {
-    const auto had_copy{settings.get_int("recovery.count", 0) > 0};
+    const auto had_copy{settings.int_value("recovery.count", 0) > 0};
     forget_unsaved_documents(settings);
     const auto folder{recovery_folder(settings)};
     int count{};
@@ -74,24 +74,24 @@ void keep_unsaved_documents(oui::Settings& settings, const Editors& editors, boo
             }
             const auto& document{documents[i]};
             const auto prefix{"recovery." + std::to_string(count) + "."};
-            settings.set(prefix + "file", name);
-            settings.set(prefix + "path", document.path ? oui::utf8_of(*document.path) : "");
-            settings.set(prefix + "title", std::string{tabs.title(i)});
-            settings.set_int(prefix + "encoding", static_cast<int>(document.format.encoding));
-            settings.set_int(prefix + "line_ending", static_cast<int>(document.format.line_ending));
+            settings.set_value(prefix + "file", name);
+            settings.set_value(prefix + "path", document.path ? oui::utf8_of(*document.path) : "");
+            settings.set_value(prefix + "title", std::string{tabs.title(i)});
+            settings.set_int_value(prefix + "encoding", static_cast<int>(document.format.encoding));
+            settings.set_int_value(prefix + "line_ending", static_cast<int>(document.format.line_ending));
             // The file as it was when last loaded or saved, so a change someone made since is still noticed.
-            settings.set(prefix + "stamp_time", document.stamp
+            settings.set_value(prefix + "stamp_time", document.stamp
                                                     ? std::to_string(static_cast<long long>(
                                                           document.stamp->modified.time_since_epoch().count()))
                                                     : "");
-            settings.set(prefix + "stamp_size", document.stamp ? std::to_string(document.stamp->size) : "");
+            settings.set_value(prefix + "stamp_size", document.stamp ? std::to_string(document.stamp->size) : "");
             ++ count;
         }
     }
     if(count > 0)
     {
-        settings.set_int("recovery.count", count);
-        settings.set_bool("recovery.announce", announce);
+        settings.set_int_value("recovery.count", count);
+        settings.set_bool_value("recovery.announce", announce);
     }
     if(count > 0 || had_copy)
     {
@@ -103,30 +103,30 @@ void keep_unsaved_documents(oui::Settings& settings, const Editors& editors, boo
 
 Reopened reopen_unsaved_documents(oui::TabView& tabs, std::vector<Document>& documents, oui::Settings& settings)
 {
-    const auto count{settings.get_int("recovery.count", 0)};
+    const auto count{settings.int_value("recovery.count", 0)};
     if(count == 0)
     {
         return Reopened::nothing;
     }
-    const auto announce{settings.get_bool("recovery.announce", true)};
+    const auto announce{settings.bool_value("recovery.announce", true)};
     const auto folder{recovery_folder(settings)};
     auto reopened{false};
     for(int n{}; n < count; ++ n)
     {
         const auto prefix{"recovery." + std::to_string(n) + "."};
-        const auto text{oui::read_file(folder / oui::path_from_utf8(settings.get(prefix + "file")))};
+        const auto text{oui::read_file(folder / oui::path_from_utf8(settings.value(prefix + "file")))};
         if(!text)
         {
             continue;
         }
         Document document;
-        if(const auto path{settings.get(prefix + "path")}; !path.empty())
+        if(const auto path{settings.value(prefix + "path")}; !path.empty())
         {
             document.path = oui::path_from_utf8(path);
         }
-        document.format.encoding = static_cast<oui::TextEncoding>(settings.get_int(prefix + "encoding"));
-        document.format.line_ending = static_cast<oui::LineEnding>(settings.get_int(prefix + "line_ending"));
-        if(const auto time{settings.get(prefix + "stamp_time")}, size{settings.get(prefix + "stamp_size")};
+        document.format.encoding = static_cast<oui::TextEncoding>(settings.int_value(prefix + "encoding"));
+        document.format.line_ending = static_cast<oui::LineEnding>(settings.int_value(prefix + "line_ending"));
+        if(const auto time{settings.value(prefix + "stamp_time")}, size{settings.value(prefix + "stamp_size")};
            !time.empty() && !size.empty())
         {
             document.stamp = oui::FileStamp{std::filesystem::file_time_type{std::filesystem::file_time_type::duration{
@@ -153,7 +153,7 @@ Reopened reopen_unsaved_documents(oui::TabView& tabs, std::vector<Document>& doc
         editor->set_text(*text);
         editor->mark_modified();
         documents.push_back(document);
-        tabs.add_tab(std::string{settings.get(prefix + "title")}, std::move(editor));
+        tabs.add_tab(std::string{settings.value(prefix + "title")}, std::move(editor));
         reopened = true;
     }
     forget_unsaved_documents(settings);
@@ -173,7 +173,7 @@ UnsavedBackup::UnsavedBackup(oui::Application& application, oui::Settings& setti
 void UnsavedBackup::configure()
 {
     m_timer.stop();
-    if(m_settings.get_bool("backup_unsaved", true))
+    if(m_settings.bool_value("backup_unsaved", true))
     {
         m_timer = m_application.start_timer(std::chrono::seconds{interval_seconds(m_settings)}, [this] { tick(); });
     }
@@ -188,7 +188,7 @@ void UnsavedBackup::keep(bool announce)
 void UnsavedBackup::forget()
 {
     m_timer.stop();
-    if(m_settings.get_int("recovery.count", 0) > 0)
+    if(m_settings.int_value("recovery.count", 0) > 0)
     {
         forget_unsaved_documents(m_settings);
         static_cast<void>(m_settings.save());
@@ -197,7 +197,7 @@ void UnsavedBackup::forget()
 
 int UnsavedBackup::interval_seconds(const oui::Settings& settings)
 {
-    return std::clamp(settings.get_int("backup_interval_seconds", default_interval_seconds), 1, 3600);
+    return std::clamp(settings.int_value("backup_interval_seconds", default_interval_seconds), 1, 3600);
 }
 
 UnsavedBackup::Fingerprint UnsavedBackup::fingerprint() const

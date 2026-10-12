@@ -28,7 +28,7 @@ void show_preferences(oui::Application& application, oui::Settings& settings, Ed
         language_names.push_back(translation.name());
     }
     const auto current_language{
-        std::find(language_codes.begin(), language_codes.end(), settings.get("language", "auto"))};
+        std::find(language_codes.begin(), language_codes.end(), settings.value("language", "auto"))};
     auto& language{ui.get<oui::ComboBox>("language")};
     language.set_options(language_names);
     language.set_selected(current_language == language_codes.end()
@@ -37,18 +37,18 @@ void show_preferences(oui::Application& application, oui::Settings& settings, Ed
     language.on_selected(
         [&settings, language_codes](std::size_t index)
         {
-            settings.set("language", language_codes.at(index));
+            settings.set_value("language", language_codes.at(index));
             static_cast<void>(settings.save());
         });
     // A box ticked or not is kept at once, under its setting, and does what it changes.
     const auto keep{[&ui, &settings](std::string_view id, const char* setting, bool otherwise, auto&& then)
                     {
                         auto& box{ui.get<oui::CheckButton>(id)};
-                        box.set_checked(settings.get_bool(setting, otherwise));
+                        box.set_checked(settings.bool_value(setting, otherwise));
                         box.on_toggled(
                             [&settings, setting, then](bool checked)
                             {
-                                settings.set_bool(setting, checked);
+                                settings.set_bool_value(setting, checked);
                                 settings.save();
                                 then(checked);
                             });
@@ -71,13 +71,13 @@ void show_preferences(oui::Application& application, oui::Settings& settings, Ed
                     const auto [end, error]{std::from_chars(text.data(), text.data() + text.size(), number)};
                     if(error == std::errc{} && end == text.data() + text.size() && number >= least && number <= most)
                     {
-                        settings.set_int(setting, number);
+                        settings.set_int_value(setting, number);
                         settings.save();
                         then();
                     }
                 });
         }};
-    keep_number("spaces", "tab_space_count", settings.get_int("tab_space_count", 4), 1, 32, [] {});
+    keep_number("spaces", "tab_space_count", settings.int_value("tab_space_count", 4), 1, 32, [] {});
     keep_number("backup_interval", "backup_interval_seconds", UnsavedBackup::interval_seconds(settings), 1, 3600,
                 [&unsaved_backup] { unsaved_backup.configure(); });
     auto dialog{ui.take_window()};

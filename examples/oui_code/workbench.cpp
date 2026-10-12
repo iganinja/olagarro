@@ -62,8 +62,8 @@ Workbench::Workbench(oui::Application& application, oui::Settings& settings, Wor
 #ifdef OLAGARRO_OUI_CODE_WINDOW
     if(m_options.window_screen != nullptr)
     {
-        use_window_theme(m_settings.get("window_theme", "classic"));
-        const auto zoom{m_settings.get("window_zoom", "")};
+        use_window_theme(m_settings.value("window_theme", "classic"));
+        const auto zoom{m_settings.value("window_zoom", "")};
         if(!zoom.empty())
         {
             m_options.window_screen->set_zoom(std::atoi(std::string{zoom}.c_str()));
@@ -72,7 +72,7 @@ Workbench::Workbench(oui::Application& application, oui::Settings& settings, Wor
 #endif
     if(m_options.in_cells && !m_options.headless)
     {
-        use_terminal_theme(m_settings.get("terminal_theme", "turbo"));
+        use_terminal_theme(m_settings.value("terminal_theme", "turbo"));
     }
     else if(m_options.legacy_render)
     {
@@ -99,11 +99,11 @@ Workbench::Workbench(oui::Application& application, oui::Settings& settings, Wor
     {
         remember_dialog_places();
     }
-    for(const auto& p : m_settings.get_list("recent_files"))
+    for(const auto& p : m_settings.list_value("recent_files"))
     {
         m_recent_files.push_back(oui::path_from_utf8(p));
     }
-    for(const auto& p : m_settings.get_list("recent_folders"))
+    for(const auto& p : m_settings.list_value("recent_folders"))
     {
         m_recent_folders.push_back(oui::path_from_utf8(p));
     }
@@ -153,7 +153,7 @@ int Workbench::run()
     {
         // A quit that asked about every unsaved document leaves nothing to bring back; one that kept
         // them, or a shutdown, has just written the copy the next start reopens.
-        if(!m_application.is_shutting_down() && !m_settings.get_bool("hot_exit", false))
+        if(!m_application.is_shutting_down() && !m_settings.bool_value("hot_exit", false))
         {
             m_unsaved_backup.forget();
         }
@@ -286,34 +286,34 @@ void Workbench::build_side_panels(oui::DockLayout& workspace)
     // Started with no folder to open, OUI Code comes back to the project and panels the user left.
     if(!m_options.headless && !m_options.folder)
     {
-        const auto saved_project{oui::path_from_utf8(m_settings.get("project_folder"))};
+        const auto saved_project{oui::path_from_utf8(m_settings.value("project_folder"))};
         std::error_code error;
         if(!saved_project.empty() && std::filesystem::is_directory(saved_project, error))
         {
             open_project(*m_project_tree, m_project_folder, saved_project);
             m_current_folder = saved_project;
-            m_project_tree->set_visible(m_settings.get_bool("project_tree_visible", true) && !m_options.no_explorer);
+            m_project_tree->set_visible(m_settings.bool_value("project_tree_visible", true) && !m_options.no_explorer);
         }
-        const auto saved_explorer{oui::path_from_utf8(m_settings.get("explorer_folder"))};
+        const auto saved_explorer{oui::path_from_utf8(m_settings.value("explorer_folder"))};
         if(!saved_explorer.empty() && std::filesystem::is_directory(saved_explorer, error))
         {
             m_file_explorer->show_folder(saved_explorer);
-            m_file_explorer->set_visible(m_settings.get_bool("explorer_visible", false));
+            m_file_explorer->set_visible(m_settings.bool_value("explorer_visible", false));
         }
     }
     // The status bar spans the whole width under everything; the explorer runs down the left above it.
     m_status_bar = &workspace.add(oui::Dock::bottom, oui::status_bar());
     // The side panels are as wide as they were last dragged.
     auto& project_tree_strip{
-        workspace.add(oui::Dock::left, std::move(project_tree_panel), m_settings.get_int("project_tree_width", 25))};
+        workspace.add(oui::Dock::left, std::move(project_tree_panel), m_settings.int_value("project_tree_width", 25))};
     auto& file_explorer_strip{
-        workspace.add(oui::Dock::right, std::move(file_explorer_panel), m_settings.get_int("explorer_width", 31))};
+        workspace.add(oui::Dock::right, std::move(file_explorer_panel), m_settings.int_value("explorer_width", 31))};
     workspace.set_resizable(project_tree_strip);
     workspace.set_resizable(file_explorer_strip);
     workspace.on_resized(
         [this, tree_strip{&project_tree_strip}](const oui::Widget& strip, int width)
         {
-            m_settings.set_int(&strip == tree_strip ? "project_tree_width" : "explorer_width", width);
+            m_settings.set_int_value(&strip == tree_strip ? "project_tree_width" : "explorer_width", width);
             static_cast<void>(m_settings.save());
         });
 }
@@ -411,11 +411,11 @@ void Workbench::remember_dialog_places()
             const auto prefix{"window." + std::string{key} + "."};
             const auto read{[this, &prefix](const char* const field) -> std::optional<int>
                             {
-                                if(m_settings.get(prefix + field).empty())
+                                if(m_settings.value(prefix + field).empty())
                                 {
                                     return std::nullopt;
                                 }
-                                return m_settings.get_int(prefix + field);
+                                return m_settings.int_value(prefix + field);
                             }};
             oui::WindowPlacement placement;
             if(const auto x{read("x")}, y{read("y")}; x && y)
@@ -432,7 +432,7 @@ void Workbench::remember_dialog_places()
         {
             const auto prefix{"window." + std::string{key} + "."};
             const auto write{[this, &prefix](const char* const field, std::optional<int> value)
-                             { m_settings.set(prefix + field, value ? std::to_string(*value) : ""); }};
+                             { m_settings.set_value(prefix + field, value ? std::to_string(*value) : ""); }};
             write("x", placement.position ? std::optional<int>{placement.position->x} : std::nullopt);
             write("y", placement.position ? std::optional<int>{placement.position->y} : std::nullopt);
             write("width", placement.size ? std::optional<int>{placement.size->width} : std::nullopt);
@@ -497,7 +497,7 @@ void Workbench::watch_external_changes()
                     if(editor != nullptr && index < documents.size())
                     {
                         check_external_change(m_application, documents.at(index), *editor,
-                                              m_settings.get_bool("reload_external_changes", true));
+                                              m_settings.bool_value("reload_external_changes", true));
                     }
                 });
         }};
@@ -652,7 +652,7 @@ void Workbench::restore_session()
     // them, as a comparison or a preview, which finds them open.
     if(!m_options.headless)
     {
-        const auto groups{m_editors.restore_layout(m_settings.get("layout"))};
+        const auto groups{m_editors.restore_layout(m_settings.value("layout"))};
         std::vector<std::vector<SessionTab>> kept(groups.size());
         std::vector<std::vector<bool>> back(groups.size());
         for(std::size_t index{}; index < groups.size(); ++ index)
@@ -661,7 +661,7 @@ void Workbench::restore_session()
             {
                 continue;
             }
-            for(const auto& entry : m_settings.get_list("layout.group." + std::to_string(index) + ".files"))
+            for(const auto& entry : m_settings.list_value("layout.group." + std::to_string(index) + ".files"))
             {
                 kept[index].push_back(session_tab(entry));
             }
@@ -704,7 +704,7 @@ void Workbench::restore_session()
                     back[index][tab] = true;
                 }
             }
-            const auto selected{m_settings.get_int("layout.group." + std::to_string(index) + ".selected", -1)};
+            const auto selected{m_settings.int_value("layout.group." + std::to_string(index) + ".selected", -1)};
             if(groups[index] != nullptr && selected >= 0 && static_cast<std::size_t>(selected) < back[index].size() &&
                back[index][static_cast<std::size_t>(selected)])
             {
@@ -719,7 +719,7 @@ void Workbench::restore_session()
                 settle_group(m_editors, *group, m_settings);
             }
         }
-        const auto active{static_cast<std::size_t>(std::max(0, m_settings.get_int("layout.active", 0)))};
+        const auto active{static_cast<std::size_t>(std::max(0, m_settings.int_value("layout.active", 0)))};
         auto* const focused{active < groups.size() && groups[active] != nullptr ? groups[active]
                                                                                 : &m_editors.groups().front()};
         // A group left empty is gone; the first one is always there.
@@ -870,7 +870,7 @@ void Workbench::finish_window(std::unique_ptr<oui::Window> window)
             [this](oui::ShutdownEvent::Reason)
             {
                 remember_window();
-                m_unsaved_backup.keep(!m_settings.get_bool("hot_exit", false));
+                m_unsaved_backup.keep(!m_settings.bool_value("hot_exit", false));
             });
     }
     m_application.set_window(std::move(window));

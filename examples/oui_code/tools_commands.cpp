@@ -598,13 +598,13 @@ void Workbench::start_interactive_ui(std::optional<std::filesystem::path> file, 
             m_application.focus(raw->view->code());
         });
     // In the language chosen last, remembered from one tab and one start to the next.
-    session->view->set_language(m_settings.get("ui_generate_language", "javascript") == "cpp"
+    session->view->set_language(m_settings.value("ui_generate_language", "javascript") == "cpp"
                                     ? SkeletonLanguage::cpp
                                     : SkeletonLanguage::javascript);
     static_cast<void>(session->view->on_language_chosen(
         [this](SkeletonLanguage language)
         {
-            m_settings.set("ui_generate_language", language == SkeletonLanguage::cpp ? "cpp" : "javascript");
+            m_settings.set_value("ui_generate_language", language == SkeletonLanguage::cpp ? "cpp" : "javascript");
             static_cast<void>(m_settings.save());
             show_generate_scripts();
         }));
@@ -632,7 +632,7 @@ void Workbench::start_interactive_ui(std::optional<std::filesystem::path> file, 
     static_cast<void>(session->view->on_script_dropped(
         [this, raw]
         {
-            m_settings.set(generate_script_setting(raw->view->language()), "");
+            m_settings.set_value(generate_script_setting(raw->view->language()), "");
             static_cast<void>(m_settings.save());
             show_generate_scripts();
         }));
@@ -744,7 +744,7 @@ void Workbench::saved_under_new_file(Document& document)
     document.interactive->module_path = *document.path;
     if(const auto& generated{document.interactive->generated})
     {
-        m_settings.set(generate_script_setting(generated->language == "cpp" ? SkeletonLanguage::cpp
+        m_settings.set_value(generate_script_setting(generated->language == "cpp" ? SkeletonLanguage::cpp
                                                                             : SkeletonLanguage::javascript),
                        oui::utf8_of(*document.path));
         static_cast<void>(m_settings.save());
@@ -754,7 +754,7 @@ void Workbench::saved_under_new_file(Document& document)
 
 std::optional<std::filesystem::path> Workbench::generate_script(SkeletonLanguage language) const
 {
-    const auto kept{m_settings.get(generate_script_setting(language))};
+    const auto kept{m_settings.value(generate_script_setting(language))};
     if(kept.empty())
     {
         return std::nullopt;
@@ -807,7 +807,7 @@ void Workbench::choose_generate_script(SkeletonLanguage language)
         }
         else
         {
-            m_settings.set(generate_script_setting(language), oui::utf8_of(*script));
+            m_settings.set_value(generate_script_setting(language), oui::utf8_of(*script));
             static_cast<void>(m_settings.save());
         }
     }

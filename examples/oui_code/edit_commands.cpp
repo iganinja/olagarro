@@ -194,7 +194,7 @@ void Workbench::register_edit_commands()
                                                       show_go_to_line_dialog(m_application, *current);
                                                   }
                                               });
-    m_suggester.set_as_you_type(m_settings.get_bool("suggest_as_you_type", true));
+    m_suggester.set_as_you_type(m_settings.bool_value("suggest_as_you_type", true));
     m_application.commands().register_command("edit.suggest", oui::translate("Commands", "Suggest"),
                                               [this] { m_suggester.suggest(); });
     // Ctrl+Space, as code editors have it; Alt+/ for a terminal that sends Ctrl+Space as nothing OUI Code can tell.

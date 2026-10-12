@@ -120,13 +120,13 @@ bool Settings::save()
     return std::fclose(output) == 0 && written;
 }
 
-std::string_view Settings::get(std::string_view key, std::string_view default_value) const
+std::string_view Settings::value(std::string_view key, std::string_view default_value) const
 {
     const auto it{m_data.find(std::string{key})};
     return it != m_data.end() ? std::string_view{it->second.data(), it->second.size()} : default_value;
 }
 
-void Settings::set(std::string_view key, std::string_view value)
+void Settings::set_value(std::string_view key, std::string_view value)
 {
     m_data[std::string{key}] = std::string{value};
 }
@@ -136,20 +136,20 @@ void Settings::remove(std::string_view key)
     m_data.erase(std::string{key});
 }
 
-bool Settings::get_bool(std::string_view key, bool default_value) const
+bool Settings::bool_value(std::string_view key, bool default_value) const
 {
-    const auto val{get(key, default_value ? "true" : "false")};
+    const auto val{value(key, default_value ? "true" : "false")};
     return val == "true";
 }
 
-void Settings::set_bool(std::string_view key, bool value)
+void Settings::set_bool_value(std::string_view key, bool value)
 {
-    set(key, value ? "true" : "false");
+    set_value(key, value ? "true" : "false");
 }
 
-int Settings::get_int(std::string_view key, int default_value) const
+int Settings::int_value(std::string_view key, int default_value) const
 {
-    const auto val{get(key)};
+    const auto val{value(key)};
     if(val.empty())
     {
         return default_value;
@@ -159,19 +159,19 @@ int Settings::get_int(std::string_view key, int default_value) const
     return (err == std::errc{}) ? result : default_value;
 }
 
-void Settings::set_int(std::string_view key, int value)
+void Settings::set_int_value(std::string_view key, int value)
 {
     std::array<char, 16> buffer{};
     const auto [ptr, err]{std::to_chars(buffer.data(), buffer.data() + buffer.size(), value)};
     if(err == std::errc{})
     {
-        set(key, std::string_view{buffer.data(), static_cast<std::size_t>(ptr - buffer.data())});
+        set_value(key, std::string_view{buffer.data(), static_cast<std::size_t>(ptr - buffer.data())});
     }
 }
 
-std::vector<std::string> Settings::get_list(std::string_view key) const
+std::vector<std::string> Settings::list_value(std::string_view key) const
 {
-    const std::string raw{get(key)};
+    const std::string raw{value(key)};
     std::vector<std::string> result;
     for(std::size_t start{}; start <= raw.size();)
     {
@@ -185,7 +185,7 @@ std::vector<std::string> Settings::get_list(std::string_view key) const
     return result;
 }
 
-void Settings::set_list(std::string_view key, const std::vector<std::string>& values)
+void Settings::set_list_value(std::string_view key, const std::vector<std::string>& values)
 {
     std::string raw;
     for(std::size_t i{}; i < values.size(); ++ i)
@@ -196,7 +196,7 @@ void Settings::set_list(std::string_view key, const std::vector<std::string>& va
         }
         raw += values[i];
     }
-    set(key, raw);
+    set_value(key, raw);
 }
 
 const std::filesystem::path& Settings::file_path() const

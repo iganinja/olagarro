@@ -71,9 +71,16 @@
 // api(oui_run): oui.Widget#onKey: (key: string, text: string) => boolean | void
 // Hears a key before the widget does, while it or what it holds has the focus: the key as shortcuts write it,
 // "Ctrl+S" or "Enter", and the text it types, if any; true keeps it from going further.
-// api(oui_run): oui.theme(name: string): void
+// api(oui_run): oui.setLanguage(language: string): void
+// The language OUI's own texts are in, as a dialog's buttons and the file dialog: "en" or "es", the system's until
+// told. A script written in one language says it first, before its window, so all it shows is in that one.
+// api(oui_run): oui.language(): string
+// The language OUI's own texts are in, as "en" or "es".
+// api(oui_run): oui.setTheme(name: string): void
 // The look: "turbo", "night", "light", "monochrome", "amber", "phosphor" or "commander" in a terminal, and "classic"
 // in a window too.
+// api(oui_run): oui.theme(): string
+// The look in use, by its name: the one chosen, or "classic" in a desktop window and "turbo" in a terminal.
 // api(oui_run): class oui.Box extends oui.Widget
 // What oui.column and oui.row make.
 // api(oui_run): oui.Box#add(widget: oui.Widget, options?: {fill?: boolean}): this
@@ -142,11 +149,11 @@
 // Opens it and waits for it to close: what close was given, or null when it was cancelled.
 // api(oui_run): oui.Dialog#close(value?: any): void
 // Closes it, show giving back value, true unless given.
-// api(oui_run): oui.menuBar(menus: {title: string, items: ({title: string, keys?: string, run: () => void} | "-")[]}[]): void
+// api(oui_run): oui.setMenuBar(menus: {title: string, items: ({title: string, keys?: string, run: () => void} | "-")[]}[]): void
 // The window's menus along its top, each a title and its entries: an entry a title, the keys that run it too, as
 // "Ctrl+O", and what it runs; "-" a line between entries. & marks the letter Alt goes with. Before or after
 // oui.window; asked again, the new menus take the old ones' place.
-// api(oui_run): oui.status(text: string, right?: string): void
+// api(oui_run): oui.setStatus(text: string, right?: string): void
 // What the line along the bottom of the window says, and what it says at its right end; the line shows from the
 // first time.
 // api(oui_run): class oui.Label extends oui.Widget
@@ -385,7 +392,7 @@
 // with clicks 2 is a double click; wheel is how far the wheel turned.
 // api(oui_run): oui.Canvas#onResize: (width: number, height: number) => void
 // Called when its size changes, the first time too: where to draw it again.
-// api(oui_run): oui.settings: {get(key: string, fallback?: any): any, set(key: string, value: any): void, remove(key: string): void}
+// api(oui_run): oui.settings: {value(key: string, fallback?: any): any, setValue(key: string, value: any): void, remove(key: string): void}
 // What the script keeps from one run to the next, by names of its choosing: any value JSON holds. In
 // <script>.ini, in the user's configuration folder for oui_run, ~/.config/oui_run on Linux; scripts with the same
 // name share it.
@@ -919,20 +926,23 @@ globalThis.oui = Object.freeze({
     ui: (description) => new Ui(n.ui(String(description))),
     uiFromFile: (path) => new Ui(n.uiFromFile(String(path))),
     shortcut: (keys, fn) => n.shortcut(String(keys), fn),
-    menuBar: (menus) => n.menuBar(menus.map((menu) => ({title: String(menu.title), items: menuEntries(menu.items)}))),
-    theme: (name) => n.theme(String(name)),
+    setMenuBar: (menus) => n.menuBar(menus.map((menu) => ({title: String(menu.title), items: menuEntries(menu.items)}))),
+    setTheme: (name) => n.theme(String(name)),
+    theme: () => n.themeName(),
+    setLanguage: (language) => n.setLanguage(String(language)),
+    language: () => n.language(),
     settings: Object.freeze({
-        get: (key, fallback = null) => {
+        value: (key, fallback = null) => {
             const kept = n.settingGet(String(key));
             return kept === null ? fallback : JSON.parse(kept);
         },
-        set: (key, value) => n.settingSet(String(key), value === undefined ? null : JSON.stringify(value)),
+        setValue: (key, value) => n.settingSet(String(key), value === undefined ? null : JSON.stringify(value)),
         remove: (key) => n.settingSet(String(key), null),
     }),
     // The same as OUI Code's, for highlight's rules.
     words: (...lists) =>
         new RegExp("\\b(?:" + lists.flat().map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b"),
-    status: (text, right = "") => n.status(String(text), String(right)),
+    setStatus: (text, right = "") => n.status(String(text), String(right)),
     quit: () => n.quit(),
     exit: (code = 0) => n.exit(Number(code)),
 });
