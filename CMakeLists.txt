@@ -176,6 +176,7 @@ add_library(olagarro_oui
     oui/src/inflate.cpp
     oui/src/layout.cpp
     oui/src/label.cpp
+    oui/src/progress_bar.cpp
     oui/src/line_edit.cpp
     oui/src/list.cpp
     oui/src/markdown_view.cpp

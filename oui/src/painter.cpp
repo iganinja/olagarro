@@ -4,6 +4,7 @@
 #include <oui/utf8.h>
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 // The elements as a terminal shows them, built from cells.
@@ -287,6 +288,38 @@ void Painter::draw_scrollbar(const Rect& track, const ScrollbarLook& look, const
     const auto travel{length - look.thumb_length};
     const auto place{travel <= 0 ? 0 : (start * (length - 1) + travel / 2) / travel};
     draw_text(at(std::clamp(place, 0, length - 1)), "■", style);
+}
+
+void Painter::draw_progress(const Rect& bounds, const ProgressLook& look, const Theme& theme)
+{
+    // The track in whole cells, what is done of it filled, and the cell it ends in filled by eighths, as far as it goes.
+    static constexpr std::string_view eighths[]{"", "▏", "▎", "▍", "▌", "▋", "▊", "▉"};
+    const auto words{look.text.empty() ? 0 : shown_width(look.text) + 1};
+    const auto length{std::max(0, bounds.width - words)};
+    const auto done{static_cast<int>(std::lround(std::clamp(look.done, 0.0, 1.0) * length * 8))};
+    for(int cell{}; cell < length; ++ cell)
+    {
+        const Point at{bounds.x + cell, bounds.y};
+        const auto filled{done - cell * 8};
+        if(filled >= 8)
+        {
+            draw_text(at, " ", {theme.item_selected_foreground, theme.item_selected_background});
+        }
+        else if(filled > 0)
+        {
+            draw_text(at, eighths[filled], {theme.item_selected_background, theme.scrollbar_background});
+        }
+        else
+        {
+            draw_text(at, " ", {theme.scrollbar_foreground, theme.scrollbar_background});
+        }
+    }
+    if(words > 0)
+    {
+        const TextStyle style{theme.dialog_foreground, theme.dialog_background};
+        draw_text({bounds.x + length, bounds.y}, " ", style);
+        draw_label({bounds.x + length + 1, bounds.y}, look.text, style);
+    }
 }
 
 void Painter::draw_bar(const Rect& bounds, BarKind kind, const Theme& theme)

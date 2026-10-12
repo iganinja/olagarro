@@ -184,6 +184,13 @@
 // api(oui_run): oui.LineEdit#selectedText: string
 // api(oui_run): oui.LineEdit#insert(text: string): this
 // Writes text in place of the selection, as typing would.
+// api(oui_run): class oui.ProgressBar extends oui.Widget
+// How far something has gone, as a bar that fills from the left, with a text after it, as "4 of 8".
+// api(oui_run): new oui.ProgressBar(options?: {value?: number, text?: string})
+// api(oui_run): oui.ProgressBar#value: number
+// How much is done, from 0, nothing, to 1, all of it; kept within them.
+// api(oui_run): oui.ProgressBar#text: string
+// What it says after the bar; nothing when empty.
 // api(oui_run): class oui.TextEdit extends oui.Widget
 // A text of many lines, to write or only to show.
 // api(oui_run): new oui.TextEdit(options?: {text?: string, readOnly?: boolean, wrap?: boolean, lineNumbers?: boolean, onChange?: (text: string) => void})
@@ -523,6 +530,18 @@ class Label extends Widget {
     set text(value) { n.setText(this.id, String(value)); }
 }
 
+class ProgressBar extends Widget {
+    constructor(options = {}) {
+        super(n.progressBar());
+        if (options.value !== undefined) this.value = options.value;
+        if (options.text !== undefined) this.text = options.text;
+    }
+    get value() { return n.getValue(this.id); }
+    set value(value) { n.setValue(this.id, Number(value)); }
+    get text() { return n.getText(this.id); }
+    set text(value) { n.setText(this.id, String(value)); }
+}
+
 class Button extends Widget {
     constructor(text, onClick, options = {}) {
         super(n.button(String(text)));
@@ -820,7 +839,7 @@ class MarkdownView extends Widget {
 }
 
 // The object of its kind for a widget the host made from a description, without making another.
-const kinds = {Label, Button, LineEdit, TextEdit, CheckButton, ComboBox, Tabs, Split, MarkdownView, Grid};
+const kinds = {Label, Button, LineEdit, ProgressBar, TextEdit, CheckButton, ComboBox, Tabs, Split, MarkdownView, Grid};
 function existing(kind, id) {
     const widget = Object.create((kinds[kind] ?? Widget).prototype);
     Object.defineProperty(widget, "id", {value: id});
@@ -883,7 +902,8 @@ delete globalThis.__ouiSystem;
 globalThis.oui = Object.freeze({
     ...system,
     args: n.args(),
-    Widget, Label, Button, LineEdit, TextEdit, CheckButton, ComboBox, List, Table, Tree, Tabs, Split, MarkdownView, Ui,
+    Widget, Label, Button, LineEdit, ProgressBar, TextEdit, CheckButton, ComboBox, List, Table, Tree, Tabs, Split,
+    MarkdownView, Ui,
     Box, Grid, ScrollView, Panel, Dock, HSpacer, VSpacer, Comparison, FolderView, Terminal, Calculator, Dialog, Canvas,
     column: (children, options) => box(true, children, options),
     row: (children, options) => box(false, children, options),

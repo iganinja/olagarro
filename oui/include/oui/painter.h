@@ -181,6 +181,13 @@ struct PixelImage
     int stride{};
 };
 
+// How far a progress bar has gone, from 0 to 1, and what it says after it.
+struct ProgressLook
+{
+    double done{0.0};
+    std::string_view text;
+};
+
 class Painter
 {
   public:
@@ -235,6 +242,8 @@ class Painter
     virtual void draw_tooltip(const Rect& bounds, const std::vector<std::string>& lines, const Theme& theme);
     // What a drag carries, at the pointer, over everything else.
     virtual void draw_drag_image(Point position, int cell_offset, std::string_view text, const Theme& theme);
+    // A progress bar over the cells of `bounds`: its track, as much of it filled as is done, and its text after it.
+    virtual void draw_progress(const Rect& bounds, const ProgressLook& look, const Theme& theme);
     // The edge of a text field, drawn after its content: the terminal shows none.
     virtual void draw_field_frame(const Rect& bounds, bool focused, const Theme& theme);
     // Pixels from the top left corner of `bounds`, cut to it: a terminal, which has none, shows the background.

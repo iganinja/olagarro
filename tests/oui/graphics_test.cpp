@@ -379,6 +379,22 @@ TEST(OuiGraphicsTests, DrawsTheSquareRootTheFontsLack)
     EXPECT_EQ(inked(half, root.height * 2 / 3, root.width, root.height), 0) << "nothing low on the right";
 }
 
+TEST(OuiGraphicsTests, AProgressBarInPixelsFillsItsTrackAsFarAsIsDone)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{240, 24};
+    canvas.fill({0, 0, 240, 24}, {1, 2, 3});
+    const auto style{classic_style()};
+    const auto theme{theme_for(style)};
+    GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    painter.draw_progress({0, 0, 20, 1}, {0.25, ""}, theme);
+    // A quarter of 240 pixels: what is done is in the title's colour, what is not is the well's.
+    EXPECT_TRUE(same(canvas.pixel_at(30, 12), style.title));
+    EXPECT_TRUE(same(canvas.pixel_at(150, 12), style.well));
+}
+
 TEST(OuiGraphicsTests, AButtonTakesItsWholeWidthWhereNoShadowIsDrawn)
 {
     // A terminal's button keeps a column for its shadow; drawn in pixels there is none, and the column left a stretched

@@ -12,7 +12,7 @@ Not every script has every name: each entry ends saying which have it.
 
 - [Globals](#globals): [clearInterval](#clearinterval), [clearTimeout](#cleartimeout), [setInterval](#setinterval), [setTimeout](#settimeout)
 - [console](#console): [log](#consolelog)
-- [oui](#oui): [args](#ouiargs), [settings](#ouisettings), [choose](#ouichoose), [chooseFolder](#ouichoosefolder), [column](#ouicolumn), [confirm](#ouiconfirm), [copy](#ouicopy), [exists](#ouiexists), [exit](#ouiexit), [fill](#ouifill), [listDir](#ouilistdir), [menuBar](#ouimenubar), [message](#ouimessage), [openExternally](#ouiopenexternally), [openFile](#ouiopenfile), [paste](#ouipaste), [prompt](#ouiprompt), [quit](#ouiquit), [readFile](#ouireadfile), [row](#ouirow), [run](#ouirun), [saveFile](#ouisavefile), [shortcut](#ouishortcut), [split](#ouisplit), [status](#ouistatus), [theme](#ouitheme), [ui](#ouiui), [uiFromFile](#ouiuifromfile), [window](#ouiwindow), [window](#ouiwindow), [words](#ouiwords), [writeFile](#ouiwritefile), [Box](#ouibox), [Button](#ouibutton), [Calculator](#ouicalculator), [Canvas](#ouicanvas), [CheckButton](#ouicheckbutton), [ComboBox](#ouicombobox), [Comparison](#ouicomparison), [Dialog](#ouidialog), [Dock](#ouidock), [FolderView](#ouifolderview), [Grid](#ouigrid), [HSpacer](#ouihspacer), [Label](#ouilabel), [LineEdit](#ouilineedit), [List](#ouilist), [MarkdownView](#ouimarkdownview), [Panel](#ouipanel), [ScrollView](#ouiscrollview), [Split](#ouisplit-1), [Table](#ouitable), [Tabs](#ouitabs), [Terminal](#ouiterminal), [TextEdit](#ouitextedit), [Tree](#ouitree), [Ui](#ouiui-1), [VSpacer](#ouivspacer), [Widget](#ouiwidget)
+- [oui](#oui): [args](#ouiargs), [settings](#ouisettings), [choose](#ouichoose), [chooseFolder](#ouichoosefolder), [column](#ouicolumn), [confirm](#ouiconfirm), [copy](#ouicopy), [exists](#ouiexists), [exit](#ouiexit), [fill](#ouifill), [listDir](#ouilistdir), [menuBar](#ouimenubar), [message](#ouimessage), [openExternally](#ouiopenexternally), [openFile](#ouiopenfile), [paste](#ouipaste), [prompt](#ouiprompt), [quit](#ouiquit), [readFile](#ouireadfile), [row](#ouirow), [run](#ouirun), [saveFile](#ouisavefile), [shortcut](#ouishortcut), [split](#ouisplit), [status](#ouistatus), [theme](#ouitheme), [ui](#ouiui), [uiFromFile](#ouiuifromfile), [window](#ouiwindow), [window](#ouiwindow), [words](#ouiwords), [writeFile](#ouiwritefile), [Box](#ouibox), [Button](#ouibutton), [Calculator](#ouicalculator), [Canvas](#ouicanvas), [CheckButton](#ouicheckbutton), [ComboBox](#ouicombobox), [Comparison](#ouicomparison), [Dialog](#ouidialog), [Dock](#ouidock), [FolderView](#ouifolderview), [Grid](#ouigrid), [HSpacer](#ouihspacer), [Label](#ouilabel), [LineEdit](#ouilineedit), [List](#ouilist), [MarkdownView](#ouimarkdownview), [Panel](#ouipanel), [ProgressBar](#ouiprogressbar), [ScrollView](#ouiscrollview), [Split](#ouisplit-1), [Table](#ouitable), [Tabs](#ouitabs), [Terminal](#ouiterminal), [TextEdit](#ouitextedit), [Tree](#ouitree), [Ui](#ouiui-1), [VSpacer](#ouivspacer), [Widget](#ouiwidget)
 - [oui.commands](#ouicommands): [register](#ouicommandsregister)
 - [oui.languages](#ouilanguages): [register](#ouilanguagesregister)
 
@@ -668,6 +668,22 @@ What it holds, with room round it, on the panels' colour.
 *In: oui_run.*
 
 Has what [oui.Widget](#ouiwidget) has, and:
+
+### oui.ProgressBar
+
+```ts
+class oui.ProgressBar extends oui.Widget
+new oui.ProgressBar(options?: {value?: number, text?: string})
+```
+
+How far something has gone, as a bar that fills from the left, with a text after it, as "4 of 8".
+
+*In: oui_run.*
+
+Has what [oui.Widget](#ouiwidget) has, and:
+
+- `value: number`: How much is done, from 0, nothing, to 1, all of it; kept within them.
+- `text: string`: What it says after the bar; nothing when empty.
 
 ### oui.ScrollView
 

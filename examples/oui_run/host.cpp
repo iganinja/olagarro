@@ -323,6 +323,10 @@ using Arguments = std::vector<Value>;
     {
         return "LineEdit";
     }
+    if(dynamic_cast<const oui::ProgressBar*>(&widget) != nullptr)
+    {
+        return "ProgressBar";
+    }
     if(dynamic_cast<const oui::TextEdit*>(&widget) != nullptr)
     {
         return "TextEdit";
@@ -980,6 +984,16 @@ void Host::define_everything()
                return Value{};
            });
     define("lineEdit", [this](const Arguments&) { return m_engine.number(adopt(oui::line_edit())); });
+    define("progressBar", [this](const Arguments&) { return m_engine.number(adopt(oui::progress_bar())); });
+    define("getValue",
+           [this](const Arguments& a)
+           { return m_engine.number(widget<oui::ProgressBar>(id_of(a, 0), "progress bar").value()); });
+    define("setValue",
+           [this](const Arguments& a)
+           {
+               widget<oui::ProgressBar>(id_of(a, 0), "progress bar").set_value(argument(a, 1).to_number());
+               return Value{};
+           });
     define("textEdit", [this](const Arguments&) { return m_engine.number(adopt(oui::text_edit())); });
     define("list", [this](const Arguments&) { return m_engine.number(adopt(oui::list())); });
     define("checkList", [this](const Arguments&) { return m_engine.number(adopt(oui::check_list())); });
@@ -1663,6 +1677,10 @@ void Host::define_everything()
                {
                    return m_engine.string(std::string{button->text()});
                }
+               if(auto* const bar{dynamic_cast<oui::ProgressBar*>(target)})
+               {
+                   return m_engine.string(std::string{bar->text()});
+               }
                return m_engine.string(widget<oui::TextEdit>(id_of(a, 0), "text").text());
            });
     define("setText",
@@ -1681,6 +1699,10 @@ void Host::define_everything()
                else if(auto* const button{dynamic_cast<oui::Button*>(target)})
                {
                    button->set_text(text);
+               }
+               else if(auto* const bar{dynamic_cast<oui::ProgressBar*>(target)})
+               {
+                   bar->set_text(text);
                }
                else
                {

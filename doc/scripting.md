@@ -276,6 +276,7 @@ field.focus();
 | `oui.Label` | `new oui.Label(text, {bold, wrap})` | `text` |
 | `oui.Button` | `new oui.Button(text, onClick, {default})`; the default one is what Enter presses in a dialog | `text`, `onClick` |
 | `oui.LineEdit` | `new oui.LineEdit({text, placeholder, password, onChange, onSubmit})` | `text`, `placeholder`, `password`, `selection`, `select(start, end)`, `selectAll()`, `selectedText`, `insert(text)`, `onChange`, `onSubmit` |
+| `oui.ProgressBar` | `new oui.ProgressBar({value, text})` | `value`, from 0 to 1, and `text`, what it says after the bar |
 | `oui.TextEdit` | `new oui.TextEdit({text, readOnly, wrap, lineNumbers, onChange})` | `text`, `readOnly`, `wrap`, `lineNumbers`, `append(text)`, `onChange`, and an editor's: see below |
 | `oui.CheckButton` | `new oui.CheckButton(text, {checked, onToggle})` | `checked`, `onToggle` |
 | `oui.ComboBox` | `new oui.ComboBox(items, {onSelect})` | `items`, `selected`, `onSelect` |
@@ -424,6 +425,7 @@ widgets:
 | `Tabs` | `fixed`; `Tab "title"` in it, each holding a widget or none |
 | `Label "text"` | `buddy=id`, the field its `&` letter goes to (with none the `&` does not show; `&&` is one), `bold`, `heading`, `wrap` |
 | `LineEdit` | `text="..."`, `placeholder="..."`, `password` |
+| `ProgressBar` | `value=0.25`, `text="..."` |
 | `TextEdit` | `read_only`, `wrap` |
 | `CheckButton "text"` | `checked` |
 | `Button "text"` | `default`, `compact`, `flat` |

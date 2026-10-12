@@ -448,6 +448,19 @@ rename.focus();
     expect("the new text", shown.find("Renamed") !== null, true);
 });
 
+test("a progress bar fills as its value says, from code and from a description", async () => {
+    const shown = await pressing(`
+const bar = new oui.ProgressBar({value: 0.5, text: "4 of 8"});
+const ui = oui.ui("Column\\n  ProgressBar id=described value=0.25 text=\\"1 of 4\\"\\n");
+oui.window("T", oui.column([bar, ui.root]));
+bar.value = 2;
+oui.status(\`\${bar.value} \${ui.described.value} \${bar.text}\`);
+`, [""]);
+    expect("its text", shown.find("4 of 8") !== null, true);
+    expect("the described one's", shown.find("1 of 4") !== null, true);
+    expect("the values", shown.find("1 0.25 4 of 8") !== null, true);
+});
+
 test("a password field shows dots for what is typed, and the script gets the text", async () => {
     const shown = await pressing(`
 const secret = new oui.LineEdit({password: true, onChange: (text) => oui.status(text === "s3cret" ? "right" : text.length + " typed")});

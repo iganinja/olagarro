@@ -3,6 +3,7 @@
 #include <oui/declarative.h>
 #include <oui/label.h>
 #include <oui/line_edit.h>
+#include <oui/progress_bar.h>
 #include <oui/tab_view.h>
 #include <oui/text_edit.h>
 #include <oui/translation.h>
@@ -296,6 +297,14 @@ TEST(OuiUiTests, EveryColourOfTheThemeCanBeNamed)
         EXPECT_EQ(problem_of("Row\n  Label background=" + name + "\n"), "built") << name;
     }
     EXPECT_GT(colours, 80u);
+}
+
+TEST(OuiUiTests, AProgressBarStartsWithTheValueAndTextItIsGiven)
+{
+    auto ui{oui::build_ui("Column\n  ProgressBar id=progress value=0.25 text=\"1 of 4\"\n", oui::UiTexts::as_written)};
+    auto& bar{ui.get<oui::ProgressBar>("progress")};
+    EXPECT_EQ(bar.value(), 0.25);
+    EXPECT_EQ(bar.text(), "1 of 4");
 }
 
 TEST(OuiUiTests, ALineEditMarkedPasswordHidesWhatIsTyped)

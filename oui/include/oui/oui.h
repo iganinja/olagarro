@@ -30,6 +30,7 @@
 #include <oui/geometry.h>
 #include <oui/grid.h>
 #include <oui/label.h>
+#include <oui/progress_bar.h>
 #include <oui/layout.h>
 #include <oui/line_edit.h>
 #include <oui/list.h>

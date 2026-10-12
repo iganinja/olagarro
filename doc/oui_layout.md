@@ -516,6 +516,7 @@ it has the focus hears nothing more.
 | `Button` | [button.h](../oui/include/oui/button.h) | A push button with a shadow, or compact on one row; `on_clicked`; `set_default` for the one Enter presses |
 | `CheckButton` | [check_button.h](../oui/include/oui/check_button.h) | A box to tick with its text; `on_toggled` |
 | `LineEdit` | [line_edit.h](../oui/include/oui/line_edit.h) | A one-line field with selection and a placeholder, or for a password with `set_password`; `on_changed` and `on_submitted` on Enter |
+| `ProgressBar` | [progress_bar.h](../oui/include/oui/progress_bar.h) | How far something has gone, from 0 to 1, as a bar filling from the left, with a text after it such as "4 of 8"; by eighths of a cell in a terminal |
 | `TextEdit` | [text_edit.h](../oui/include/oui/text_edit.h) | A multi-line editor: undo, several cursors, search and replace with regular expressions, line operations, bracket matching, word wrap, line numbers, syntax colours |
 | `ComboBox` | [combo_box.h](../oui/include/oui/combo_box.h) | One option of a list, which drops down; `on_selected` |
 | `Table` | [table.h](../oui/include/oui/table.h) | Rows of cells, each any widget, with headers that sort and resize, selection, typing to find a row, scrolling both ways |

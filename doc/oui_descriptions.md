@@ -67,6 +67,7 @@ Window "Find in Files" context=FindInFiles width=60
 | `Tab` | its title | | one widget, or none |
 | `Label` | what it says | `buddy`, `bold`, `heading`, `wrap`, `background` | |
 | `LineEdit` | | `text`, `placeholder`, `background`, `password` | |
+| `ProgressBar` | | `value`, `text` | |
 | `TextEdit` | | `read_only`, `wrap` | |
 | `MarkdownView` | | `background`, `foreground` | |
 | `CheckButton` | what it says | `checked`, `background` | |
@@ -93,6 +94,7 @@ What each builds, and what its properties do, as `Builder::make` in ui.cpp does 
 | `Tab "title"` | a page of the `Tabs` | a tab with no widget shows nothing under it: a choice the code follows, as over a list it fills |
 | `Label "text"` | `Label` | `buddy=id` the widget its letter goes to; `bold`; `heading` bold in the dialog's heading colour; `wrap` the text breaks into lines; `background=colour` |
 | `LineEdit` | `LineEdit` | `text="..."` what it starts with; `placeholder="..."` what it says while empty; `background=colour`; `password` a dot shows for each character typed |
+| `ProgressBar` | `ProgressBar` | `value=0.25` how much is done, from 0 to 1; `text="..."` what it says after the bar |
 | `TextEdit` | `TextEdit` | `read_only`; `wrap` long lines break |
 | `MarkdownView` | `MarkdownView` | `background=colour`, `foreground=colour` |
 | `CheckButton "text"` | `CheckButton` | `checked`; `background=colour` |

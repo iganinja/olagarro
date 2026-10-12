@@ -664,6 +664,26 @@ declare namespace oui {
     }
 
     /**
+     * How far something has gone, as a bar that fills from the left, with a text after it, as "4 of 8".
+     * In: oui_run.
+     */
+    class ProgressBar extends Widget {
+        constructor(options?: {value?: number, text?: string});
+
+        /**
+         * How much is done, from 0, nothing, to 1, all of it; kept within them.
+         * In: oui_run.
+         */
+        value: number;
+
+        /**
+         * What it says after the bar; nothing when empty.
+         * In: oui_run.
+         */
+        text: string;
+    }
+
+    /**
      * What it holds, scrolled when it is taller than the room it has.
      * In: oui_run.
      */

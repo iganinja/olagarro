@@ -9,6 +9,7 @@
 #include <oui/label.h>
 #include <oui/layout.h>
 #include <oui/line_edit.h>
+#include <oui/progress_bar.h>
 #include <oui/markdown_view.h>
 #include <oui/spacer.h>
 #include <oui/split_view.h>
@@ -54,6 +55,7 @@ struct Kind
         {"Tab", {}, true},
         {"Label", {"buddy", "bold", "heading", "wrap", "background"}, true},
         {"LineEdit", {"text", "placeholder", "background", "password"}, false},
+        {"ProgressBar", {"value", "text"}, false},
         {"TextEdit", {"read_only", "wrap"}, false},
         {"MarkdownView", {"background", "foreground"}, false},
         {"CheckButton", {"checked", "background"}, true},
@@ -221,6 +223,7 @@ struct Property
         {"rows", Value::lengths, "content, fill, flex or cells, each"},
         {"vertical", Value::flag, "one over the other"},
         {"ratio", Value::number, "the first's share, as 0.4"},
+        {"value", Value::number, "how much is done, from 0 to 1, as 0.25"},
         {"fixed", Value::flag, "its tabs cannot be closed"},
         {"buddy", Value::id, "the field its letter goes to"},
         {"bold", Value::flag, "in bold"},
@@ -655,6 +658,19 @@ class Builder
                 made->set_background(*background);
             }
             made->set_password(node.has("password"));
+            return made;
+        }
+        if(type == "ProgressBar")
+        {
+            auto made{progress_bar()};
+            if(const auto value{share_of(node, "value")})
+            {
+                made->set_value(*value);
+            }
+            if(const auto text{node.property("text")})
+            {
+                made->set_text(shown(*text));
+            }
             return made;
         }
         if(type == "TextEdit")

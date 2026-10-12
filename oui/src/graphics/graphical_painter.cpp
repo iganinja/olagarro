@@ -939,6 +939,26 @@ void GraphicalPainter::draw_file_icon(Icon icon, PixelPoint at, float size)
     }
 }
 
+void GraphicalPainter::draw_progress(const Rect& bounds, const ProgressLook& look, const Theme&)
+{
+    // A sunken track along the middle of the row, filled in the title's colour as far as is done, and the text after
+    // it in the interface font.
+    const auto area{pixels(bounds)};
+    const auto words{look.text.empty() ? 0 : (interface_width(look.text) + m_cell.width - 1) / m_cell.width + 1};
+    const auto length{std::max(0, bounds.width - words) * m_cell.width};
+    const PixelRect track{area.x, area.y + area.height / 5, length, area.height - 2 * (area.height / 5)};
+    bevel(track, true, m_style.well);
+    const auto inside{PixelRect{track.x + m_style.line, track.y + m_style.line, track.width - 2 * m_style.line,
+                                track.height - 2 * m_style.line}};
+    const auto done{static_cast<int>(std::lround(std::clamp(look.done, 0.0, 1.0) * inside.width))};
+    m_canvas.fill({inside.x, inside.y, done, inside.height}, m_style.title);
+    if(words > 0)
+    {
+        static_cast<void>(label({area.x + length + m_cell.width, area.y, area.width - length - m_cell.width, area.height},
+                                look.text, m_style.text, Align::start));
+    }
+}
+
 void GraphicalPainter::draw_field_frame(const Rect& bounds, bool focused, const Theme&)
 {
     const auto area{pixels(bounds)};

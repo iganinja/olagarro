@@ -23,6 +23,7 @@
 #include <oui/scroll_view.h>
 #include <oui/tab_switcher.h>
 #include <oui/dock_layout.h>
+#include <oui/progress_bar.h>
 #include <oui/scripted_backend.h>
 #include <oui/status_bar.h>
 #include <oui/tab_view.h>
@@ -855,6 +856,43 @@ TEST(OuiWidgetTests, APasswordLineEditShowsADotForEachCharacterAndKeepsWhatIsTyp
     edit.handle_event(oui::TextEvent{U'Y'});
     EXPECT_EQ(edit.text(), "seYñaXl");
     EXPECT_EQ(shown().substr(0, 8), U"●●●●●●● ");
+}
+
+TEST(OuiWidgetTests, AProgressBarFillsAsMuchOfItsTrackAsIsDoneAndSaysItsTextAfter)
+{
+    oui::ProgressBar bar;
+    bar.set_value(0.5);
+    bar.set_text("4 of 8");
+    bar.arrange({0, 0, 20, 1});
+    oui::CellBuffer buffer{20, 1};
+    oui::CellBufferPainter painter{buffer};
+    const oui::Theme theme{};
+    bar.paint(painter, theme);
+    // Thirteen cells of track, a space, and the text: half of thirteen is six cells and a half.
+    EXPECT_EQ(buffer.cell_at(0, 0).background, theme.item_selected_background);
+    EXPECT_EQ(buffer.cell_at(5, 0).background, theme.item_selected_background);
+    EXPECT_EQ(buffer.cell_at(6, 0).glyph, U'\u258c');
+    EXPECT_EQ(buffer.cell_at(6, 0).foreground, theme.item_selected_background);
+    EXPECT_EQ(buffer.cell_at(7, 0).background, theme.scrollbar_background);
+    EXPECT_EQ(buffer.cell_at(12, 0).background, theme.scrollbar_background);
+    std::u32string text;
+    for(int x{14}; x < 20; ++ x)
+    {
+        text += buffer.cell_at(x, 0).glyph;
+    }
+    EXPECT_EQ(text, U"4 of 8");
+}
+
+TEST(OuiWidgetTests, AProgressBarKeepsItsValueBetweenNothingAndAll)
+{
+    oui::ProgressBar bar;
+    EXPECT_EQ(bar.value(), 0.0);
+    bar.set_value(1.5);
+    EXPECT_EQ(bar.value(), 1.0);
+    bar.set_value(-1.0);
+    EXPECT_EQ(bar.value(), 0.0);
+    EXPECT_FALSE(bar.is_focusable());
+    EXPECT_EQ(bar.measure({80, 25}).height, 1);
 }
 
 TEST(OuiWidgetTests, APasswordLineEditCopiesNothingAndCutsNothing)
