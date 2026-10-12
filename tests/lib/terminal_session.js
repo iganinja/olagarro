@@ -63,8 +63,10 @@ export async function place(program, files = {}) {
             const drawn = {text: "", writes: 0, last: Date.now()};
             const running = oui.run(
                 // In a shell of its own whose errors go nowhere: the one that saw it stopped says so, over what it
-                // drew. The pipe opened to read and write, so it stays open however the keys are written to it.
-                `(exec 3<>${quote(keys)}; LANGUAGE=en LC_ALL=C LANG=C ${inPseudoTerminal(inner)} <&3) 2>/dev/null`,
+                // drew. A sleep holds the pipe open to write, so it stays open however the keys are written to it: a
+                // pipe opened to read and write at once is Linux's, which macOS does not open.
+                `(sleep 86400 > ${quote(keys)} & exec 3< ${quote(keys)}; ` +
+                    `LANGUAGE=en LC_ALL=C LANG=C ${inPseudoTerminal(inner)} <&3) 2>/dev/null`,
                 {cwd: folder, output: (text) => {
                     drawn.text += text;
                     drawn.writes += 1;
