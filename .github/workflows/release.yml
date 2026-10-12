@@ -1,5 +1,6 @@
 # Makes a release from a version's tag, as v0.1.0: the tests first, in the terminal build and in the one with the
-# window module, then the programs of each system and kind with tools/build_portable.sh, then the release's files
+# window module, on x86-64 and on ARM64 Linux, then the programs of each system, processor and kind with
+# tools/build_portable.sh, each processor's on GitHub's machines of that processor, then the release's files
 # with tools/package_release.sh, published as the tag's release. Started by hand from the Actions tab, it does the
 # same and leaves the files as the run's artifact instead of publishing them. A tag's Debian packages then go to the
 # APT repository on GitHub Pages, made and signed by tools/apt_repository.sh with the key in the APT_SIGNING_KEY
@@ -17,13 +18,21 @@ permissions:
 jobs:
   test:
     name: Tests (${{ matrix.name }})
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         include:
-          - name: terminal
+          - name: x86_64 terminal
+            runner: ubuntu-24.04
             options: ""
-          - name: gui
+          - name: x86_64 gui
+            runner: ubuntu-24.04
+            options: --gui
+          - name: aarch64 terminal
+            runner: ubuntu-24.04-arm
+            options: ""
+          - name: aarch64 gui
+            runner: ubuntu-24.04-arm
             options: --gui
     steps:
       - uses: actions/checkout@v7
@@ -40,17 +49,27 @@ jobs:
   build:
     name: Build (${{ matrix.name }})
     needs: test
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         include:
           - name: linux-x86_64-terminal
+            runner: ubuntu-24.04
             options: ""
           - name: linux-x86_64-gui
+            runner: ubuntu-24.04
+            options: --gui
+          - name: linux-aarch64-terminal
+            runner: ubuntu-24.04-arm
+            options: ""
+          - name: linux-aarch64-gui
+            runner: ubuntu-24.04-arm
             options: --gui
           - name: windows-x86_64-terminal
+            runner: ubuntu-24.04
             options: --windows
           - name: windows-x86_64-gui
+            runner: ubuntu-24.04
             options: --windows --gui
     steps:
       - uses: actions/checkout@v7

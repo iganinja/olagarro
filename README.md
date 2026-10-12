@@ -22,8 +22,9 @@ OUI Code, the text editor built on OUI, the same program in a terminal and in a 
 ## Install
 
 OUI Code, oui_run and oui_calc come ready to run from the [releases](https://github.com/iganinja/olagarro/releases),
-for Linux and Windows on x86-64. An installer shows what there is and asks, then downloads it, checks it against the
-release's sums and installs it, with no root and no administrator:
+for Linux and Windows on x86-64 and for Linux on 64-bit ARM, as a Raspberry Pi 3, 4 or 5 with a 64-bit system. An
+installer shows what there is and asks, then downloads it, checks it against the release's sums and installs it, with
+no root and no administrator:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh
@@ -65,7 +66,8 @@ cmake --install build --prefix /path/to/install
 On Linux, `tools/build.sh` does the same; `tools/build.sh --gui` builds the programs able to open in a desktop window
 as well, as `bin/oui_code_gui` and the rest.
 
-Each release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64, each in two kinds: `terminal`,
+Each release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64 and for Linux on 64-bit ARM
+(aarch64), each in two kinds: `terminal`,
 which runs in the terminal it is started from, and `gui`, which also opens in a window of its own with `--window`. They
 come together in a package for each system and kind, as `olagarro-linux-x86_64-gui.tar.gz`, and each alone, as
 `oui_code-windows-x86_64-terminal.exe`, and need nothing installed beside them: OUI Code is 2.1 MB in the terminal

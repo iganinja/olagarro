@@ -145,7 +145,8 @@ It always uses Ninja, and runs `ctest --output-on-failure` with as many jobs as 
 
 ## Release binaries
 
-A release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64, in two kinds: `terminal`, the
+A release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64 and for Linux on 64-bit ARM
+(aarch64), as a Raspberry Pi 3, 4 or 5 with a 64-bit system, in two kinds: `terminal`, the
 programs as the terminal build makes them, and `gui`, those that also open in a window. Both kinds name them the
 same, `oui_code` and the rest: a system has one or the other, and the `_gui` names of a window build here are only
 so the two sit side by side in `bin/`.
@@ -157,6 +158,7 @@ read-only, and writes the programs to `dist/<system>-<processor>-<kind>/`:
 ```sh
 tools/build_portable.sh                   # dist/linux-x86_64-terminal: oui_code, oui_run, oui_calc
 tools/build_portable.sh --gui             # dist/linux-x86_64-gui: oui_code, oui_run, oui_calc
+                                          # on an ARM machine: dist/linux-aarch64-terminal and -gui
 tools/build_portable.sh --windows         # dist/windows-x86_64-terminal: oui_code.exe and the rest
 tools/build_portable.sh --windows --gui   # dist/windows-x86_64-gui: oui_code.exe and the rest
 ```
@@ -180,9 +182,9 @@ All are MinSizeRel, with tests off, `OLAGARRO_STATIC_LINK=ON` and link-time opti
 
 | File | What it is |
 |------|------------|
-| `olagarro-<system>-x86_64-<kind>.tar.gz`, `.zip` for Windows | the three programs of that kind, with `LICENSE` and `THIRD_PARTY_NOTICES.txt` |
-| `<program>-<system>-x86_64-<kind>`, `.exe` for Windows | each program alone, as `oui_code-linux-x86_64-gui` |
-| `oui-pack-linux-x86_64-<kind>.deb` | the three Linux programs of that kind as a Debian package, `oui-pack` or `oui-pack-gui`, in `/usr/bin` |
+| `olagarro-<system>-<processor>-<kind>.tar.gz`, `.zip` for Windows | the three programs of that kind, with `LICENSE` and `THIRD_PARTY_NOTICES.txt` |
+| `<program>-<system>-<processor>-<kind>`, `.exe` for Windows | each program alone, as `oui_code-linux-x86_64-gui` or `oui_code-linux-aarch64-terminal` |
+| `oui-pack-linux-<processor>-<kind>.deb` | the three Linux programs of that kind as a Debian package, `oui-pack` or `oui-pack-gui`, in `/usr/bin`, for `amd64` or `arm64` |
 | `THIRD_PARTY_NOTICES.txt` | the licences of everything any of them carries, for whoever downloads one program alone |
 | `SHA256SUMS` | the sum of each file |
 
@@ -212,7 +214,8 @@ choose without asking, check each file against `SHA256SUMS`, and install the pro
 folder they run in. `OUI_INSTALL_DIR` and `OUI_DOWNLOAD_URL` change where the programs go and where they come from.
 
 GitHub makes the releases with `.github/workflows/release.yml`. Pushing a version's tag, as `v0.1.0`, runs the tests
-in a terminal build and in a `gui` one, then builds the four kinds with `tools/build_portable.sh` in parallel, then
+in a terminal build and in a `gui` one, on x86-64 and on GitHub's ARM machines, then builds the six kinds with
+`tools/build_portable.sh` in parallel, the ARM ones on an ARM machine, then
 makes the files with `tools/package_release.sh` and publishes them as the tag's release. Nothing is published when a
 test fails. Then a tag's Debian packages become the APT repository, published on GitHub Pages, signed with the key in
 the repository's `APT_SIGNING_KEY` secret. Started by hand from the Actions tab, it makes the same files and leaves them

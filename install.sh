@@ -1,6 +1,6 @@
 #!/bin/sh
-# Installs OUI Code, oui_run and oui_calc on Linux from the latest release: each one file, with nothing to install
-# beside it and no root needed. Or downloads a whole package, the programs with their licences.
+# Installs OUI Code, oui_run and oui_calc on Linux, x86-64 or 64-bit ARM, from the latest release: each one file,
+# with nothing to install beside it and no root needed. Or downloads a whole package, the programs with their licences.
 #
 #   curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh
 #
@@ -37,7 +37,10 @@ if [ "$(uname -s)" != Linux ]; then
 fi
 case "$(uname -m)" in
     x86_64 | amd64) processor=x86_64 ;;
-    *) fail "The releases have no programs for $(uname -m) yet, only for x86_64." ;;
+    aarch64 | arm64) processor=aarch64 ;;
+    # A Raspberry Pi or another ARM board with a 32-bit system says armv7l or armv6l, even on a 64-bit processor.
+    armv*) fail "The releases have programs for 64-bit ARM, and this system is 32-bit ($(uname -m)): a 64-bit one runs them." ;;
+    *) fail "The releases have no programs for $(uname -m), only for x86_64 and 64-bit ARM (aarch64)." ;;
 esac
 
 # What to get: the programs, the kind, terminal or gui, and whether the whole package.
