@@ -11,3 +11,5 @@ dist/
 *.user.*
 opencode.json
 backup_opencode.json
+# The maintainer's own script to push and tag a release.
+publish_release.sh
