@@ -1,8 +1,8 @@
 # Makes a release from a version's tag, as v0.1.0: the tests first, in the terminal build and in the one with the
-# window module, on x86-64 and on ARM64 Linux, then the programs of each system, processor and kind with
-# tools/build_portable.sh, each processor's on GitHub's machines of that processor, then the release's files
-# with tools/package_release.sh, published as the tag's release. Started by hand from the Actions tab, it does the
-# same and leaves the files as the run's artifact instead of publishing them. A tag's Debian packages then go to the
+# window module, on x86-64 and ARM64 Linux and on Apple's and Intel's Macs, then the programs of each system,
+# processor and kind with tools/build_portable.sh, each on GitHub's machines of that system and processor, then the
+# release's files with tools/package_release.sh, published as the tag's release. Started by hand from the Actions
+# tab, it does the same and leaves the files as the run's artifact instead of publishing them. A tag's Debian packages then go to the
 # APT repository on GitHub Pages, made and signed by tools/apt_repository.sh with the key in the APT_SIGNING_KEY
 # secret.
 name: Release
@@ -34,9 +34,19 @@ jobs:
           - name: aarch64 gui
             runner: ubuntu-24.04-arm
             options: --gui
+          - name: macOS arm64 terminal
+            runner: macos-15
+            options: ""
+          - name: macOS arm64 gui
+            runner: macos-15
+            options: -DOLAGARRO_OUI_WINDOW=ON
+          - name: macOS x86_64 terminal
+            runner: macos-15-intel
+            options: ""
     steps:
       - uses: actions/checkout@v7
       - name: Install what the build needs
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -qq -y cmake ninja-build g++ libgtest-dev libgmock-dev \
@@ -44,7 +54,18 @@ jobs:
             libxkbcommon-dev libwayland-dev libwayland-bin wayland-protocols libegl-dev libgl-dev libdrm-dev \
             libgbm-dev
       - name: Build and test
+        if: runner.os == 'Linux'
         run: tools/build.sh ${{ matrix.options }}
+      - name: Install what the build needs on a Mac
+        if: runner.os == 'macOS'
+        run: brew install ninja googletest
+      # Past every error to show them all, then the tests four at a time: a Mac has fewer cores, and is slower.
+      - name: Build and test on a Mac
+        if: runner.os == 'macOS'
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ${{ matrix.options }}
+          cmake --build build -- -k 0
+          ctest --test-dir build --output-on-failure -j4 --timeout 300
 
   build:
     name: Build (${{ matrix.name }})
@@ -65,6 +86,18 @@ jobs:
           - name: linux-aarch64-gui
             runner: ubuntu-24.04-arm
             options: --gui
+          - name: macos-arm64-terminal
+            runner: macos-15
+            options: ""
+          - name: macos-arm64-gui
+            runner: macos-15
+            options: --gui
+          - name: macos-x86_64-terminal
+            runner: macos-15-intel
+            options: ""
+          - name: macos-x86_64-gui
+            runner: macos-15-intel
+            options: --gui
           - name: windows-x86_64-terminal
             runner: ubuntu-24.04
             options: --windows
@@ -73,6 +106,9 @@ jobs:
             options: --windows --gui
     steps:
       - uses: actions/checkout@v7
+      - name: Install what the build needs on a Mac
+        if: runner.os == 'macOS'
+        run: brew install ninja
       - name: Build the programs
         run: tools/build_portable.sh ${{ matrix.options }}
       - uses: actions/upload-artifact@v7

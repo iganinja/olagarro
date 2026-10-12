@@ -1,6 +1,6 @@
 #!/bin/sh
-# Installs OUI Code, oui_run and oui_calc on Linux, x86-64 or 64-bit ARM, from the latest release: each one file,
-# with nothing to install beside it and no root needed. Or downloads a whole package, the programs with their licences.
+# Installs OUI Code, oui_run and oui_calc on Linux, x86-64 or 64-bit ARM, and on macOS, from the latest release: each
+# one file, with nothing to install beside it and no root needed. Or downloads a whole package, the programs with their licences.
 #
 #   curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh
 #
@@ -32,12 +32,15 @@ fail() {
     exit 1
 }
 
-if [ "$(uname -s)" != Linux ]; then
-    fail "This installer is for Linux. On Windows, install.ps1 does the same: see the README."
-fi
+case "$(uname -s)" in
+    Linux) system=linux ;;
+    Darwin) system=macos ;;
+    *) fail "This installer is for Linux and macOS. On Windows, install.ps1 does the same: see the README." ;;
+esac
 case "$(uname -m)" in
     x86_64 | amd64) processor=x86_64 ;;
-    aarch64 | arm64) processor=aarch64 ;;
+    # 64-bit ARM, as Linux and macOS each name it.
+    aarch64 | arm64) if [ "$system" = macos ]; then processor=arm64; else processor=aarch64; fi ;;
     # A Raspberry Pi or another ARM board with a 32-bit system says armv7l or armv6l, even on a 64-bit processor.
     armv*) fail "The releases have programs for 64-bit ARM, and this system is 32-bit ($(uname -m)): a 64-bit one runs them." ;;
     *) fail "The releases have no programs for $(uname -m), only for x86_64 and 64-bit ARM (aarch64)." ;;
@@ -115,8 +118,8 @@ EOF
 fi
 [ -n "$programs" ] || programs=oui_code
 
-# The window programs take the C library and the display libraries from the system: glibc 2.35 or newer.
-if [ "$kind" = gui ]; then
+# The window programs for Linux take the C library and the display libraries from the system: glibc 2.35 or newer.
+if [ "$kind" = gui ] && [ "$system" = linux ]; then
     glibc=$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}') || glibc=""
     if [ -z "$glibc" ]; then
         fail "The GUI programs need glibc, which this system has not: take those for the terminal."
@@ -184,7 +187,7 @@ download() {
 }
 
 if [ $package -eq 1 ]; then
-    name="olagarro-linux-$processor-$kind"
+    name="olagarro-$system-$processor-$kind"
     [ -e "$name" ] && fail "$name is here already: nothing done."
     download "$name.tar.gz"
     tar -xzf "$work/$name.tar.gz"
@@ -194,15 +197,15 @@ fi
 
 # Every program downloaded and checked before any is installed: a failure leaves nothing half done.
 for program in $programs; do
-    download "$program-linux-$processor-$kind"
+    download "$program-$system-$processor-$kind"
 done
 
 mkdir -p "$target"
 installed=""
 for program in $programs; do
     name=$program
-    chmod +x "$work/$program-linux-$processor-$kind"
-    mv "$work/$program-linux-$processor-$kind" "$target/$name"
+    chmod +x "$work/$program-$system-$processor-$kind"
+    mv "$work/$program-$system-$processor-$kind" "$target/$name"
     echo "Installed $target/$name"
     installed="$installed $name"
 done

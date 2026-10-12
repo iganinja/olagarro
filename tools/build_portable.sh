@@ -15,6 +15,10 @@
 #                                             llvm-mingw and linked statically.
 #   tools/build_portable.sh --windows --gui   Windows, also opening in a window, the same three programs.
 #
+# On a Mac, with or without --gui, it builds macOS's programs there, as Apple's tools run in no container: for macOS
+# 11 and newer, the first Apple's own processors run, linked against the system's libraries, which every Mac has,
+# unused code dropped (-dead_strip). The machine's processor says which: arm64 on Apple's, x86_64 on Intel's.
+#
 # The Linux ones are for the processor the container runs on: x86_64 here, aarch64 on an ARM machine; the Windows
 # ones are for x86_64. Output: dist/<system>-<processor>-<kind>/, as dist/linux-x86_64-terminal/, with the programs,
 # named the same in either kind: a build here names the gui ones apart, oui_code_gui, to keep them beside the
@@ -33,6 +37,36 @@ for argument in "$@"; do
 done
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "$(uname -s)" == Darwin ]]; then
+    if [[ $windows -eq 1 ]]; then
+        echo "Windows' programs are built on Linux" >&2
+        exit 2
+    fi
+    kind=terminal
+    window=OFF
+    suffix=""
+    if [[ $gui -eq 1 ]]; then
+        kind=gui
+        window=ON
+        suffix=_gui
+    fi
+    output="$root/dist/macos-$(uname -m)-$kind"
+    rm -rf "$output"
+    mkdir -p "$output"
+    work="$(mktemp -d)"
+    trap 'rm -rf "$work"' EXIT
+    cmake -S "$root" -B "$work/build" -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DOLAGARRO_BUILD_TESTS=OFF \
+        -DOLAGARRO_OUI_WINDOW="$window" -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+        -DCMAKE_EXE_LINKER_FLAGS=-Wl,-dead_strip -DOLAGARRO_RUNTIME_OUTPUT_DIRECTORY="$work/bin" >/dev/null
+    cmake --build "$work/build" --target olagarro_oui_code olagarro_oui_run olagarro_oui_calc >/dev/null
+    for program in oui_code oui_run oui_calc; do
+        strip -o "$output/$program" "$work/bin/$program$suffix"
+        echo "$output/$program: $(stat -f%z "$output/$program") bytes"
+    done
+    exit 0
+fi
+
 engine="$(command -v podman || command -v docker || true)"
 if [[ -z "$engine" ]]; then
     echo "podman or docker is required" >&2

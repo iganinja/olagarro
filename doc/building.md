@@ -145,8 +145,9 @@ It always uses Ninja, and runs `ctest --output-on-failure` with as many jobs as 
 
 ## Release binaries
 
-A release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64 and for Linux on 64-bit ARM
-(aarch64), as a Raspberry Pi 3, 4 or 5 with a 64-bit system, in two kinds: `terminal`, the
+A release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64, for Linux on 64-bit ARM
+(aarch64), as a Raspberry Pi 3, 4 or 5 with a 64-bit system, and for macOS on Apple's processors (arm64) and Intel's
+(x86_64), in two kinds: `terminal`, the
 programs as the terminal build makes them, and `gui`, those that also open in a window. Both kinds name them the
 same, `oui_code` and the rest: a system has one or the other, and the `_gui` names of a window build here are only
 so the two sit side by side in `bin/`.
@@ -177,6 +178,11 @@ All are MinSizeRel, with tests off, `OLAGARRO_STATIC_LINK=ON` and link-time opti
 - **Windows.** Cross-built in Ubuntu 22.04 with [llvm-mingw](https://github.com/mstorsjo/llvm-mingw), a fixed
   version checked against its SHA-256 sum, and linked statically: the `.exe` needs only the system's DLLs.
   `oui_code.exe` is about 2.5 MB, or 4.1 MB in the `gui` kind.
+- **macOS.** Built on the Mac itself, as Apple's tools run in no container: `tools/build_portable.sh`, with or
+  without `--gui`, run on a Mac makes `dist/macos-<processor>-<kind>`, arm64 on Apple's processors and x86_64 on
+  Intel's. They run on macOS 11 and newer, linked against the system's libraries, which every Mac has, unused code
+  dropped (`-Wl,-dead_strip`). They are not signed by Apple: a browser marks what it downloads, and macOS then asks
+  before running it the first time (right-click, Open); `install.sh` downloads with curl, which marks nothing.
 
 `tools/package_release.sh` then makes the release's files of whatever `dist/` holds, in `dist/release/`:
 
@@ -214,8 +220,9 @@ choose without asking, check each file against `SHA256SUMS`, and install the pro
 folder they run in. `OUI_INSTALL_DIR` and `OUI_DOWNLOAD_URL` change where the programs go and where they come from.
 
 GitHub makes the releases with `.github/workflows/release.yml`. Pushing a version's tag, as `v0.1.0`, runs the tests
-in a terminal build and in a `gui` one, on x86-64 and on GitHub's ARM machines, then builds the six kinds with
-`tools/build_portable.sh` in parallel, the ARM ones on an ARM machine, then
+in a terminal build and in a `gui` one on x86-64 and ARM64 Linux, and on GitHub's Macs, Apple's and Intel's, four at
+a time there and past every error of the build, then builds the ten kinds with `tools/build_portable.sh` in parallel,
+each on a machine of its system and processor, then
 makes the files with `tools/package_release.sh` and publishes them as the tag's release. Nothing is published when a
 test fails. Then a tag's Debian packages become the APT repository, published on GitHub Pages, signed with the key in
 the repository's `APT_SIGNING_KEY` secret. Started by hand from the Actions tab, it makes the same files and leaves them
