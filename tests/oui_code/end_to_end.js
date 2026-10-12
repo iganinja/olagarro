@@ -244,6 +244,15 @@ test("In Spanish a menuPath names OUI Code's submenus in English or as they show
     expect("found by its English name", text.find("Joined") !== null && text.find("Ordenar líneas") !== null, true);
 });
 
+test("The Edit menu has Find Next, Find Previous and Find Next of the Selection, each beside its key", async () => {
+    const edit = await session(ouiCode, ["left.txt"], files, ["\x1be"], tall);
+    const rows = Array.from({length: 50}, (_, index) => edit.row(index));
+    for (const [title, key] of [["Find Next", "F3"], ["Find Previous", "Shift\\+F3"],
+                                ["Find Next of the Selection", "Ctrl\\+F3"]]) {
+        expect(title, rows.some((row) => new RegExp(`${title} +${key} `).test(row)), true);
+    }
+});
+
 test("Alt+X lists the text commands alone, and the one picked works on the document", async () => {
     const listed = await session(ouiCode, ["left.txt"], files, ["\x1bx"]);
     expect("the list", listed.find("Text Commands") !== null, true);
