@@ -62,6 +62,9 @@ if [[ "$(uname -s)" == Darwin ]]; then
     cmake --build "$work/build" --target olagarro_oui_code olagarro_oui_run olagarro_oui_calc >/dev/null
     for program in oui_code oui_run oui_calc; do
         strip -o "$output/$program" "$work/bin/$program$suffix"
+        # Signed again, ad hoc, with no certificate: a Mac with Apple's processor runs nothing unsigned, and strip
+        # changed what the linker signed.
+        codesign --force --sign - "$output/$program"
         echo "$output/$program: $(stat -f%z "$output/$program") bytes"
     done
     exit 0
