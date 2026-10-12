@@ -772,6 +772,16 @@ if(OLAGARRO_BUILD_TESTS)
         # destroyed once, never used after, and never leaked. Not where the sanitizers cannot run: Windows, or a
         # build linked statically.
         if(NOT WIN32 AND NOT OLAGARRO_STATIC_LINK AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            # macOS has no leak checker; and its GoogleTest, Homebrew's, is built without the marks that checking a
+            # container's spare room needs, so that check finds overflows in GoogleTest's own vectors that are not
+            # there.
+            if(APPLE)
+                set(olagarro_asan_leaks 0)
+                set(olagarro_asan_more ":detect_container_overflow=0")
+            else()
+                set(olagarro_asan_leaks 1)
+                set(olagarro_asan_more "")
+            endif()
             add_executable(olagarro_signalslot_sanitized_tests tests/signalslot/main.cpp)
             target_link_libraries(olagarro_signalslot_sanitized_tests PRIVATE olagarro::SignalSlot GTest::gtest_main)
             target_compile_options(olagarro_signalslot_sanitized_tests PRIVATE
@@ -779,7 +789,7 @@ if(OLAGARRO_BUILD_TESTS)
             target_link_options(olagarro_signalslot_sanitized_tests PRIVATE -fsanitize=address,undefined)
             add_test(NAME Olagarro.SignalSlotSanitized COMMAND olagarro_signalslot_sanitized_tests)
             set_tests_properties(Olagarro.SignalSlotSanitized PROPERTIES
-                ENVIRONMENT "ASAN_OPTIONS=detect_leaks=1:abort_on_error=0")
+                ENVIRONMENT "ASAN_OPTIONS=detect_leaks=${olagarro_asan_leaks}:abort_on_error=0${olagarro_asan_more}")
             # OUI itself under the sanitizers, for what goes wrong as its parts go: its sources built again so.
             get_target_property(olagarro_oui_sources olagarro_oui SOURCES)
             add_executable(olagarro_oui_sanitized_tests tests/oui/teardown_test.cpp ${olagarro_oui_sources})
@@ -790,7 +800,8 @@ if(OLAGARRO_BUILD_TESTS)
                 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
             target_link_options(olagarro_oui_sanitized_tests PRIVATE -fsanitize=address,undefined)
             add_test(NAME Olagarro.OuiSanitized COMMAND olagarro_oui_sanitized_tests)
-            set_tests_properties(Olagarro.OuiSanitized PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0")
+            set_tests_properties(Olagarro.OuiSanitized PROPERTIES
+                ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0${olagarro_asan_more}")
         endif()
 
 

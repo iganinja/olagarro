@@ -11,6 +11,15 @@ export async function capture(command, options = {}) {
     return {code, output};
 }
 
+// The command that runs `inner`, a shell command line, in a pseudo terminal by script(1): util-linux's on Linux; the
+// BSD one on macOS, which takes the command after the file and has no -c.
+const bsd = (await capture("uname -s")).output.trim() === "Darwin";
+export const inPseudoTerminal = (inner) =>
+    bsd ? `script -q /dev/null /bin/sh -c ${quote(inner)}` : `script -qec ${quote(inner)} /dev/null`;
+// `command`, ended after `seconds`: by timeout on Linux; macOS has none, and perl's alarm ends it the same way.
+export const endedAfter = (seconds, command) =>
+    bsd ? `perl -e 'alarm shift; exec @ARGV' ${seconds} ${command}` : `timeout -s KILL ${seconds} ${command}`;
+
 const pause = (milliseconds) => new Promise((done) => setTimeout(done, milliseconds));
 
 // Until what is drawn has grown since `writes` and then stayed as it is for `quiet` milliseconds: the program has
@@ -55,7 +64,7 @@ export async function place(program, files = {}) {
             const running = oui.run(
                 // In a shell of its own whose errors go nowhere: the one that saw it stopped says so, over what it
                 // drew. The pipe opened to read and write, so it stays open however the keys are written to it.
-                `(exec 3<>${quote(keys)}; LANGUAGE=en LC_ALL=C LANG=C script -qec ${quote(inner)} /dev/null <&3) 2>/dev/null`,
+                `(exec 3<>${quote(keys)}; LANGUAGE=en LC_ALL=C LANG=C ${inPseudoTerminal(inner)} <&3) 2>/dev/null`,
                 {cwd: folder, output: (text) => {
                     drawn.text += text;
                     drawn.writes += 1;
