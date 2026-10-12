@@ -1,40 +1,14 @@
-# Builds and tests olagarro on macOS, on Apple's processors and on Intel's, to see what it lacks there. It runs on
-# every push to the branch macos, where olagarro is made to build on a Mac, and keeps building past an error so each
-# run shows them all.
+# Builds and tests olagarro on macOS, on Apple's processors and on Intel's: with each version's tag, beside the release,
+# so each version is known to build and pass its tests on a Mac too, and when started by hand from the Actions tab. It
+# keeps building past an error, so a run shows them all.
 name: macOS
 
 on:
   push:
-    branches: [macos]
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
-  # How script(1) takes keys here, three ways, each told step by step and ended after 15 seconds: from a named pipe,
-  # from that pipe through cat, and from a file through tail -f. A minute, where the build and tests take many.
-  keys:
-    name: How a terminal takes keys on macOS
-    runs-on: macos-15
-    steps:
-      - name: Three ways
-        run: |
-          way() {
-            echo "== $1"
-            perl -e 'alarm 15; exec @ARGV' sh -c "$2" || echo "ended by the alarm"
-          }
-          inner='stty cols 40 rows 10; stty size; echo inside; read key; echo got $key; sleep 1'
-          way "named pipe" "
-            rm -f /tmp/k1; mkfifo /tmp/k1
-            (sleep 12 > /tmp/k1 & exec 3< /tmp/k1; script -q /dev/null /bin/sh -c '$inner' <&3; echo script ended) &
-            sleep 2; echo writing; printf 'x\n' > /tmp/k1; echo written; wait"
-          way "named pipe through cat" "
-            rm -f /tmp/k2; mkfifo /tmp/k2
-            (sleep 12 > /tmp/k2 & exec 3< /tmp/k2; cat <&3 | script -q /dev/null /bin/sh -c '$inner'; echo script ended) &
-            sleep 2; echo writing; printf 'x\n' > /tmp/k2; echo written; wait"
-          way "file through tail -f" "
-            : > /tmp/k3
-            (tail -f /tmp/k3 | script -q /dev/null /bin/sh -c '$inner'; echo script ended) &
-            sleep 2; echo writing; printf 'x\n' >> /tmp/k3; echo written; sleep 4; kill %1 2>/dev/null; echo done"
-
   build:
     name: macOS ${{ matrix.machine }} (${{ matrix.kind }})
     runs-on: ${{ matrix.runner }}
