@@ -476,7 +476,8 @@ oui.confirm("Go?");
 test("oui.theme says the look in use: Turbo's in a terminal until oui.setTheme chooses another", async () => {
     // In a terminal: a build with the window module started with none opens a window, classic.
     const output = await inTerminal(`console.log(oui.theme());\noui.setTheme("night");\nconsole.log(oui.theme());\n`);
-    expect("the looks", output.replace(/\r/g, ""), "turbo\nnight\n");
+    // What a terminal adds around it, as the ^D macOS's script writes as its input ends, is no matter.
+    expect("the looks", /turbo\r?\nnight\r?\n/.test(output), true);
 });
 
 test("oui.setLanguage names the languages there are when given one there is not", async () => {

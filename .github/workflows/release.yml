@@ -20,6 +20,8 @@ jobs:
     name: Tests (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     strategy:
+      # Every system's tests to the end, though one fails: each shows its failures, and nothing is built either way.
+      fail-fast: false
       matrix:
         include:
           - name: x86_64 terminal
