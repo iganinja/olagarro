@@ -764,7 +764,8 @@ class DrmBackend final : public PixelBackend
         {
             return std::nullopt;
         }
-        return Point{(m_pointer_x - content.x) / cell_size().width, (m_pointer_y - content.y) / cell_size().height};
+        return Point{(m_pointer_x - content.x) / cell_size().width,
+                     GraphicalPainter::row_at(m_pointer_y - content.y, content.height, cell_size().height)};
     }
 
     [[nodiscard]] int offset_in_cell() const { return std::max(0, m_pointer_x - content_area().x) % cell_size().width; }

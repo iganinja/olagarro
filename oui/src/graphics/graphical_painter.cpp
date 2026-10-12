@@ -189,10 +189,33 @@ Size GraphicalPainter::cell_size(Font& cell_font)
     return {cell_font.glyph(U'M').advance, cell_font.line_height()};
 }
 
+int GraphicalPainter::row_offset(int row, int height, int cell_height)
+{
+    const auto rows{height / cell_height};
+    if(rows <= 0)
+    {
+        return row * cell_height;
+    }
+    const auto left_over{height - rows * cell_height};
+    return row * cell_height + std::min(row, rows) * left_over / rows;
+}
+
+int GraphicalPainter::row_at(int y, int height, int cell_height)
+{
+    // Rows are a cell tall or more, so the row is the one a cell's height gives or one before it.
+    auto row{y / cell_height};
+    while(row > 0 && row_offset(row, height, cell_height) > y)
+    {
+        -- row;
+    }
+    return row;
+}
+
 PixelRect GraphicalPainter::pixels(const Rect& cells) const
 {
-    return {m_area.x + cells.x * m_cell.width, m_area.y + cells.y * m_cell.height, cells.width * m_cell.width,
-            cells.height * m_cell.height};
+    const auto top{row_offset(cells.y, m_area.height, m_cell.height)};
+    const auto bottom{row_offset(cells.y + cells.height, m_area.height, m_cell.height)};
+    return {m_area.x + cells.x * m_cell.width, m_area.y + top, cells.width * m_cell.width, bottom - top};
 }
 
 void GraphicalPainter::fill_rect(const Rect& rect, Color color)

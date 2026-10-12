@@ -18,6 +18,8 @@
 
 #include "oui/src/graphics/wheel.h"
 
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include <algorithm>
@@ -111,6 +113,51 @@ TEST(OuiGraphicsTests, PaintsCellsInPixelsOfTheCellFont)
     EXPECT_TRUE(same(canvas.pixel_at(47, 47), {10, 20, 30}));
     EXPECT_FALSE(same(canvas.pixel_at(48, 24), {10, 20, 30}));
     EXPECT_FALSE(same(canvas.pixel_at(23, 24), {10, 20, 30}));
+}
+
+TEST(OuiGraphicsTests, TheLastRowEndsAtTheBottomWhenTheRowsDoNotFillTheHeight)
+{
+    // Three rows of 24 in 80 pixels: the 8 left over go among the rows, not in a strip under the last one, which in
+    // a window is the status line.
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{120, 80};
+    canvas.fill({0, 0, 120, 80}, {1, 2, 3});
+    const auto style{classic_style()};
+    GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    painter.fill_rect({0, 0, 10, 2}, {200, 0, 0});
+    painter.fill_rect({0, 2, 10, 1}, {0, 0, 200});
+    for(int y{}; y < 80; ++ y)
+    {
+        EXPECT_FALSE(same(canvas.pixel_at(5, y), {1, 2, 3})) << "a strip nothing paints at " << y;
+    }
+    EXPECT_TRUE(same(canvas.pixel_at(5, 79), {0, 0, 200}));
+    const auto last_row_top{GraphicalPainter::row_offset(2, 80, 24)};
+    EXPECT_TRUE(same(canvas.pixel_at(5, last_row_top - 1), {200, 0, 0}));
+    // Shared evenly: no row more than a pixel taller than another.
+    std::vector<int> heights;
+    for(int row{}; row < 3; ++ row)
+    {
+        heights.push_back(GraphicalPainter::row_offset(row + 1, 80, 24) - GraphicalPainter::row_offset(row, 80, 24));
+    }
+    EXPECT_LE(*std::max_element(heights.begin(), heights.end()) - *std::min_element(heights.begin(), heights.end()),
+              1);
+}
+
+TEST(OuiGraphicsTests, APixelIsInTheRowThatIsPaintedThere)
+{
+    for(const auto height : {72, 80, 95, 1000})
+    {
+        const auto rows{height / 24};
+        for(int y{}; y < height; ++ y)
+        {
+            const auto row{GraphicalPainter::row_at(y, height, 24)};
+            ASSERT_LT(row, rows) << y << " of " << height;
+            EXPECT_LE(GraphicalPainter::row_offset(row, height, 24), y) << y << " of " << height;
+            EXPECT_GT(GraphicalPainter::row_offset(row + 1, height, 24), y) << y << " of " << height;
+        }
+    }
 }
 
 TEST(OuiGraphicsTests, ShowsAnApplicationInTheClassicStyle)

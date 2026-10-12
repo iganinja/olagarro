@@ -503,7 +503,8 @@ class WindowBackend final : public DesktopWindow
         {
             return std::nullopt;
         }
-        return Point{(x - content.x) / cell_size().width, (y - content.y) / cell_size().height};
+        return Point{(x - content.x) / cell_size().width,
+                     GraphicalPainter::row_at(y - content.y, content.height, cell_size().height)};
     }
 
     // How far into its cell a pixel lies, from the cell's left.
