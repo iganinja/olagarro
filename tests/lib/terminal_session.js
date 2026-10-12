@@ -149,9 +149,13 @@ export function expect(what, actual, expected) {
 }
 
 // Runs the cases, or those whose name has `only` in it, says how each went, and ends with 1 when any failed.
+// `only`, when given, chooses which: the cases whose name has it; or, as "part 2 of 4", every fourth from the second,
+// so a long suite runs as parts side by side.
 export async function run(cases, only) {
     let failed = 0;
-    const chosen = cases.filter((each) => !only || each.name.includes(only));
+    const part = /^part (\d+) of (\d+)$/.exec(only ?? "");
+    const chosen = cases.filter((each, index) => !only ||
+        (part ? index % Number(part[2]) === Number(part[1]) - 1 : each.name.includes(only)));
     for (const {name, run: work} of chosen) {
         try {
             await work();
