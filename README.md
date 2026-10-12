@@ -21,27 +21,44 @@ OUI Code, the text editor built on OUI, the same program in a terminal and in a 
 
 ## Install
 
-OUI Code, oui_run and oui_calc come ready to run from the [releases](https://github.com/iganinja/olagarro/releases),
-for Linux and Windows on x86-64, for Linux on 64-bit ARM, as a Raspberry Pi 3, 4 or 5 with a 64-bit system, and for
-macOS on Apple's processors and Intel's. An installer shows what there is and asks, then downloads it, checks it
-against the release's sums and installs it, with no root and no administrator; `install.sh` on Linux and macOS:
+OUI Code, oui_run and oui_calc, ready to run. One line in a terminal, for your system:
+
+**Linux and macOS**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh
 ```
 
+**Windows**, in PowerShell
+
 ```powershell
 irm https://raw.githubusercontent.com/iganinja/olagarro/master/install.ps1 | iex
 ```
 
+**Debian, Ubuntu and the like**, kept up to date by `apt upgrade`
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh -s -- --apt
+```
+
+Or download them from the [releases](https://github.com/iganinja/olagarro/releases).
+
+### What the installers do
+
+They show what there is and ask, then download it, check it against the release's sums and install it, with no
+root and no administrator but for `--apt`: in `~/.local/bin` on Linux and macOS, and on Windows in
+`%LOCALAPPDATA%\Programs\olagarro`, which they add to the PATH. There are programs for Linux and Windows on x86-64, for Linux on 64-bit ARM, as a Raspberry Pi 3,
+4 or 5 with a 64-bit system, and for macOS on Apple's processors and Intel's.
+
 Each program comes in two kinds, under the same name: for the terminal, and `gui`, which also opens in a window of
 its own. Typed in a terminal it stays there, and `--window` opens its window; started from the desktop's menu or an
-icon, with no terminal, it opens its window. The installers can also get the whole package, the three programs with their licences,
-and take options to choose without asking: `sh -s -- --all --gui` on Linux, `-All -Gui` on Windows, as the head of
-each script tells.
+icon, with no terminal, it opens its window. The installers can also get the whole package, the three programs with
+their licences, and take options to choose without asking: `sh -s -- --all --gui` on Linux and macOS, `-All -Gui` on
+Windows, as the head of each script tells.
 
-On Debian, Ubuntu and the like, apt can keep them up to date: `install.sh` adds the project's APT repository, with
-`--apt` or from its menu, or by hand:
+### APT by hand
+
+`--apt` adds the project's APT repository and its key, with sudo, and installs from it; this is the same by hand:
 
 ```sh
 sudo mkdir -p /etc/apt/keyrings
@@ -52,7 +69,8 @@ sudo apt update && sudo apt install oui-pack
 ```
 
 `oui-pack` has the three for the terminal and `oui-pack-gui` the `gui` ones, which also puts OUI Code and OUI Calc in
-the desktop's menu; one or the other, in `/usr/bin`. `apt upgrade` brings each new release. Each release also carries them as `.deb` files, for `sudo dpkg -i`.
+the desktop's menu; one or the other, in `/usr/bin`. `apt upgrade` brings each new release. Each release also carries
+them as `.deb` files, for `sudo dpkg -i`.
 
 ## Build
 
