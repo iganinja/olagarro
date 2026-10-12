@@ -43,7 +43,7 @@ TEST_F(ContainerActionsTests, SerialExecutesTasksInASerialWay)
 
     TE.add_task(serial(execute([&]() { value = 1; }), execute([&]() { value = 2; }), execute([&]() { value = 3; })));
 
-    EXPECT_EQ(value, 0);
+    EXPECT_EQ(value, 0u);
 
     TE.update(0.1f);
 
@@ -305,7 +305,7 @@ TEST_F(ContainerActionsTests, RepeatRepeatsTaskNTimes)
         TE.update(1.0f);
     }
 
-    EXPECT_EQ(value, Times);
+    EXPECT_EQ(value, static_cast<int>(Times));
 }
 
 // Once its task had finished, RepeatWhile started it again on every update after, so a task that takes more than one

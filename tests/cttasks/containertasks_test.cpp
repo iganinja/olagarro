@@ -197,7 +197,7 @@ TEST_F(ContainerTasksTests, RepeatRepeatsTaskNTimes)
         TE.update();
     }
 
-    EXPECT_EQ(value, Times);
+    EXPECT_EQ(value, static_cast<int>(Times));
 }
 
 TEST_F(ContainerTasksTests, RepeatCallsOnAboutToStartNTimes)

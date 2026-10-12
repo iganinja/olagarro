@@ -710,6 +710,17 @@ if(OLAGARRO_BUILD_TESTS)
     if(BUILD_TESTING)
         find_package(GTest CONFIG REQUIRED)
         include(GoogleTest)
+        # GoogleTest's warnings are not Olagarro's to fix. Its targets say its headers are the system's, but CMake drops
+        # a folder the compiler searches anyway, as Homebrew's /usr/local/include on an Intel Mac, where the compiler
+        # then warns in them as in Olagarro's own. /usr/include stays as it is: it is the system's already, and marked
+        # again it comes before the C++ library's own headers.
+        get_target_property(olagarro_gtest_includes GTest::gtest INTERFACE_INCLUDE_DIRECTORIES)
+        foreach(olagarro_gtest_include IN LISTS olagarro_gtest_includes)
+            if(NOT olagarro_gtest_include STREQUAL "/usr/include")
+                set_property(TARGET GTest::gtest APPEND PROPERTY INTERFACE_COMPILE_OPTIONS
+                    "SHELL:-isystem ${olagarro_gtest_include}")
+            endif()
+        endforeach()
 
         add_executable(olagarro_tasks_tests
             tests/tasks/taskexecutor_test.cpp
