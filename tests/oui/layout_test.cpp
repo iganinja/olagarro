@@ -2140,6 +2140,27 @@ TEST(OuiApplicationTests, LetsTheFocusedTextEditConsumeTabBeforeFocusTraversal)
     EXPECT_EQ(edit_reference->text(), "\t");
 }
 
+TEST(OuiApplicationTests, LetsTabLeaveAReadOnlyTextEditBothWays)
+{
+    auto backend{std::make_unique<MemoryBackend>()};
+    oui::Application application{std::move(backend)};
+    auto content{oui::column()};
+    auto edit{oui::text_edit()};
+    edit->set_read_only(true);
+    auto& edit_reference{content->add(std::move(edit))};
+    auto& button{oui::button("Close", *content, [] {})};
+    application.set_content(std::move(content));
+    application.focus(edit_reference);
+
+    application.dispatch_event(oui::KeyEvent{oui::Key::tab});
+    EXPECT_TRUE(button.is_focused());
+    application.dispatch_event(oui::KeyEvent{oui::Key::shift_tab});
+    EXPECT_TRUE(edit_reference.is_focused());
+    application.dispatch_event(oui::KeyEvent{oui::Key::shift_tab});
+    EXPECT_TRUE(button.is_focused());
+    EXPECT_EQ(edit_reference.text(), "");
+}
+
 TEST(OuiTreeViewTests, ExpandsBranchesAndNavigatesVisibleNodes)
 {
     oui::TreeView tree;

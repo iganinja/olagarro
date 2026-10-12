@@ -161,7 +161,8 @@ bool TextEdit::handle_input(const Event& event)
                      key->key == Key::backspace || key->key == Key::delete_};
     if(edits && m_read_only)
     {
-        return true;
+        // Tab and Shift+Tab, which would indent, go on to move the focus, as they do from any other widget.
+        return key->key != Key::tab && key->key != Key::shift_tab;
     }
     switch(key->key)
     {
