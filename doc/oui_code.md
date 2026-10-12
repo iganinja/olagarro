@@ -189,13 +189,14 @@ documents (`oui_code_recovery/`), and the task list when there is no project.
 
 ## Scripting
 
-OUI Code runs JavaScript in four places, each with an engine of its own (see [OUIScript](ouiscript.md) for the engine
+OUI Code runs JavaScript in five places, each with an engine of its own (see [OUIScript](ouiscript.md) for the engine
 and `SystemApi`):
 
 | What | Class | File | Engine's life | What scripts see |
 |------|-------|------|---------------|------------------|
 | Languages and text commands | `Scripting` | [scripting.cpp](../examples/oui_code/scripting.cpp) | from load to the next reload | `oui.languages.register`, `oui.commands.register`, `oui.words` |
 | Tools > Run Script | `ScriptRun` | [script_run.cpp](../examples/oui_code/script_run.cpp) | one run | `SystemApi`'s calls |
+| The user's tools | `ScriptRun` | [script_run.cpp](../examples/oui_code/script_run.cpp) | one load at each load of the scripts, and one each run | `SystemApi`'s calls |
 | Tools > Interactive Script | `LiveScript` | [live_script.cpp](../examples/oui_code/live_script.cpp) | one run, a new one at each change | `SystemApi`'s, read only |
 | Tools > Interactive UI | `UiPreviewView` | [ui_preview.cpp](../examples/oui_code/ui_preview.cpp) | no script: a description built | (none) |
 
@@ -233,6 +234,23 @@ button to stop the programs the script started; closing that tab drops the run. 
 `processGeneratedCode` is also what runs after an Interactive UI tab's Generate, through `run_generate_script`, with
 the script chosen for that language (`ui_generate_script_javascript`, `ui_generate_script_cpp`). Tools > Script
 Templates writes a starting script of each kind (`process_file_template` and the others, in script_run.cpp).
+
+### The user's tools
+
+A tool is a module in the `tools` folder of the user's scripts that exports `tool`, its title, keys and `menuPath`,
+and `run(context)`; `ScriptRun` knows it as `Kind::tool`. `Workbench::load_tools` (in `load_scripts`) loads each
+once, in a `ScriptRun` of its own, to read its `tool` with `read_placement`, the same reading as a text command's,
+and keeps a `UserTool`: the command's id, `user_tool.` and the file's name, its placement and its script. Each is
+registered as a command that calls `run_tool`, its keys bound and its id among `m_script_command_ids`, and
+`with_text_commands` places it as a text command; those with no `menuPath` are in Tools > User Tools.
+
+`Workbench::run_tool` ([run_script.cpp](../examples/oui_code/run_script.cpp)) saves the current document when it has a
+file and changes, loads the script again, as it is now, and calls `run` with `{file, language, folder, selection,
+line, column}` written as JavaScript. The output tab opens with the first thing the run says, or with its error, so a
+tool that says nothing opens none; until then `m_tool_run_shown` keeps `drop_unseen_run` from dropping it, and
+`refuse_while_running`, which every run asks first, opens it through `m_reveal_tool_run`, to see it or stop it.
+Once it ends, `show_script_changes` brings back what changed, then what `run` gave back is pasted over the selection
+of the document it ran on, if that is still open.
 
 ### Interactive Script
 

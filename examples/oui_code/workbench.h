@@ -144,7 +144,7 @@ class Workbench
     [[nodiscard]] std::vector<olagarro::oui::MenuItem> help_menu();
     // Sets every menu's entries, with the text commands the user's scripts put in each; again when they reload.
     void fill_menus();
-    // `items`, a menu's own, with the text commands whose menuPath starts with `menu` after them.
+    // `items`, a menu's own, with the text commands and tools whose menuPath starts with `menu` after them.
     [[nodiscard]] std::vector<olagarro::oui::MenuItem> with_text_commands(std::string_view menu,
                                                                           std::vector<olagarro::oui::MenuItem> items);
     // View > Syntax: the language a document is coloured as, the file's own unless one is picked.
@@ -154,9 +154,11 @@ class Workbench
 
     // tools_commands.cpp
     // Scripts: OUI Code's own, then the user's from a folder beside the settings. They define languages, which colour
-    // the documents, and text commands, registered as any other command. Loading them again replaces both; what
-    // failed is given back.
+    // the documents, and text commands, registered as any other command; and the user's tools, one script each in the
+    // folder's tools folder, registered too. Loading them again replaces them all; what failed is given back.
     std::vector<std::string> load_scripts();
+    // The tools in the tools folder of the user's scripts, each loaded once to read what its `tool` says: what failed.
+    std::vector<std::string> load_tools();
     // What failed in the scripts is said, not hidden: a script that does not load does nothing else.
     void report_script_problems(const std::vector<std::string>& problems);
     void register_tool_commands();
@@ -224,12 +226,17 @@ class Workbench
     // gives back at the end.
     void run_generate_script(const std::filesystem::path& script, std::string_view code, SkeletonLanguage language,
                              const std::filesystem::path& file);
+    // A tool of the user's, by its command's id: the current document is saved, then the tool's run(context) gets what
+    // the editor has; text it gives back replaces the selection, and what it says opens the output tab.
+    void run_tool(const std::string& id);
     // After a run for real: what the script changed shows, in open documents and in the panels' folders.
     void show_script_changes();
     // The tab that shows what the script run says, looked for each time: the user may have closed it.
     [[nodiscard]] ScriptOutput* script_output_tab();
     // A run whose tab was closed is not wanted: it stops, and what it started with it.
     void drop_unseen_run();
+    // Whether a script runs, so no other may start: then its output tab shows, to see it or stop it, and `title` says.
+    [[nodiscard]] bool refuse_while_running(const std::string& title);
     // Opens the output tab for a new run, titled `title`, with `heading` over the output: the tab there is, wherever
     // it is, or a new one in the active group.
     void open_script_output(const std::string& title, const std::string& heading);
@@ -287,6 +294,14 @@ class Workbench
     std::optional<std::size_t> m_switcher_original_index;
 
     std::unique_ptr<Scripting> m_scripting;
+    // A tool of the user's: its command's id, what its `tool` says, and its script, loaded again at each run.
+    struct UserTool
+    {
+        std::string id;
+        CommandPlacement placement;
+        std::filesystem::path script;
+    };
+    std::vector<UserTool> m_tools;
     // The commands the scripts registered, which loading them again takes away first.
     std::vector<std::string> m_script_command_ids;
 
@@ -299,6 +314,10 @@ class Workbench
 
     // The script running, if one is.
     std::unique_ptr<ScriptRun> m_script_run;
+    // While a tool runs, whether its output tab has opened, which it does once it says something, and what opens it,
+    // to see it or stop it: one that has said nothing has no tab, and is not dropped for it.
+    std::shared_ptr<bool> m_tool_run_shown;
+    std::function<void()> m_reveal_tool_run;
     // The document the last script run was on, to go on with from the tab that shows its output; only compared, as
     // it may be gone.
     olagarro::oui::WidgetRef<const olagarro::oui::TextEdit> m_last_script_subject;

@@ -12,6 +12,21 @@
 #include <string_view>
 #include <vector>
 
+// How a script says what a command of its own is called and where it goes: a title, keys, and a place in the menus.
+struct CommandPlacement
+{
+    std::string title;
+    std::optional<olagarro::oui::Shortcut> keys;
+    // Where in the menus it goes, from menuPath: one of OUI Code's menus by its name, "edit", then the submenus under
+    // it, as written. Empty for the submenu of its kind in Tools.
+    std::vector<std::string> menu_path;
+};
+
+// Reads title, keys and menuPath from `definition`, a text command's or a tool's, in `language` where they give one
+// per language, the title `untitled` when it has none. Throws ScriptError naming it as `what`, "command user.shout".
+[[nodiscard]] CommandPlacement read_placement(const olagarro::oui::script::Value& definition, std::string_view language,
+                                              const std::string& untitled, const std::string& what);
+
 // A command a script defined: it gets text, the selection or the whole document, and gives back what goes in
 // its place, or undefined to leave it.
 struct TextCommand
@@ -19,8 +34,6 @@ struct TextCommand
     std::string id;
     std::string title;
     std::optional<olagarro::oui::Shortcut> keys;
-    // Where in the menus it goes, from menuPath: one of OUI Code's menus by its name, "edit", then the submenus under
-    // it, as written. Empty for Tools > Text Commands.
     std::vector<std::string> menu_path;
     olagarro::oui::script::Value run;
 };

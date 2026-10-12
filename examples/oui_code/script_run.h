@@ -15,7 +15,7 @@
 #include <string>
 #include <string_view>
 
-// A script the user runs, which is a module that exports one of three functions:
+// A script the user runs, which is a module that exports one of three functions, or is a tool:
 //
 //     processFile(file, dryRun)                   works on a document's file, given by its whole path
 //     process(dryRun, folder)                     works on its own, from a folder, such as on a whole project's files
@@ -24,6 +24,9 @@
 //                                                 or "cpp", from the description at the whole path `file`; run
 //                                                 from here it is for real, and only an Interactive Script tab's
 //                                                 run gives it dryRun, true
+//     tool, and run(context)                      a tool of the user's: tool says its title, keys and place in the
+//                                                 menus, and run works on what the editor has, given in context:
+//                                                 {file, language, folder, selection, line, column}
 //
 // With dryRun true the script changes nothing and says what it would do. What processGeneratedCode gives back is
 // text that says how it went. Both get what OUI gives every script
@@ -37,7 +40,8 @@ class ScriptRun
     {
         on_file,
         on_its_own,
-        on_generated_code
+        on_generated_code,
+        tool
     };
 
     struct Callbacks
@@ -65,6 +69,10 @@ class ScriptRun
     void run_on_file(const std::filesystem::path& file, bool dry_run);
     void run_on_its_own(const std::filesystem::path& folder, bool dry_run);
     void run_on_generated_code(std::string_view code, std::string_view language, const std::filesystem::path& file);
+    // A tool's run(context), `context` an object written in JavaScript.
+    void run_tool(std::string_view context);
+    // What a tool exports as `tool`: its title, keys and menuPath.
+    [[nodiscard]] const olagarro::oui::script::Value& tool() const;
     // Once the run has ended, what its function gave back, as text; nothing when it gave back nothing.
     [[nodiscard]] const std::optional<std::string>& returned() const;
     // Stops the programs the script started; the script goes on with their exit codes.
@@ -81,6 +89,8 @@ class ScriptRun
     std::optional<int> m_process_file_parameters;
     std::optional<int> m_process_parameters;
     bool m_process_generated_code{false};
+    std::optional<int> m_run_parameters;
+    olagarro::oui::script::Value m_tool;
     std::optional<std::string> m_returned;
     std::string m_script_name;
     std::shared_ptr<bool> m_alive{std::make_shared<bool>(true)};
@@ -96,6 +106,7 @@ class ScriptRun
 extern const std::string_view process_file_template;
 extern const std::string_view process_template;
 extern const std::string_view generated_code_template;
+extern const std::string_view tool_template;
 
 // What a script run says, in a tab of its own: what runs on what, its output as it comes, and how it ended,
 // with a button to stop the programs it started while it runs.

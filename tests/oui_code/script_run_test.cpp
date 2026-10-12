@@ -75,6 +75,11 @@ class ScriptRunTests : public ::testing::Test
         {
             runner.run_on_generated_code(code, "cpp", folder / "description.oui");
         }
+        else if(runner.kind() == ScriptRun::Kind::tool)
+        {
+            tool = runner.tool().get("title").to_string();
+            runner.run_tool(context);
+        }
         else
         {
             runner.run_on_its_own(folder, dry_run);
@@ -108,6 +113,10 @@ class ScriptRunTests : public ::testing::Test
     std::optional<std::string> returned;
     // What a processGeneratedCode gets.
     std::string code{"// generated\n"};
+    // What a tool's run gets, and the title its tool said.
+    std::string context{"{file: null, language: \"markdown\", folder: \"/tmp\", selection: \"two words\", line: 3, "
+                        "column: 7}"};
+    std::string tool;
 };
 
 TEST_F(ScriptRunTests, ProcessFileGetsTheFileAndWhetherItIsADryRun)
@@ -183,6 +192,41 @@ TEST_F(ScriptRunTests, ProcessGeneratedCodeGetsTheCodeAndWhatItIsForAndItsTextIs
     EXPECT_EQ(returned, std::nullopt) << "nothing given back, nothing to show";
 }
 
+TEST_F(ScriptRunTests, AToolSaysWhatItIsAndItsRunGetsWhatTheEditorHas)
+{
+    EXPECT_EQ(run("export const tool = {title: 'Count Words', keys: 'Ctrl+Alt+W'};\n"
+                  "export async function run({file, language, selection, line, column}) {\n"
+                  "    await null;\n"
+                  "    console.log(file, language, selection.split(' ').length, line, column);\n"
+                  "    return selection.toUpperCase();\n"
+                  "}\n",
+                  false),
+              std::nullopt);
+    EXPECT_EQ(failure, std::nullopt);
+    EXPECT_EQ(tool, "Count Words");
+    EXPECT_EQ(output, "null markdown 2 3 7\n");
+    EXPECT_EQ(returned, std::optional<std::string>{"TWO WORDS"});
+
+    EXPECT_EQ(run("export const tool = {title: 'Quiet'};\nexport function run(context) { return null; }\n", false),
+              std::nullopt);
+    EXPECT_EQ(failure, std::nullopt);
+    EXPECT_EQ(returned, std::nullopt) << "null, as undefined, leaves the document";
+}
+
+TEST_F(ScriptRunTests, AToolNeedsItsRunAndAnObjectToSayWhatItIs)
+{
+    const auto without_run{problem_with("export const tool = {title: 'Nothing'};\n")};
+    ASSERT_TRUE(without_run.has_value());
+    EXPECT_NE(without_run->find("run(context)"), std::string::npos) << *without_run;
+    const auto not_an_object{problem_with("export const tool = 'Count';\nexport function run() {}\n")};
+    ASSERT_TRUE(not_an_object.has_value());
+    EXPECT_NE(not_an_object->find("must be an object"), std::string::npos) << *not_an_object;
+    const auto both{problem_with("export const tool = {};\nexport function run() {}\n"
+                                 "export function process(dryRun) {}\n")};
+    ASSERT_TRUE(both.has_value());
+    EXPECT_NE(both->find("more than one"), std::string::npos) << *both;
+}
+
 TEST_F(ScriptRunTests, ImportsResolveFromTheScriptsFolder)
 {
     write(folder / "helper.js", "export const shout = (text) => text + '!';\n");
@@ -237,6 +281,14 @@ TEST_F(ScriptRunTests, TheTemplatesAreScriptsThatRun)
     EXPECT_EQ(problem_with(process_file_template), std::nullopt);
     EXPECT_EQ(problem_with(process_template), std::nullopt);
     EXPECT_EQ(problem_with(generated_code_template), std::nullopt);
+    // The tool's says what it found in a message, which waits for someone to close it: loaded, not run.
+    EXPECT_EQ(problem_with(tool_template), std::nullopt);
+    {
+        ScriptRun checker{application, {[](std::string_view) {}, [](std::optional<std::string>) {}}};
+        ASSERT_EQ(checker.load(folder / "candidate.js"), std::nullopt);
+        EXPECT_EQ(checker.kind(), ScriptRun::Kind::tool);
+        EXPECT_EQ(checker.tool().get("title").to_string(), "Count Words");
+    }
 
     write(file, "a\tb\n");
     EXPECT_EQ(run(process_file_template, true), std::nullopt);

@@ -47,6 +47,11 @@ constexpr std::string_view script_examples{"export function processFile(file, dr
                                            "{\n"
                                            "    ...\n"
                                            "    return \"How it went.\";\n"
+                                           "}\n"
+                                           "\n"
+                                           "export const tool = {title: \"Count Words\", keys: \"Ctrl+Alt+W\"};\n"
+                                           "export async function run({file, selection, line, column}) {\n"
+                                           "    ...\n"
                                            "}"};
 
 } // namespace
@@ -139,6 +144,24 @@ export async function process(dryRun, folder) {
 }
 )js"};
 
+const std::string_view tool_template{
+    R"js(// A tool of your own: saved in the tools folder of your scripts, Tools > User Scripts > Open
+// User Script shows where, it gets an entry in the menus, under Tools > User Tools unless menuPath
+// says another, and its keys. Tools > User Scripts > Reload User Scripts picks up a new one.
+export const tool = {title: "Count Words", keys: "Ctrl+Alt+W"};
+
+// What the editor has: file is the document's whole path, null when it was never saved; selection
+// the text selected, "" when none; line and column the cursor's, from 1. The document is saved
+// before, so the file says what the editor does. Text it gives back replaces the selection, or goes
+// at the cursor; what it prints shows in a tab of its own.
+export async function run({file, language, folder, selection, line, column}) {
+    const words = selection.split(/\s+/).filter(Boolean).length;
+    await oui.message("Count Words", `${words} words selected, at line ${line}.`);
+    // A program, waited for; what it says shows in the tab.
+    // const code = await oui.run(`wc -w "${file}"`, {cwd: folder});
+}
+)js"};
+
 ScriptRun::ScriptRun(oui::Application& application, Callbacks callbacks)
     : m_application{application}, m_callbacks{std::move(callbacks)}
 {
@@ -165,12 +188,17 @@ ScriptRun::ScriptRun(oui::Application& application, Callbacks callbacks)
                         m_process_file_parameters = parameters(0);
                         m_process_parameters = parameters(1);
                         m_process_generated_code = parameters(2).has_value();
+                        m_run_parameters = parameters(3);
+                        if(arguments.size() > 4)
+                        {
+                            m_tool = arguments[4];
+                        }
                         return Value{};
                     });
     m_engine.define("__ouiCodeFinished",
                     [this](const std::vector<Value>& arguments)
                     {
-                        if(arguments.size() > 1 && !arguments[1].is_undefined())
+                        if(arguments.size() > 1 && !arguments[1].is_undefined() && !arguments[1].is_null())
                         {
                             m_returned = arguments[1].to_string();
                         }
@@ -203,7 +231,7 @@ std::optional<std::string> ScriptRun::load(const std::filesystem::path& script)
                       "globalThis.__ouiCodeScript = script;\n"
                       "const parameters = (f) => typeof f === \"function\" ? f.length : null;\n"
                       "globalThis.__ouiCodeFound(parameters(script.processFile), parameters(script.process),\n"
-                      "    parameters(script.processGeneratedCode));\n"};
+                      "    parameters(script.processGeneratedCode), parameters(script.run), script.tool);\n"};
     try
     {
         m_engine.run_module(source, script.parent_path() / oui::path_from_utf8(m_script_name + ".run.js"));
@@ -213,24 +241,39 @@ std::optional<std::string> ScriptRun::load(const std::filesystem::path& script)
         return oui::format_text(oui::translate("ScriptRun", "{0} could not be loaded:\n\n{1}"),
                                 {m_script_name, error.what()});
     }
+    const auto is_tool{!m_tool.is_undefined()};
     const auto exported{static_cast<int>(m_process_file_parameters.has_value()) +
                         static_cast<int>(m_process_parameters.has_value()) +
-                        static_cast<int>(m_process_generated_code)};
+                        static_cast<int>(m_process_generated_code) + static_cast<int>(is_tool)};
     if(exported > 1)
     {
-        return oui::format_text(oui::translate("ScriptRun", "{0} exports more than one of processFile, process and "
-                                                            "processGeneratedCode; a script is one of them."),
+        return oui::format_text(oui::translate("ScriptRun", "{0} exports more than one of processFile, process, "
+                                                            "processGeneratedCode and tool; a script is one of them."),
                                 {m_script_name});
     }
     if(exported == 0)
     {
         return oui::format_text(oui::translate("ScriptRun",
                                                "{0} exports none of processFile(file, dryRun), which runs on the "
-                                               "document, process(dryRun, folder), which runs on its own, and "
+                                               "document, process(dryRun, folder), which runs on its own, "
                                                "processGeneratedCode(code, {language, file}), which runs after "
-                                               "Generate in an Interactive UI tab. A script looks like one of these:"),
+                                               "Generate in an Interactive UI tab, and tool with run(context), a "
+                                               "tool of its own in the menus. A script looks like one of these:"),
                                 {m_script_name}) +
                "\n\n" + std::string{script_examples};
+    }
+    if(is_tool && !m_tool.is_object())
+    {
+        return oui::format_text(oui::translate("ScriptRun", "The tool of {0} must be an object: {title: \"Count "
+                                                            "Words\", keys: \"Ctrl+Alt+W\", menuPath: \"tools\"}."),
+                                {m_script_name});
+    }
+    if(is_tool && !m_run_parameters)
+    {
+        return oui::format_text(oui::translate("ScriptRun", "{0} is a tool, so it must export what it does: "
+                                                            "run(context), which gets {file, language, folder, "
+                                                            "selection, line, column}."),
+                                {m_script_name});
     }
     // dryRun is not optional: a script says what it would do before it does it.
     if(m_process_file_parameters && *m_process_file_parameters < 2)
@@ -250,9 +293,10 @@ std::optional<std::string> ScriptRun::load(const std::filesystem::path& script)
 
 ScriptRun::Kind ScriptRun::kind() const
 {
-    return m_process_file_parameters ? Kind::on_file
-           : m_process_parameters    ? Kind::on_its_own
-                                     : Kind::on_generated_code;
+    return !m_tool.is_undefined()      ? Kind::tool
+           : m_process_file_parameters ? Kind::on_file
+           : m_process_parameters      ? Kind::on_its_own
+                                       : Kind::on_generated_code;
 }
 
 void ScriptRun::set_finished(std::function<void(std::optional<std::string> error)> finished)
@@ -275,6 +319,16 @@ void ScriptRun::run_on_generated_code(std::string_view code, std::string_view la
 {
     call("processGeneratedCode", js_string(code) + ", {language: " + js_string(language) +
                                      ", file: " + js_string(oui::utf8_of(file)) + ", dryRun: false}");
+}
+
+void ScriptRun::run_tool(std::string_view context)
+{
+    call("run", std::string{context});
+}
+
+const oui::script::Value& ScriptRun::tool() const
+{
+    return m_tool;
 }
 
 const std::optional<std::string>& ScriptRun::returned() const
@@ -401,16 +455,16 @@ struct ScratchFolder
 
 const std::filesystem::path& scratch_folder()
 {
-    static const ScratchFolder folder{[]
-                                      {
-                                          std::random_device random;
-                                          char name[32];
-                                          std::snprintf(name, sizeof name, "oui_code_%08x%08x", random(), random());
-                                          std::error_code error;
-                                          auto path{std::filesystem::temp_directory_path(error) /
-                                                    olagarro::oui::path_from_utf8(name)};
-                                          std::filesystem::create_directories(path, error);
-                                          return path;
-                                      }()};
+    static const ScratchFolder folder{
+        []
+        {
+            std::random_device random;
+            char name[32];
+            std::snprintf(name, sizeof name, "oui_code_%08x%08x", random(), random());
+            std::error_code error;
+            auto path{std::filesystem::temp_directory_path(error) / olagarro::oui::path_from_utf8(name)};
+            std::filesystem::create_directories(path, error);
+            return path;
+        }()};
     return folder.path;
 }

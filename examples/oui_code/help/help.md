@@ -276,6 +276,38 @@ Besides JavaScript, a script has `oui.readFile(path)`, `oui.writeFile(path, text
 `await oui.confirm(question)`, `await oui.prompt(title, label, text)`, `await oui.choose(title, options)`,
 `setTimeout` and `setInterval`, and can `import` modules beside it.
 
+### Tools of your own
+
+A script in the folder `tools`, inside `oui_code_scripts`, is a tool: a command of yours, in the menus and on its
+keys, that works on what the editor has, with all a script run from Tools has. It exports `tool`, which says what it
+is, and `run`, which gets the document's file and language, the project's folder, the selection, and the cursor's
+line and column:
+
+```js
+// oui_code_scripts/tools/count_words.js
+export const tool = {
+    title: "Count Words",      // or {en: "Count Words", es: "Contar palabras"}
+    keys: "Ctrl+Alt+W",        // optional
+    menuPath: "edit",          // optional: in Tools > User Tools without it
+};
+
+export async function run({file, language, folder, selection, line, column}) {
+    const words = selection.split(/\s+/).filter(Boolean).length;
+    await oui.message("Count Words", `${words} words selected`);
+}
+```
+
+`title`, `keys` and `menuPath` are as a text command's. The document is saved before the tool runs, so its file
+says what the editor does; `file` is `null` for one never saved, `selection` is `""` when nothing is selected, and
+`line` and `column` count from 1. Text `run` gives back replaces the selection, or goes in at the cursor, a change
+that undo takes back; giving back nothing leaves the document as it is. What it prints, and what the programs it
+runs say, opens the scripts' tab, with its button to stop them; a tool that says nothing opens nothing. After it,
+the open documents and the folder panels show what it changed.
+
+Tools load with the rest of your scripts, and **Reload User Scripts** picks up a new one, or a change to what its
+`tool` says; each run loads the script again, so a change to `run` needs no reload. **Tools > Script Templates**
+writes one to start from.
+
 ## Interactive scripts
 
 **Tools > Interactive Script** opens a tab with a script on the left and, on the right, what it makes, run again a

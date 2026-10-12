@@ -16,6 +16,60 @@ using oui::script::Value;
 
 } // namespace
 
+CommandPlacement read_placement(const Value& definition, std::string_view language, const std::string& untitled,
+                                const std::string& what)
+{
+    CommandPlacement placement;
+    const auto title{definition.get("title")};
+    if(title.is_object())
+    {
+        const auto translated{title.get(language)};
+        placement.title = (translated.is_undefined() ? title.get("en") : translated).to_string();
+    }
+    else
+    {
+        placement.title = title.is_undefined() ? untitled : title.to_string();
+    }
+    if(const auto keys{definition.get("keys")}; !keys.is_undefined())
+    {
+        placement.keys = oui::parse_shortcut(keys.to_string());
+        if(!placement.keys)
+        {
+            throw ScriptError{what + ": \"" + keys.to_string() + "\" is not a shortcut, such as \"Ctrl+Alt+U\""};
+        }
+    }
+    if(const auto path{definition.get("menuPath")}; !path.is_undefined())
+    {
+        const auto translated{path.is_object() ? path.get(language) : path};
+        const auto written{(translated.is_undefined() && path.is_object() ? path.get("en") : translated).to_string()};
+        for(std::size_t start{};;)
+        {
+            const auto end{std::min(written.find('/', start), written.size())};
+            placement.menu_path.push_back(written.substr(start, end - start));
+            if(end == written.size())
+            {
+                break;
+            }
+            start = end + 1;
+        }
+        const auto empty{std::find(placement.menu_path.begin(), placement.menu_path.end(), std::string{})};
+        if(empty != placement.menu_path.end())
+        {
+            throw ScriptError{what + ": menuPath \"" + written + "\" has a name missing, such as \"edit/Case\""};
+        }
+        auto& menu{placement.menu_path.front()};
+        std::transform(menu.begin(), menu.end(), menu.begin(),
+                       [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+        static constexpr std::array<std::string_view, 5> menus{"file", "edit", "view", "tools", "help"};
+        if(std::find(menus.begin(), menus.end(), menu) == menus.end())
+        {
+            throw ScriptError{what + ": menuPath \"" + written +
+                              "\" starts with no menu of OUI Code's: file, edit, view, tools or help"};
+        }
+    }
+    return placement;
+}
+
 // What the scripts that give OUI Code its languages and text commands see, for tools/extract_api.js to put in
 // oui/oui.d.ts:
 //
@@ -60,55 +114,10 @@ void Scripting::add_command(const Value& definition)
     {
         throw ScriptError{"a command needs an id"};
     }
-    const auto title{definition.get("title")};
-    if(title.is_object())
-    {
-        const auto translated{title.get(m_language)};
-        command.title = (translated.is_undefined() ? title.get("en") : translated).to_string();
-    }
-    else
-    {
-        command.title = title.is_undefined() ? command.id : title.to_string();
-    }
-    if(const auto keys{definition.get("keys")}; !keys.is_undefined())
-    {
-        command.keys = oui::parse_shortcut(keys.to_string());
-        if(!command.keys)
-        {
-            throw ScriptError{"command " + command.id + ": \"" + keys.to_string() +
-                              "\" is not a shortcut, such as \"Ctrl+Alt+U\""};
-        }
-    }
-    if(const auto path{definition.get("menuPath")}; !path.is_undefined())
-    {
-        const auto translated{path.is_object() ? path.get(m_language) : path};
-        const auto written{(translated.is_undefined() && path.is_object() ? path.get("en") : translated).to_string()};
-        for(std::size_t start{};;)
-        {
-            const auto end{std::min(written.find('/', start), written.size())};
-            command.menu_path.push_back(written.substr(start, end - start));
-            if(end == written.size())
-            {
-                break;
-            }
-            start = end + 1;
-        }
-        const auto empty{std::find(command.menu_path.begin(), command.menu_path.end(), std::string{})};
-        if(empty != command.menu_path.end())
-        {
-            throw ScriptError{"command " + command.id + ": menuPath \"" + written +
-                              "\" has a name missing, such as \"edit/Case\""};
-        }
-        auto& menu{command.menu_path.front()};
-        std::transform(menu.begin(), menu.end(), menu.begin(),
-                       [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
-        static constexpr std::array<std::string_view, 5> menus{"file", "edit", "view", "tools", "help"};
-        if(std::find(menus.begin(), menus.end(), menu) == menus.end())
-        {
-            throw ScriptError{"command " + command.id + ": menuPath \"" + written +
-                              "\" starts with no menu of OUI Code's: file, edit, view, tools or help"};
-        }
-    }
+    auto placement{read_placement(definition, m_language, command.id, "command " + command.id)};
+    command.title = std::move(placement.title);
+    command.keys = placement.keys;
+    command.menu_path = std::move(placement.menu_path);
     command.run = definition.get("run");
     if(!command.run.is_function())
     {

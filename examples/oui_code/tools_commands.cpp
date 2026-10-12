@@ -90,8 +90,71 @@ std::vector<std::string> Workbench::load_scripts()
         }
         m_script_command_ids.push_back(command.id);
     }
+    auto tool_problems{load_tools()};
+    problems.insert(problems.end(), tool_problems.begin(), tool_problems.end());
+    for(const auto& tool : m_tools)
+    {
+        m_application.commands().register_command(tool.id, tool.placement.title, [this, id{tool.id}] { run_tool(id); });
+        if(tool.placement.keys)
+        {
+            m_application.commands().bind(tool.id, *tool.placement.keys);
+        }
+        m_script_command_ids.push_back(tool.id);
+    }
     m_editors.set_languages(&m_scripting->languages());
     m_editors.apply_languages(true);
+    return problems;
+}
+
+std::vector<std::string> Workbench::load_tools()
+{
+    m_tools.clear();
+    std::vector<std::string> problems;
+    std::error_code error;
+    const auto folder{m_scripts_folder / oui::path_from_utf8("tools")};
+    if(m_options.headless || !std::filesystem::is_directory(folder, error))
+    {
+        return problems;
+    }
+    std::vector<std::filesystem::path> files;
+    for(const auto& entry : oui::list_directory(folder, error))
+    {
+        if(!entry.is_directory && oui::utf8_of(entry.path.extension()) == ".js")
+        {
+            files.push_back(entry.path);
+        }
+    }
+    std::sort(files.begin(), files.end());
+    for(const auto& file : files)
+    {
+        // Loaded for what it says it is; each run loads it again, as it is then.
+        ScriptRun reader{m_application, ScriptRun::Callbacks{[](std::string_view) {}, {}}};
+        const auto name{"tools/" + oui::utf8_of(file.filename())};
+        if(const auto problem{reader.load(file)})
+        {
+            problems.push_back(*problem);
+            continue;
+        }
+        if(reader.kind() != ScriptRun::Kind::tool)
+        {
+            problems.push_back(oui::format_text(
+                oui::translate("Scripts", "{0} is in the tools folder, but is no tool: a tool exports tool, such as "
+                                          "{title: \"Count Words\", keys: \"Ctrl+Alt+W\"}, and run(context)."),
+                {name}));
+            continue;
+        }
+        const auto stem{oui::utf8_of(file.stem())};
+        try
+        {
+            m_tools.push_back({"user_tool." + stem,
+                               read_placement(reader.tool(), m_options.interface_language, stem, "tool " + name),
+                               file});
+        }
+        catch(const oui::script::ScriptError& failure)
+        {
+            problems.push_back(name + ": " + failure.what());
+        }
+    }
     return problems;
 }
 
@@ -233,6 +296,9 @@ void Workbench::register_tool_commands()
         "tools.template_generated_code",
         oui::translate("Commands", "Template: Script After Generate (processGeneratedCode)"),
         [this] { write_template(generated_code_template); });
+    m_application.commands().register_command("tools.template_tool",
+                                              oui::translate("Commands", "Template: Tool of Your Own (tool, run)"),
+                                              [this] { write_template(tool_template); });
     m_application.commands().bind("tools.run_script_dry", {oui::Key::f5});
     m_application.commands().bind("tools.run_script", {oui::Key::f5, false, false, true});
 }
@@ -308,13 +374,20 @@ using Placed = std::vector<std::pair<std::vector<std::string>, std::string>>;
 std::vector<oui::MenuItem> Workbench::with_text_commands(std::string_view menu, std::vector<oui::MenuItem> items)
 {
     Placed placed;
+    const auto place{[&placed, menu](const std::vector<std::string>& path, const std::string& id)
+                     {
+                         if(!path.empty() && path.front() == menu)
+                         {
+                             placed.emplace_back(std::vector<std::string>{path.begin() + 1, path.end()}, id);
+                         }
+                     }};
     for(const auto& command : m_scripting->commands())
     {
-        if(!command.menu_path.empty() && command.menu_path.front() == menu)
-        {
-            placed.emplace_back(std::vector<std::string>{command.menu_path.begin() + 1, command.menu_path.end()},
-                                command.id);
-        }
+        place(command.menu_path, command.id);
+    }
+    for(const auto& tool : m_tools)
+    {
+        place(tool.placement.menu_path, tool.id);
     }
     return with_placed(std::move(items), placed);
 }
@@ -344,6 +417,24 @@ std::vector<oui::MenuItem> Workbench::tools_menu()
                                   return items;
                               }),
             "tools.run_text_command",
+            oui::menu_submenu(oui::translate("Menu", "User T&ools"),
+                              [this]
+                              {
+                                  std::vector<oui::MenuItem> items;
+                                  // Those that say no other place in the menus.
+                                  for(const auto& tool : m_tools)
+                                  {
+                                      if(tool.placement.menu_path.empty())
+                                      {
+                                          items.emplace_back(tool.id);
+                                      }
+                                  }
+                                  if(items.empty())
+                                  {
+                                      items.push_back(oui::menu_action(oui::translate("Menu", "(none)"), [] {}, false));
+                                  }
+                                  return items;
+                              }),
             oui::menu_separator(),
             "tools.run_script_choose",
             "tools.run_script_dry",
@@ -351,9 +442,9 @@ std::vector<oui::MenuItem> Workbench::tools_menu()
             oui::menu_submenu(oui::translate("Menu", "Script Te&mplates"),
                               []
                               {
-                                  return std::vector<oui::MenuItem>{"tools.template_process_file",
-                                                                    "tools.template_process",
-                                                                    "tools.template_generated_code"};
+                                  return std::vector<oui::MenuItem>{
+                                      "tools.template_process_file", "tools.template_process",
+                                      "tools.template_generated_code", "tools.template_tool"};
                               }),
             oui::menu_separator(),
             oui::menu_submenu(oui::translate("Menu", "User Scri&pts"), user_scripts),
@@ -745,8 +836,8 @@ void Workbench::saved_under_new_file(Document& document)
     if(const auto& generated{document.interactive->generated})
     {
         m_settings.set_value(generate_script_setting(generated->language == "cpp" ? SkeletonLanguage::cpp
-                                                                            : SkeletonLanguage::javascript),
-                       oui::utf8_of(*document.path));
+                                                                                  : SkeletonLanguage::javascript),
+                             oui::utf8_of(*document.path));
         static_cast<void>(m_settings.save());
         show_generate_scripts();
     }

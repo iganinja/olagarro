@@ -262,6 +262,55 @@ test("Alt+X lists the text commands alone, and the one picked works on the docum
     expect("the document, in upper case", shown.find("GONE") !== null, true);
 });
 
+// Tools of the user's, a script each in the tools folder of their scripts.
+const tools = {
+    "oui_code_scripts/tools/first_line.js": `
+export const tool = {title: "First Line"};
+export async function run({file, line, column}) {
+    await null;
+    console.log(\`first line: \${oui.readFile(file).split("\\n")[0]}, at \${line}:\${column}\`);
+}
+`,
+    "oui_code_scripts/tools/shout.js": `
+export const tool = {title: "Shout", menuPath: "edit/&Loud"};
+export function run({selection}) { return selection.toUpperCase(); }
+`,
+};
+
+test("A tool runs on the document saved, and what it says opens a tab of its own", async () => {
+    // O is the letter of User Tools in the Tools menu; First Line, with no place of its own, is there.
+    const shown = await session(ouiCode, ["left.txt"], {...files, ...tools}, ["X", keys.tools, "o", keys.enter]);
+    expect("the file as the editor had it", shown.find("first line: Xone, at 1:2") !== null, true);
+    expect("its tab", shown.find("First Line on left.txt") !== null, true);
+});
+
+test("Text a tool gives back replaces the selection, and a tool that says nothing opens no tab", async () => {
+    // Shift+End selects the first line; Edit > Loud > Shout, where its menuPath puts it.
+    const shown = await session(ouiCode, ["left.txt"], {...files, ...tools},
+        ["\x1b[1;2F", "\x1be", "l", keys.enter], tall);
+    expect("in upper case", shown.find("ONE") !== null, true);
+    expect("the next line as it was", shown.find("gone") !== null, true);
+    expect("no tab", shown.find("Shout on"), null);
+    const menu = await session(ouiCode, ["left.txt"], {...files, ...tools}, [keys.tools, "o"]);
+    expect("in User Tools, the one with no place", menu.find("First Line") !== null, true);
+    expect("not the one with a place", menu.find("Shout"), null);
+});
+
+test("A tool still running that has said nothing is kept, and shows itself when another would start", async () => {
+    // Short enough to be gone when the session ends.
+    const slow = {...files, "oui_code_scripts/tools/slow.js":
+        `export const tool = {title: "Slow"};\nexport async function run() { await oui.run("sleep 3"); }\n`};
+    const shown = await session(ouiCode, ["left.txt"], slow, [keys.tools, "o", keys.enter, keys.tools, "o", keys.enter]);
+    expect("why not", shown.find("A script is running already") !== null, true);
+    expect("its tab, to stop it", shown.find("Slow on left.txt") !== null, true);
+});
+
+test("A script in the tools folder that is no tool is said, and the rest load", async () => {
+    const broken = {...files, ...tools, "oui_code_scripts/tools/broken.js": "export function process(dryRun) {}\n"};
+    const shown = await session(ouiCode, ["left.txt"], broken, []);
+    expect("what is wrong", shown.find("tools/broken.js is in the tools folder, but is no tool") !== null, true);
+});
+
 test("Ctrl+T offers every kind of tab: the calculator among them", async () => {
     const shown = await session(ouiCode, ["left.txt"], files, ["\x14"]);
     for (const title of ["New File", "New Terminal", "Calculator", "Interactive Script", "Interactive UI",

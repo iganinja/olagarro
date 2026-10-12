@@ -472,6 +472,11 @@ export async function processGeneratedCode(code, {language, file, dryRun}) { ...
 export function transform(text) {
     return text.split("\n").sort().join("\n");
 }
+
+// A tool of your own, a script in oui_code_scripts/tools: in the menus and on its keys, on what the editor has, the
+// document saved first. Text it gives back replaces the selection.
+export const tool = {title: "Count Words", keys: "Ctrl+Alt+W", menuPath: "edit"};
+export async function run({file, language, folder, selection, line, column}) { ... }
 ```
 
 `dryRun` is not optional: a dry run changes nothing and says what it would do. Interactive scripts only look: they read

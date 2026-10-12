@@ -4,6 +4,7 @@
 
 #include <oui/oui.h>
 
+#include <algorithm>
 #include <memory>
 #include <optional>
 #include <string>
@@ -15,9 +16,8 @@ void Workbench::run_script(bool dry_run, bool choose)
 {
     const auto title{oui::translate("ScriptRun", "Run Script")};
     drop_unseen_run();
-    if(m_script_run)
+    if(refuse_while_running(title))
     {
-        show_error(m_application, title, oui::translate("ScriptRun", "A script is running already; stop it first."));
         return;
     }
     // The document is the current tab's; from the tab that shows a run's output, it is the one that run
@@ -236,9 +236,8 @@ void Workbench::run_generate_script(const std::filesystem::path& script, std::st
 {
     const auto title{oui::translate("InteractiveUi", "Script After Generate")};
     drop_unseen_run();
-    if(m_script_run)
+    if(refuse_while_running(title))
     {
-        show_error(m_application, title, oui::translate("ScriptRun", "A script is running already; stop it first."));
         return;
     }
     auto runner{std::make_unique<ScriptRun>(
@@ -280,6 +279,117 @@ void Workbench::run_generate_script(const std::filesystem::path& script, std::st
     m_script_run->run_on_generated_code(code, language == SkeletonLanguage::cpp ? "cpp" : "javascript", file);
 }
 
+void Workbench::run_tool(const std::string& id)
+{
+    const auto found{
+        std::find_if(m_tools.begin(), m_tools.end(), [&id](const UserTool& each) { return each.id == id; })};
+    if(found == m_tools.end())
+    {
+        return;
+    }
+    const auto title{found->placement.title};
+    drop_unseen_run();
+    if(refuse_while_running(title))
+    {
+        return;
+    }
+    auto& group{m_editors.active()};
+    const auto index{group.tabs.selected_index()};
+    auto* const editor{document_editor(group.tabs, index)};
+    const auto has_document{editor != nullptr && index < group.documents.size() && !group.documents[index].preview_of};
+    std::optional<std::filesystem::path> file;
+    std::optional<std::string> language;
+    if(has_document)
+    {
+        auto& document{group.documents[index]};
+        // Saved first, so the file says what the editor does to whatever the tool runs on it.
+        if(document.path && editor->is_modified() && !save_document(m_application, document, *editor, *document.path))
+        {
+            return;
+        }
+        file = document.path;
+        if(document.language)
+        {
+            language = document.language->id;
+        }
+    }
+    const auto folder{m_project_folder ? *m_project_folder : file ? file->parent_path() : m_current_folder};
+    const auto name{file ? title_for(*file) : std::string{}};
+    const auto heading{file ? oui::format_text(oui::translate("ScriptRun", "{0} on {1}"), {title, shown_path(*file)})
+                            : title};
+    const auto tab_title{file ? oui::format_text(oui::translate("ScriptRun", "{0} on {1}"), {title, name}) : title};
+    // The output tab opens with the first thing the tool says, or with what went wrong: one that says nothing opens
+    // nothing.
+    const auto shown{std::make_shared<bool>(false)};
+    const auto show{[this, shown, tab_title, heading]
+                    {
+                        if(!*shown)
+                        {
+                            *shown = true;
+                            open_script_output(tab_title, heading);
+                        }
+                    }};
+    auto runner{std::make_unique<ScriptRun>(m_application, ScriptRun::Callbacks{[this, show](std::string_view text)
+                                                                                {
+                                                                                    show();
+                                                                                    append_script_output(text);
+                                                                                },
+                                                                                {}})};
+    // As it is now: it may have changed since it was loaded.
+    if(const auto problem{runner->load(found->script)})
+    {
+        show_error(m_application, title, *problem);
+        return;
+    }
+    if(runner->kind() != ScriptRun::Kind::tool)
+    {
+        show_error(m_application, title,
+                   oui::format_text(oui::translate("Scripts", "{0} is in the tools folder, but is no tool: a tool "
+                                                              "exports tool, such as {title: \"Count Words\", keys: "
+                                                              "\"Ctrl+Alt+W\"}, and run(context)."),
+                                    {"tools/" + oui::utf8_of(found->script.filename())}));
+        return;
+    }
+    const auto [line, column]{editor != nullptr ? editor->line_column() : std::pair<std::size_t, std::size_t>{}};
+    const auto or_null{[](const std::optional<std::string>& text) { return text ? js_string(*text) : "null"; }};
+    const auto context{"{file: " + or_null(file ? std::optional<std::string>{oui::utf8_of(*file)} : std::nullopt) +
+                       ", language: " + or_null(language) + ", folder: " + js_string(oui::utf8_of(folder)) +
+                       ", selection: " + js_string(editor != nullptr ? editor->selected_text() : std::string{}) +
+                       ", line: " + (editor != nullptr ? std::to_string(line) : "null") +
+                       ", column: " + (editor != nullptr ? std::to_string(column) : "null") + "}"};
+    runner->set_finished(
+        [this, show, shown,
+         subject{oui::WidgetRef<oui::TextEdit>{has_document ? editor : nullptr}}](std::optional<std::string> error)
+        {
+            const auto returned{m_script_run->returned()};
+            m_script_run.reset();
+            m_tool_run_shown.reset();
+            m_reveal_tool_run = nullptr;
+            if(error)
+            {
+                show();
+                end_script_output();
+                append_script_output("\n" + *error + "\n");
+                return;
+            }
+            show_script_changes();
+            // After the file has come back as the tool left it, if it changed it.
+            if(auto* const target{subject.get()}; returned && target != nullptr && !target->is_read_only())
+            {
+                target->paste(*returned);
+            }
+            if(*shown)
+            {
+                end_script_output();
+                append_script_output("\n" + oui::translate("ScriptRun", "Done.") + "\n");
+            }
+        });
+    m_tool_run_shown = shown;
+    m_reveal_tool_run = show;
+    m_script_run = std::move(runner);
+    m_script_run->run_tool(context);
+}
+
 void Workbench::show_script_changes()
 {
     // Whatever the script changed shows: open documents, and the folders in the panels.
@@ -312,9 +422,24 @@ ScriptOutput* Workbench::script_output_tab()
     return nullptr;
 }
 
+bool Workbench::refuse_while_running(const std::string& title)
+{
+    if(!m_script_run)
+    {
+        return false;
+    }
+    if(m_reveal_tool_run)
+    {
+        m_reveal_tool_run();
+    }
+    show_error(m_application, title, oui::translate("ScriptRun", "A script is running already; stop it first."));
+    return true;
+}
+
 void Workbench::drop_unseen_run()
 {
-    if(m_script_run && script_output_tab() == nullptr)
+    // A tool that has said nothing yet has no tab to have been closed.
+    if(m_script_run && script_output_tab() == nullptr && !(m_tool_run_shown && !*m_tool_run_shown))
     {
         m_script_run->stop_programs();
         m_script_run.reset();

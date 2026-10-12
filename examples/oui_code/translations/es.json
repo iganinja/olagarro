@@ -97,7 +97,8 @@
       "Interactive UI: Generate C++": "Interfaz interactiva: generar C++",
       "Template: Script After Generate (processGeneratedCode)": "Plantilla: script tras Generar (processGeneratedCode)",
       "Run Text Command...": "Ejecutar un comando de texto...",
-      "Edit the Previewed File": "Editar el archivo de la vista previa"
+      "Edit the Previewed File": "Editar el archivo de la vista previa",
+      "Template: Tool of Your Own (tool, run)": "Plantilla: herramienta propia (tool, run)"
     },
     "Compare": {
       "Compare Files": "Comparar archivos",
@@ -270,7 +271,8 @@
       "S&yntax": "Sinta&xis",
       "Script Te&mplates": "&Plantillas de scripts",
       "Te&xt Commands": "Comandos de &texto",
-      "User Scri&pts": "Scripts de &usuario"
+      "User Scri&pts": "Scripts de &usuario",
+      "User T&ools": "&Herramientas de usuario"
     },
     "Preferences": {
       "Back up &every (seconds):": "Copia &cada (segundos):",
@@ -323,21 +325,24 @@
       "{0} (dry run)": "{0} (ensayo)",
       "{0} (interactive)": "{0} (interactivo)",
       "{0} could not be loaded:\n\n{1}": "No se ha podido cargar {0}:\n\n{1}",
-      "{0} exports more than one of processFile, process and processGeneratedCode; a script is one of them.": "{0} exporta más de una de processFile, process y processGeneratedCode; un script es uno de ellos.",
-      "{0} exports none of processFile(file, dryRun), which runs on the document, process(dryRun, folder), which runs on its own, and processGeneratedCode(code, {language, file}), which runs after Generate in an Interactive UI tab. A script looks like one of these:": "{0} no exporta ninguna de processFile(file, dryRun), que trabaja sobre el documento, process(dryRun, folder), que trabaja por su cuenta, y processGeneratedCode(code, {language, file}), que se ejecuta tras Generar en una pestaña de interfaz interactiva. Un script es como uno de estos:",
+      "{0} exports more than one of processFile, process, processGeneratedCode and tool; a script is one of them.": "{0} exporta más de una de processFile, process, processGeneratedCode y tool; un script es uno de ellos.",
+      "{0} exports none of processFile(file, dryRun), which runs on the document, process(dryRun, folder), which runs on its own, processGeneratedCode(code, {language, file}), which runs after Generate in an Interactive UI tab, and tool with run(context), a tool of its own in the menus. A script looks like one of these:": "{0} no exporta ninguna de processFile(file, dryRun), que trabaja sobre el documento, process(dryRun, folder), que trabaja por su cuenta, processGeneratedCode(code, {language, file}), que se ejecuta tras Generar en una pestaña de interfaz interactiva, y tool con run(context), una herramienta propia en los menús. Un script es como uno de estos:",
       "{0} in {1}": "{0} en {1}",
       "{0} on {1}": "{0} sobre {1}",
       "{0} runs on a document: open one first.": "{0} trabaja sobre un documento: abre uno primero.",
       "Stops the script": "Detiene el script",
       "{0} runs after Generate in an Interactive UI tab, chosen beside it, not from here.": "{0} se ejecuta tras Generar en una pestaña de interfaz interactiva, elegido a su lado, no desde aquí.",
-      "(Text pasted in the tab)": "(Texto pegado en la pestaña)"
+      "(Text pasted in the tab)": "(Texto pegado en la pestaña)",
+      "The tool of {0} must be an object: {title: \"Count Words\", keys: \"Ctrl+Alt+W\", menuPath: \"tools\"}.": "El tool de {0} tiene que ser un objeto: {title: \"Count Words\", keys: \"Ctrl+Alt+W\", menuPath: \"tools\"}.",
+      "{0} is a tool, so it must export what it does: run(context), which gets {file, language, folder, selection, line, column}.": "{0} es una herramienta, así que tiene que exportar lo que hace: run(context), que recibe {file, language, folder, selection, line, column}."
     },
     "Scripts": {
       "Could not create {0}.": "No se pudo crear {0}.",
       "No script has printed anything yet.": "Ningún script ha escrito nada todavía.",
       "User Scripts Output": "Salida de los scripts de usuario",
       "Scripts": "Scripts",
-      "Text Commands": "Comandos de texto"
+      "Text Commands": "Comandos de texto",
+      "{0} is in the tools folder, but is no tool: a tool exports tool, such as {title: \"Count Words\", keys: \"Ctrl+Alt+W\"}, and run(context).": "{0} está en la carpeta tools, pero no es una herramienta: una herramienta exporta tool, como {title: \"Count Words\", keys: \"Ctrl+Alt+W\"}, y run(context)."
     },
     "SplitEditor": {
       "Move: ←↑→↓ · Tabs: PgUp/PgDn · Done: any other key": "Moverse: ←↑→↓ · Pestañas: RePág/AvPág · Listo: cualquier otra tecla",

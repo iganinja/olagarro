@@ -1187,7 +1187,7 @@ namespace
 {
 
 // Ctrl and a, c, x or v in a field: select, copy, cut or paste, through the clipboard; false for other letters.
-template<typename Field> bool edit_field(Field& field, char32_t letter, Clipboard& clipboard)
+template <typename Field> bool edit_field(Field& field, char32_t letter, Clipboard& clipboard)
 {
     switch(letter)
     {

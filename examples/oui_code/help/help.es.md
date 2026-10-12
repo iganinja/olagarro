@@ -289,6 +289,39 @@ Además de JavaScript, un script tiene `oui.readFile(path)`, `oui.writeFile(path
 `await oui.confirm(question)`, `await oui.prompt(title, label, text)`, `await oui.choose(title, options)`,
 `setTimeout` y `setInterval`, y puede importar con `import` los módulos que tenga al lado.
 
+### Herramientas propias
+
+Un script en la carpeta `tools`, dentro de `oui_code_scripts`, es una herramienta: un comando tuyo, en los menús y
+con sus teclas, que trabaja sobre lo que tiene el editor, con todo lo que tiene un script ejecutado desde
+Herramientas. Exporta `tool`, que dice qué es, y `run`, que recibe el archivo y el lenguaje del documento, la carpeta
+del proyecto, la selección, y la línea y la columna del cursor:
+
+```js
+// oui_code_scripts/tools/count_words.js
+export const tool = {
+    title: "Count Words",      // o {en: "Count Words", es: "Contar palabras"}
+    keys: "Ctrl+Alt+W",        // opcional
+    menuPath: "edit",          // opcional: sin él, en Herramientas > Herramientas de usuario
+};
+
+export async function run({file, language, folder, selection, line, column}) {
+    const words = selection.split(/\s+/).filter(Boolean).length;
+    await oui.message("Count Words", `${words} words selected`);
+}
+```
+
+`title`, `keys` y `menuPath` son como los de un comando de texto. El documento se guarda antes de lanzar la
+herramienta, así que su archivo dice lo mismo que el editor; `file` es `null` en uno que nunca se ha guardado,
+`selection` es `""` cuando no hay nada seleccionado, y `line` y `column` cuentan desde 1. El texto que devuelve `run`
+sustituye la selección, o entra en el cursor, un cambio que deshacer quita; si no devuelve nada, el documento se
+queda como está. Lo que escribe, y lo que dicen los programas que lanza, abre la pestaña de los scripts, con su botón
+para pararlos; una herramienta que no dice nada no abre nada. Después, los documentos abiertos y los paneles de
+carpetas muestran lo que cambió.
+
+Las herramientas se cargan con el resto de tus scripts, y **Recargar los scripts de usuario** recoge una nueva, o un
+cambio en lo que dice su `tool`; cada ejecución vuelve a cargar el script, así que un cambio en `run` no necesita
+recargar. **Herramientas > Plantillas de scripts** escribe una para empezar.
+
 ## Scripts interactivos
 
 **Herramientas > Script interactivo** abre una pestaña con un script a la izquierda y, a la derecha, lo que hace, que
