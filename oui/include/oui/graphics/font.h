@@ -54,7 +54,7 @@ struct FontSet
 
 // The fonts built into OUI: Spleen for the cells (BSD 2-clause), 8x16, 12x24 and 16x32, and the two larger doubled
 // (8x16 doubled would be the size of 16x32), and Jersey 10 for interface text (SIL Open Font License); their licences
-// are in oui/fonts. The defaults are 12x24 and 20 pixels.
+// are in oui/fonts. The defaults are 12x24 and 24 pixels.
 [[nodiscard]] std::unique_ptr<Font> built_in_cell_font(int cell_height);
 [[nodiscard]] std::unique_ptr<Font> built_in_interface_font(float pixels);
 [[nodiscard]] std::unique_ptr<Font> default_cell_font();

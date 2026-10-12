@@ -445,7 +445,7 @@ std::unique_ptr<Font> default_cell_font()
 
 std::unique_ptr<Font> default_interface_font()
 {
-    return built_in_interface_font(20.0f);
+    return built_in_interface_font(24.0f);
 }
 
 } // namespace olagarro::oui

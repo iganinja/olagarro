@@ -270,7 +270,7 @@ A graphical style writes with three fonts ([font.h](../oui/include/oui/graphics/
 The interface font falls back to the cell font for a character it lacks, as a box line, and to the symbols for an
 arrow, on the same baseline (`FontSet::interface_glyph`); a tab in interface text is a space. The fonts and their
 licences are in [oui/fonts](../oui/fonts) and are built into `oui_graphics` with `olagarro_embed_files`, so a
-program carries them. `default_cell_font()` is Spleen 12x24 and `default_interface_font()` Jersey 10 at 20 pixels.
+program carries them. `default_cell_font()` is Spleen 12x24 and `default_interface_font()` Jersey 10 at 24 pixels.
 
 stb_truetype is compiled as it comes in a file of its own, `stb_truetype_api.cpp`, behind the small interface of
 [stb_truetype_api.h](../oui/src/graphics/stb_truetype_api.h), so the project's warnings, which are errors, stay off
@@ -314,10 +314,11 @@ two rows; in a terminal the same code gives the Turbo Vision shapes.
 ## Zoom
 
 A pixel backend has five sizes (`zoom_table` in [pixel_backend.cpp](../oui/src/graphics/pixel_backend.cpp)): cell
-fonts 16, 24, 32, 48 and 64 pixels high, with the interface font at 15, 20, 27, 40 and 54 pixels to keep to them; 24
-is the default (`default_zoom()` is 1). `set_zoom` loads the fonts at the new size and calls `fonts_changed`; the
-SDL window lays itself out again there and sends a `ResizeEvent`, since the same pixels now hold another number of
-cells. Every frame arranges the widgets in `size()` anyway, so the layout follows on the next one.
+fonts 16, 24, 32, 48 and 64 pixels high, with the interface font as high as each: Jersey 10's line runs from its
+highest accent to its lowest tail, so it fills the row without spilling, and menus look as big as the text beside
+them. 24 is the default (`default_zoom()` is 1). `set_zoom` loads the fonts at the new size and calls
+`fonts_changed`; the SDL window lays itself out again there and sends a `ResizeEvent`, since the same pixels now hold
+another number of cells. Every frame arranges the widgets in `size()` anyway, so the layout follows on the next one.
 
 `Application` offers zoom where the backend `zooms()`: the commands `zoom.in` (Ctrl++ and Ctrl+=), `zoom.out`
 (Ctrl+-) and `zoom.reset` (Ctrl+0), titled **Zoom In**, **Zoom Out** and **Normal Size**, and Ctrl with the mouse

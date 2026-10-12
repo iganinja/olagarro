@@ -56,14 +56,15 @@ class PixelTextMetrics final : public TextMetrics
 namespace
 {
 
-// Each size: the cell font's height and the interface font's, which keeps to the cells.
+// Each size: the cell font's height and the interface font's, the same: Jersey 10's lines hold all its ink, so it
+// fills the row without spilling out of it, and the interface looks as big as the editor's text beside it.
 struct ZoomLevel
 {
     int cell_height;
     float interface_pixels;
 };
 
-constexpr ZoomLevel zoom_table[]{{16, 15.0f}, {24, 20.0f}, {32, 27.0f}, {48, 40.0f}, {64, 54.0f}};
+constexpr ZoomLevel zoom_table[]{{16, 16.0f}, {24, 24.0f}, {32, 32.0f}, {48, 48.0f}, {64, 64.0f}};
 
 } // namespace
 
