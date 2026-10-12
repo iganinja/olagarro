@@ -173,7 +173,7 @@ void LiveScript::run(std::string_view code, const std::filesystem::path& path, s
     {
         input_literal = js_string(*input);
         // A copy of its own, with the input's name, for a processFile to work on.
-        const auto folder{std::filesystem::temp_directory_path() / oui::path_from_utf8("oui_code_live")};
+        const auto folder{scratch_folder() / oui::path_from_utf8("live")};
         std::error_code ignored;
         std::filesystem::create_directories(folder, ignored);
         run->copy = folder / (input_file ? input_file->filename() : oui::path_from_utf8("input.txt"));

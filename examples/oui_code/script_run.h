@@ -123,3 +123,8 @@ class ScriptOutput final : public olagarro::oui::Container
     olagarro::oui::TextEdit* m_text{};
     std::function<void()> m_stop;
 };
+
+// A folder in the system's temporary one for this OUI Code alone, where dry runs work on their copies: another
+// OUI Code running at the same time has its own. It is made the first time it is asked for, and removed as OUI Code
+// ends.
+[[nodiscard]] const std::filesystem::path& scratch_folder();

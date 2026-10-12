@@ -7,6 +7,9 @@
 #include <oui/translation.h>
 
 #include <chrono>
+#include <cstdio>
+#include <random>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -378,4 +381,36 @@ void ScriptOutput::arrange(const oui::Rect& bounds)
     {
         child_at(0).arrange(bounds);
     }
+}
+
+namespace
+{
+
+struct ScratchFolder
+{
+    std::filesystem::path path;
+
+    ~ScratchFolder()
+    {
+        std::error_code ignored;
+        std::filesystem::remove_all(path, ignored);
+    }
+};
+
+} // namespace
+
+const std::filesystem::path& scratch_folder()
+{
+    static const ScratchFolder folder{[]
+                                      {
+                                          std::random_device random;
+                                          char name[32];
+                                          std::snprintf(name, sizeof name, "oui_code_%08x%08x", random(), random());
+                                          std::error_code error;
+                                          auto path{std::filesystem::temp_directory_path(error) /
+                                                    olagarro::oui::path_from_utf8(name)};
+                                          std::filesystem::create_directories(path, error);
+                                          return path;
+                                      }()};
+    return folder.path;
 }

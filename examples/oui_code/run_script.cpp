@@ -131,7 +131,7 @@ void Workbench::run_script(bool dry_run, bool choose)
     {
         // The copy has the document's name, so a script that looks at it sees what it would on the file.
         std::error_code error;
-        const auto folder{std::filesystem::temp_directory_path(error) / oui::path_from_utf8("oui_code_dry_run")};
+        const auto folder{scratch_folder() / oui::path_from_utf8("dry_run")};
         std::filesystem::create_directories(folder, error);
         target = folder / (document.path ? document.path->filename() : oui::path_from_utf8("untitled.txt"));
         oui::FileError file_error;
