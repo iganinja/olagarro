@@ -25,7 +25,9 @@ async function read() {
     processes = text.split("\n")
         .map((line) => line.trim().match(/^(\d+)\s+([\d.]+)\s+([\d.]+)\s+(.+)$/))
         .filter((match) => match !== null)
-        .map(([, pid, cpu, memory, name]) => ({pid: Number(pid), cpu: Number(cpu), memory: Number(memory), name}));
+        // macOS's ps gives a program's whole path where Linux's gives its name: the name is what shows.
+        .map(([, pid, cpu, memory, command]) => ({pid: Number(pid), cpu: Number(cpu), memory: Number(memory),
+                                                 name: command.slice(command.lastIndexOf("/") + 1)}));
     update();
 }
 
