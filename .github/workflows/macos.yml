@@ -9,6 +9,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  # How script(1) takes keys here, three ways, each told step by step and ended after 15 seconds: from a named pipe,
+  # from that pipe through cat, and from a file through tail -f. A minute, where the build and tests take many.
+  keys:
+    name: How a terminal takes keys on macOS
+    runs-on: macos-15
+    steps:
+      - name: Three ways
+        run: |
+          way() {
+            echo "== $1"
+            perl -e 'alarm 15; exec @ARGV' sh -c "$2" || echo "ended by the alarm"
+          }
+          inner='stty cols 40 rows 10; stty size; echo inside; read key; echo got $key; sleep 1'
+          way "named pipe" "
+            rm -f /tmp/k1; mkfifo /tmp/k1
+            (sleep 12 > /tmp/k1 & exec 3< /tmp/k1; script -q /dev/null /bin/sh -c '$inner' <&3; echo script ended) &
+            sleep 2; echo writing; printf 'x\n' > /tmp/k1; echo written; wait"
+          way "named pipe through cat" "
+            rm -f /tmp/k2; mkfifo /tmp/k2
+            (sleep 12 > /tmp/k2 & exec 3< /tmp/k2; cat <&3 | script -q /dev/null /bin/sh -c '$inner'; echo script ended) &
+            sleep 2; echo writing; printf 'x\n' > /tmp/k2; echo written; wait"
+          way "file through tail -f" "
+            : > /tmp/k3
+            (tail -f /tmp/k3 | script -q /dev/null /bin/sh -c '$inner'; echo script ended) &
+            sleep 2; echo writing; printf 'x\n' >> /tmp/k3; echo written; sleep 4; kill %1 2>/dev/null; echo done"
+
   build:
     name: macOS ${{ matrix.machine }} (${{ matrix.kind }})
     runs-on: ${{ matrix.runner }}
@@ -36,22 +62,6 @@ jobs:
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ${{ matrix.options }}
       - name: Build, past every error
         run: cmake --build build -- -k 0
-      # What the end-to-end tests do, step by step and told: a terminal by script(1) reading its keys from a named pipe.
-      - name: How script(1) takes keys from a pipe here
-        continue-on-error: true
-        run: |
-          perl -e 'alarm 20; exec @ARGV' sh -c '
-            rm -f /tmp/keys; mkfifo /tmp/keys
-            (sleep 15 > /tmp/keys & exec 3< /tmp/keys
-             echo "pipe open to read"
-             script -q /dev/null /bin/sh -c "stty cols 40 rows 10; stty size; echo inside; read key; echo got \$key; sleep 1" <&3
-             echo "script ended with $?") &
-            sleep 2
-            echo "writing a key"
-            printf "x\n" > /tmp/keys
-            echo "key written"
-            wait
-            echo "all ended"'
       # Four at a time, and none longer than five minutes: one that hangs says so without holding the rest.
       - name: Test
         run: ctest --test-dir build --output-on-failure -j4 --timeout 300
