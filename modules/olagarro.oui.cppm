@@ -151,6 +151,7 @@ using ::olagarro::oui::set_text_metrics;
 using ::olagarro::oui::Settings;
 using ::olagarro::oui::SettingsLocation;
 using ::olagarro::oui::shell_command;
+using ::olagarro::oui::show_typing;
 using ::olagarro::oui::started_from_terminal;
 using ::olagarro::oui::Shortcut;
 using ::olagarro::oui::ShortcutNames;

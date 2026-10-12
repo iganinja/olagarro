@@ -73,7 +73,7 @@ class SystemApi
     Value start_timer(const Arguments& arguments);
     void stop_timer(int id);
     Value ask_yes_no(const std::string& question);
-    Value ask_text(const std::string& title, const std::string& label, const std::string& text);
+    Value ask_text(const std::string& title, const std::string& label, const std::string& text, bool password);
     Value ask_choice(const std::string& title, const Value& options);
     // A file to open or to save as, or a folder, as `mode` says: in a dialog, from `options` as the script gives them.
     Value ask_path(int mode, const Value& options);

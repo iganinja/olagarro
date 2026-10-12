@@ -70,4 +70,8 @@ bool open_externally(std::string_view target);
 // started from: it is closed, so the program goes on without it.
 [[nodiscard]] bool started_from_terminal();
 
+// Whether what is typed on the terminal the program reads from shows as it is typed: off while a password is asked
+// on it, then on again. Nothing when the program's input is no terminal.
+void show_typing(bool shown);
+
 } // namespace olagarro::oui

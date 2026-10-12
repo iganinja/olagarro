@@ -298,6 +298,13 @@ TEST(OuiUiTests, EveryColourOfTheThemeCanBeNamed)
     EXPECT_GT(colours, 80u);
 }
 
+TEST(OuiUiTests, ALineEditMarkedPasswordHidesWhatIsTyped)
+{
+    auto ui{oui::build_ui("Row\n  LineEdit id=secret password\n  LineEdit id=name\n", oui::UiTexts::as_written)};
+    EXPECT_TRUE(ui.get<oui::LineEdit>("secret").is_password());
+    EXPECT_FALSE(ui.get<oui::LineEdit>("name").is_password());
+}
+
 TEST(OuiUiTests, TextsCanShowAsTheyAreWrittenWithoutAContext)
 {
     oui::TranslationCatalog catalog{"es", "Español", {}};

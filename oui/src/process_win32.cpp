@@ -285,6 +285,17 @@ std::vector<std::string> shell_command(std::string command_line)
     return {"cmd.exe", "/d", "/s", "/c", std::move(command_line)};
 }
 
+void show_typing(bool shown)
+{
+    auto* const input{GetStdHandle(STD_INPUT_HANDLE)};
+    DWORD mode{};
+    if(GetConsoleMode(input, &mode) == 0)
+    {
+        return;
+    }
+    SetConsoleMode(input, shown ? (mode | ENABLE_ECHO_INPUT) : (mode & ~static_cast<DWORD>(ENABLE_ECHO_INPUT)));
+}
+
 bool started_from_terminal()
 {
     // A console this program shares with another, as the shell it was typed in.

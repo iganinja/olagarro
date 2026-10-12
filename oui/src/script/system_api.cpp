@@ -47,8 +47,9 @@ namespace
 // Tells something, in a window when there is one and on the terminal when not. Not in an interactive script.
 // api(system): oui.confirm(question: string): Promise<boolean>
 // Asks yes or no. Not in an interactive script.
-// api(system): oui.prompt(title: string, label?: string, text?: string): Promise<string | null>
-// Asks for a line of text, starting with text; null when cancelled. Not in an interactive script.
+// api(system): oui.prompt(title: string, label?: string, text?: string, options?: {password?: boolean}): Promise<string | null>
+// Asks for a line of text, starting with text; null when cancelled. For a password, what is typed shows as dots, or not
+// at all when asked on the terminal. Not in an interactive script.
 // api(system): oui.choose(title: string, options: (string | {label: string, detail?: string})[]): Promise<string | null>
 // Asks to pick one of options, and gives its label; null when cancelled. Not in an interactive script.
 // api(system): oui.openFile(options?: {title?: string, folder?: string, filters?: {name: string, patterns: string}[]}): Promise<string | null>
@@ -89,7 +90,8 @@ globalThis.__ouiSystem = {
     listDir: (path) => n.listDir(String(path)),
     message: (title, text = "") => n.message(String(title), String(text)),
     confirm: (question) => n.confirm(String(question)),
-    prompt: (title, label = "", text = "") => n.prompt(String(title), String(label), String(text)),
+    prompt: (title, label = "", text = "", options = {}) =>
+        n.prompt(String(title), String(label), String(text), Boolean(options?.password)),
     choose: (title, options) => n.choose(String(title), options),
     copy: (text) => n.copy(String(text)),
     paste: () => n.paste(),
@@ -361,12 +363,24 @@ Value SystemApi::ask_yes_no(const std::string& question)
         });
 }
 
-Value SystemApi::ask_text(const std::string& title, const std::string& label, const std::string& text)
+Value SystemApi::ask_text(const std::string& title, const std::string& label, const std::string& text, bool password)
 {
     if(!m_hooks.has_screen())
     {
-        write_to(stdout, (label.empty() ? title : label) + (text.empty() ? "" : " [" + text + "]") + " ");
+        // A password's default shows no more than what is typed.
+        write_to(stdout, (label.empty() ? title : label) + (text.empty() || password ? "" : " [" + text + "]") + " ");
+        if(password)
+        {
+            std::fflush(stdout);
+            show_typing(false);
+        }
         const auto answer{read_line()};
+        if(password)
+        {
+            show_typing(true);
+            // The Enter that ended it did not show either.
+            write_to(stdout, "\n");
+        }
         if(!answer)
         {
             return settled(m_engine.null());
@@ -374,12 +388,13 @@ Value SystemApi::ask_text(const std::string& title, const std::string& label, co
         return settled(m_engine.string(answer->empty() ? text : *answer));
     }
     return later(
-        [this, title, label, text]
+        [this, title, label, text, password]
         {
             PromptOptions options;
             options.title = title;
             options.label = label;
             options.text = text;
+            options.password = password;
             const auto answer{prompt(m_application, options)};
             return answer ? m_engine.string(*answer) : m_engine.null();
         });
@@ -516,7 +531,10 @@ void SystemApi::define_everything()
     define("message", [this](const Arguments& a) { return tell(text_of(argument(a, 0)), text_of(argument(a, 1))); });
     define("confirm", [this](const Arguments& a) { return ask_yes_no(text_of(argument(a, 0))); });
     define("prompt", [this](const Arguments& a)
-           { return ask_text(text_of(argument(a, 0)), text_of(argument(a, 1)), text_of(argument(a, 2))); });
+           {
+               return ask_text(text_of(argument(a, 0)), text_of(argument(a, 1)), text_of(argument(a, 2)),
+                               argument(a, 3).to_bool());
+           });
     define("choose", [this](const Arguments& a) { return ask_choice(text_of(argument(a, 0)), argument(a, 1)); });
     define("copy",
            [this](const Arguments& a)

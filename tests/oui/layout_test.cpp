@@ -819,6 +819,66 @@ TEST(OuiWidgetTests, LineEditSelectsCutsAndPastesText)
     EXPECT_EQ(edit.text(), "bepha");
 }
 
+TEST(OuiWidgetTests, APasswordLineEditShowsADotForEachCharacterAndKeepsWhatIsTyped)
+{
+    oui::Application application{std::make_unique<MemoryBackend>()};
+    auto content{oui::column()};
+    auto& edit{content->add(oui::line_edit())};
+    application.set_content(std::move(content));
+    edit.set_password(true);
+    EXPECT_TRUE(edit.is_password());
+    edit.arrange({0, 0, 12, 1});
+    application.focus(edit);
+    for(const auto letter : std::u32string{U"señal"})
+    {
+        edit.handle_event(oui::TextEvent{letter});
+    }
+    EXPECT_EQ(edit.text(), "señal");
+    const auto shown{[&edit]
+                     {
+                         oui::CellBuffer buffer{12, 1};
+                         oui::CellBufferPainter painter{buffer};
+                         edit.paint(painter, {});
+                         std::u32string cells;
+                         for(int x{}; x < 12; ++ x)
+                         {
+                             cells += buffer.cell_at(x, 0).glyph;
+                         }
+                         return cells;
+                     }};
+    EXPECT_EQ(shown().substr(0, 6), U"●●●●● ");
+    // The cursor moves a character, a dot, at a time, and a click lands between two dots.
+    edit.handle_event(oui::KeyEvent{oui::Key::left});
+    edit.handle_event(oui::TextEvent{U'X'});
+    EXPECT_EQ(edit.text(), "señaXl");
+    EXPECT_TRUE(edit.handle_event(oui::MouseEvent{2, 0, true}));
+    edit.handle_event(oui::TextEvent{U'Y'});
+    EXPECT_EQ(edit.text(), "seYñaXl");
+    EXPECT_EQ(shown().substr(0, 8), U"●●●●●●● ");
+}
+
+TEST(OuiWidgetTests, APasswordLineEditCopiesNothingAndCutsNothing)
+{
+    oui::LineEdit edit;
+    edit.set_password(true);
+    edit.set_text("hola mundo");
+    edit.select_all();
+    std::string clipboard{"before"};
+    edit.copy_selection(clipboard);
+    EXPECT_EQ(clipboard, "before");
+    edit.cut_selection(clipboard);
+    EXPECT_EQ(clipboard, "before");
+    EXPECT_EQ(edit.text(), "hola mundo");
+    // Control and an arrow go to an end, not to a word's: where its words are is not told either.
+    edit.handle_event(oui::KeyEvent{oui::Key::end});
+    edit.handle_event(oui::KeyEvent{oui::Key::left, true});
+    edit.handle_event(oui::TextEvent{U'Y'});
+    EXPECT_EQ(edit.text(), "Yhola mundo");
+    edit.handle_event(oui::KeyEvent{oui::Key::right, true});
+    edit.handle_event(oui::TextEvent{U'Z'});
+    EXPECT_EQ(edit.text(), "Yhola mundoZ");
+}
+
 TEST(OuiWidgetTests, LineEditMovesTheCursorToTheClickedCell)
 {
     oui::LineEdit edit;

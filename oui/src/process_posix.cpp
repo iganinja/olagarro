@@ -16,6 +16,7 @@
 #include <signal.h>
 #include <spawn.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <unistd.h>
 
 extern char** environ;
@@ -286,6 +287,24 @@ bool open_externally(std::string_view target)
 std::vector<std::string> shell_command(std::string command_line)
 {
     return {"/bin/sh", "-c", std::move(command_line)};
+}
+
+void show_typing(bool shown)
+{
+    termios settings{};
+    if(isatty(STDIN_FILENO) == 0 || tcgetattr(STDIN_FILENO, &settings) != 0)
+    {
+        return;
+    }
+    if(shown)
+    {
+        settings.c_lflag |= ECHO;
+    }
+    else
+    {
+        settings.c_lflag &= static_cast<tcflag_t>(~ECHO);
+    }
+    tcsetattr(STDIN_FILENO, TCSANOW, &settings);
 }
 
 bool started_from_terminal()

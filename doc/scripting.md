@@ -171,6 +171,7 @@ terminal.
 await oui.message("Done", "Every file is tidy.");
 if (await oui.confirm("Replace 12 matches?")) { ... }            // true or false
 const name = await oui.prompt("New file", "Name:", "notes.txt");  // the text, or null when cancelled
+const key = await oui.prompt("Sign in", "Password:", "", {password: true});   // dots as it is typed
 const pick = await oui.choose("Build", ["debug", {label: "release", detail: "optimised, no asserts"}]);
                                                                   // a label, or null
 const file = await oui.openFile({filters: [{name: "Texts", patterns: "*.txt;*.md"}]});   // a path, or null
@@ -178,8 +179,8 @@ const where = await oui.saveFile({name: "report.csv"});           // asks before
 const folder = await oui.chooseFolder();
 ```
 
-On the terminal, `confirm` takes y or n, `prompt` a line, `choose` the option's number, and the file and folder
-ones a path. When input is not a
+On the terminal, `confirm` takes y or n, `prompt` a line, which does not show as it is typed when it is a password,
+`choose` the option's number, and the file and folder ones a path. When input is not a
 terminal, as with `< answers.txt` or a pipe, they read their answers from it.
 
 ## Settings
@@ -274,7 +275,7 @@ field.focus();
 |--------|-----------|-------------|
 | `oui.Label` | `new oui.Label(text, {bold, wrap})` | `text` |
 | `oui.Button` | `new oui.Button(text, onClick, {default})`; the default one is what Enter presses in a dialog | `text`, `onClick` |
-| `oui.LineEdit` | `new oui.LineEdit({text, placeholder, onChange, onSubmit})` | `text`, `placeholder`, `selection`, `select(start, end)`, `selectAll()`, `selectedText`, `insert(text)`, `onChange`, `onSubmit` |
+| `oui.LineEdit` | `new oui.LineEdit({text, placeholder, password, onChange, onSubmit})` | `text`, `placeholder`, `password`, `selection`, `select(start, end)`, `selectAll()`, `selectedText`, `insert(text)`, `onChange`, `onSubmit` |
 | `oui.TextEdit` | `new oui.TextEdit({text, readOnly, wrap, lineNumbers, onChange})` | `text`, `readOnly`, `wrap`, `lineNumbers`, `append(text)`, `onChange`, and an editor's: see below |
 | `oui.CheckButton` | `new oui.CheckButton(text, {checked, onToggle})` | `checked`, `onToggle` |
 | `oui.ComboBox` | `new oui.ComboBox(items, {onSelect})` | `items`, `selected`, `onSelect` |
@@ -422,7 +423,7 @@ widgets:
 | `Split` | `vertical`, `ratio=0.4`; its two widgets with a line between them |
 | `Tabs` | `fixed`; `Tab "title"` in it, each holding a widget or none |
 | `Label "text"` | `buddy=id`, the field its `&` letter goes to (with none the `&` does not show; `&&` is one), `bold`, `heading`, `wrap` |
-| `LineEdit` | `text="..."`, `placeholder="..."` |
+| `LineEdit` | `text="..."`, `placeholder="..."`, `password` |
 | `TextEdit` | `read_only`, `wrap` |
 | `CheckButton "text"` | `checked` |
 | `Button "text"` | `default`, `compact`, `flat` |

@@ -1714,6 +1714,12 @@ void Host::define_everything()
                widget<oui::LineEdit>(id_of(a, 0), "field").set_placeholder(text_of(argument(a, 1)));
                return Value{};
            });
+    define("setPassword",
+           [this](const Arguments& a)
+           {
+               widget<oui::LineEdit>(id_of(a, 0), "field").set_password(argument(a, 1).to_bool());
+               return Value{};
+           });
     define("setReadOnly",
            [this](const Arguments& a)
            {

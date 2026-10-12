@@ -448,6 +448,29 @@ rename.focus();
     expect("the new text", shown.find("Renamed") !== null, true);
 });
 
+test("a password field shows dots for what is typed, and the script gets the text", async () => {
+    const shown = await pressing(`
+const secret = new oui.LineEdit({password: true, onChange: (text) => oui.status(text === "s3cret" ? "right" : text.length + " typed")});
+const plain = new oui.LineEdit();
+oui.window("T", oui.column([secret, plain]));
+plain.password = true;
+oui.status(secret.password && plain.password ? "both" : "not both");
+secret.focus();
+`, ["s3cret", ""]);
+    expect("the text", shown.find("s3cret"), null);
+    expect("the dots", shown.find("●●●●●●") !== null, true);
+    expect("what the script got", shown.find("right") !== null, true);
+});
+
+test("a prompt for a password with no window does not show what is typed", async () => {
+    const shown = await pressing(`
+const answer = await oui.prompt("Key", "Passphrase:", "", {password: true});
+console.log(answer === "s3cret" ? "got it" : "got " + answer);
+`, ["s3cret\r", ""]);
+    expect("the text", shown.find("s3cret"), null);
+    expect("what the script got", shown.find("got it") !== null, true);
+});
+
 test("a menu bar runs its entries, from the menu and by their keys, and the status line says what they do", async () => {
     const script = `
 oui.menuBar([{title: "&File", items: [{title: "&Say", keys: "Ctrl+T", run: () => oui.status("said")}, "-",

@@ -53,7 +53,7 @@ struct Kind
         {"Tabs", {"fixed"}, false},
         {"Tab", {}, true},
         {"Label", {"buddy", "bold", "heading", "wrap", "background"}, true},
-        {"LineEdit", {"text", "placeholder", "background"}, false},
+        {"LineEdit", {"text", "placeholder", "background", "password"}, false},
         {"TextEdit", {"read_only", "wrap"}, false},
         {"MarkdownView", {"background", "foreground"}, false},
         {"CheckButton", {"checked", "background"}, true},
@@ -231,6 +231,7 @@ struct Property
         {"text", Value::text, "what it starts with"},
         {"placeholder", Value::text, "what it says while empty"},
         {"read_only", Value::flag, "it only shows"},
+        {"password", Value::flag, "a dot shows for each character typed"},
         {"checked", Value::flag, "ticked"},
         {"default", Value::flag, "Enter presses it"},
         {"compact", Value::flag, "one row"},
@@ -653,6 +654,7 @@ class Builder
             {
                 made->set_background(*background);
             }
+            made->set_password(node.has("password"));
             return made;
         }
         if(type == "TextEdit")

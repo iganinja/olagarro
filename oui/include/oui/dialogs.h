@@ -28,6 +28,8 @@ struct PromptOptions
     // The bytes of `text` selected when the prompt opens, so typing replaces them; all of it when not set.
     std::optional<std::pair<std::size_t, std::size_t>> selection;
     std::string placeholder;
+    // A password: a dot shows for each character typed.
+    bool password{false};
     std::string accept{translate("Dialogs", "OK")};
     std::string cancel{translate("Dialogs", "Cancel")};
     // How many cells wide the dialog opens, at least, for a long text; as its content needs when not set. It grows

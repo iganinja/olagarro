@@ -235,10 +235,10 @@ What the clipboard holds, as text.
 ### oui.prompt
 
 ```ts
-oui.prompt(title: string, label?: string, text?: string): Promise<string | null>
+oui.prompt(title: string, label?: string, text?: string, options?: {password?: boolean}): Promise<string | null>
 ```
 
-Asks for a line of text, starting with text; null when cancelled. Not in an interactive script.
+Asks for a line of text, starting with text; null when cancelled. For a password, what is typed shows as dots, or not at all when asked on the terminal. Not in an interactive script.
 
 *In: oui_run, and OUI Code's Tools > Run Script and Tools > Interactive Script.*
 
@@ -599,7 +599,7 @@ Has what [oui.Widget](#ouiwidget) has, and:
 
 ```ts
 class oui.LineEdit extends oui.Widget
-new oui.LineEdit(options?: {text?: string, placeholder?: string, onChange?: (text: string) => void, onSubmit?: (text: string) => void})
+new oui.LineEdit(options?: {text?: string, placeholder?: string, password?: boolean, onChange?: (text: string) => void, onSubmit?: (text: string) => void})
 ```
 
 A field of one line.
@@ -612,6 +612,7 @@ Has what [oui.Widget](#ouiwidget) has, and:
 - `onChange: (text: string) => void`: Called at every change.
 - `onSubmit: (text: string) => void`: Called when Enter is pressed in it.
 - `placeholder: string`: What it shows, quieter, while it is empty.
+- `password: boolean`: Whether it is for a password: a dot shows for each character, copying and cutting take nothing, and Control with an arrow goes to an end rather than to a word's. Its text is what was typed.
 - `selection: [number, number]`: What is selected, from start to end, as places in its text; the same twice where the cursor is.
 - `select(start: number, end?: number): this`: Selects from start to end, the cursor at end; with one place, only puts the cursor there.
 - `selectAll(): this`

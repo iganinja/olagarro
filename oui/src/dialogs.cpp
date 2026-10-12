@@ -107,6 +107,7 @@ std::optional<std::string> prompt(Application& application, const PromptOptions&
         field.select_all();
     }
     field.set_placeholder(options.placeholder);
+    field.set_password(options.password);
     if(options.extra)
     {
         options.extra(*content);

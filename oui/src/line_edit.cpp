@@ -9,6 +9,24 @@
 
 namespace olagarro::oui
 {
+namespace
+{
+
+// What shows for each character of a password: a black circle, ●, drawn in a window even where the font has none.
+constexpr std::string_view password_dot{"\xe2\x97\x8f"};
+
+// Where the character before `index` starts in `text`.
+[[nodiscard]] std::size_t codepoint_before(std::string_view text, std::size_t index)
+{
+    do
+    {
+        -- index;
+    } while(index > 0 && (static_cast<unsigned char>(text.at(index)) & 0xc0) == 0x80);
+    return index;
+}
+
+} // namespace
+
 void LineEdit::set_text(std::string_view text)
 {
     m_text = text;
@@ -37,12 +55,18 @@ void LineEdit::select_range(std::size_t start, std::size_t end)
 }
 void LineEdit::copy_selection(std::string& clipboard) const
 {
-    clipboard = selected_text();
+    if(!m_password)
+    {
+        clipboard = selected_text();
+    }
 }
 void LineEdit::cut_selection(std::string& clipboard)
 {
-    copy_selection(clipboard);
-    static_cast<void>(erase_selection());
+    if(!m_password)
+    {
+        copy_selection(clipboard);
+        static_cast<void>(erase_selection());
+    }
 }
 void LineEdit::paste(std::string_view text)
 {
@@ -55,6 +79,14 @@ void LineEdit::set_placeholder(std::string_view placeholder)
 void LineEdit::set_background(ColorRef background)
 {
     m_background = background;
+}
+void LineEdit::set_password(bool password)
+{
+    m_password = password;
+}
+bool LineEdit::is_password() const
+{
+    return m_password;
 }
 bool LineEdit::is_focusable() const
 {
@@ -77,11 +109,12 @@ bool LineEdit::handle_event(const Event& event)
         }
         // A drag takes in the character under the pointer.
         const auto& metrics{text_metrics()};
-        const auto first{std::min(m_first_shown, m_text.size())};
-        m_cursor = first + metrics.byte_at(std::string_view{m_text}.substr(first),
-                                           (mouse->x - bounds().x) * metrics.cell_width() + mouse->cell_offset -
-                                               metrics.field_padding(),
-                                           !mouse->pressed);
+        const auto shown{shown_text()};
+        const auto first{shown_offset(std::min(m_first_shown, m_text.size()))};
+        m_cursor = text_offset(first + metrics.byte_at(std::string_view{shown}.substr(first),
+                                                       (mouse->x - bounds().x) * metrics.cell_width() +
+                                                           mouse->cell_offset - metrics.field_padding(),
+                                                       !mouse->pressed));
         if(mouse->pressed)
         {
             m_anchor = m_cursor;
@@ -201,7 +234,7 @@ Size LineEdit::measure(const Constraints& constraints) const
     // As wide as its text shows, in whole cells, with the padding before it and room for the cursor after: in a
     // proportional font text takes fewer cells than it has characters.
     const auto& metrics{text_metrics()};
-    const auto units{std::max(metrics.width(m_text), metrics.width(m_placeholder)) + metrics.field_padding()};
+    const auto units{std::max(metrics.width(shown_text()), metrics.width(m_placeholder)) + metrics.field_padding()};
     const auto cell{std::max(1, metrics.cell_width())};
     const auto content_width{(units + cell - 1) / cell};
     return constraints.constrain({std::max(content_width + 1, 4), 1});
@@ -209,20 +242,22 @@ Size LineEdit::measure(const Constraints& constraints) const
 void LineEdit::keep_cursor_shown() const
 {
     const auto& metrics{text_metrics()};
-    const std::string_view text{m_text};
+    const auto shown{shown_text()};
+    const std::string_view text{shown};
+    const auto cursor{shown_offset(m_cursor)};
     // What fits after the padding, leaving a cell for the cursor at the end.
     const auto room{std::max(1, (bounds().width - 1) * metrics.cell_width() - metrics.field_padding())};
-    auto first{std::min({m_first_shown, m_cursor, m_text.size()})};
-    while(first < m_cursor && metrics.width(text.substr(first, m_cursor - first)) > room)
+    auto first{std::min({shown_offset(std::min(m_first_shown, m_text.size())), cursor, text.size()})};
+    while(first < cursor && metrics.width(text.substr(first, cursor - first)) > room)
     {
         static_cast<void>(decode_utf8(text, first));
     }
     // Text taken away leaves room: what comes before shows again.
-    while(first > 0 && metrics.width(text.substr(previous_codepoint(first))) <= room)
+    while(first > 0 && metrics.width(text.substr(codepoint_before(text, first))) <= room)
     {
-        first = previous_codepoint(first);
+        first = codepoint_before(text, first);
     }
-    m_first_shown = first;
+    m_first_shown = text_offset(first);
 }
 void LineEdit::paint(Painter& painter, const Theme& theme) const
 {
@@ -244,16 +279,19 @@ void LineEdit::paint(Painter& painter, const Theme& theme) const
     const auto selection_fg{theme.item_selected_foreground};
     const auto selection_bg{theme.item_selected_background};
     const auto placeholder{m_text.empty()};
-    const auto [first, last]{selection_range()};
+    const auto [first_byte, last_byte]{selection_range()};
+    const auto first{shown_offset(first_byte)};
+    const auto last{shown_offset(last_byte)};
+    const auto text{shown_text()};
     TextFieldLook look;
     // From the first byte shown; the selection and the cursor count from there.
-    const auto shown{placeholder ? 0 : m_first_shown};
-    look.text = placeholder ? std::string_view{m_placeholder} : std::string_view{m_text}.substr(shown);
+    const auto shown{placeholder ? 0 : shown_offset(m_first_shown)};
+    look.text = placeholder ? std::string_view{m_placeholder} : std::string_view{text}.substr(shown);
     look.selection_start = placeholder ? 0 : std::max(first, shown) - shown;
     look.selection_end = placeholder ? 0 : std::max(last, shown) - shown;
     if(focused)
     {
-        look.cursor = placeholder ? 0 : m_cursor - shown;
+        look.cursor = placeholder ? 0 : shown_offset(m_cursor) - shown;
     }
     look.style = {placeholder && !focused ? theme.disabled_foreground : foreground_color, background_color};
     look.selected = {selection_fg, selection_bg};
@@ -309,7 +347,14 @@ void LineEdit::move_right(bool extend)
 }
 void LineEdit::move_word(bool forward, bool extend)
 {
-    m_cursor = forward ? word_boundary::next(m_text, m_cursor) : word_boundary::previous(m_text, m_cursor);
+    if(m_password)
+    {
+        m_cursor = forward ? m_text.size() : 0;
+    }
+    else
+    {
+        m_cursor = forward ? word_boundary::next(m_text, m_cursor) : word_boundary::previous(m_text, m_cursor);
+    }
     if(!extend)
     {
         m_anchor = m_cursor;
@@ -317,10 +362,46 @@ void LineEdit::move_word(bool forward, bool extend)
 }
 std::size_t LineEdit::previous_codepoint(std::size_t index) const
 {
-    do
+    return codepoint_before(m_text, index);
+}
+std::string LineEdit::shown_text() const
+{
+    if(!m_password)
     {
-        -- index;
-    } while(index > 0 && (static_cast<unsigned char>(m_text.at(index)) & 0xc0) == 0x80);
+        return m_text;
+    }
+    std::string dots;
+    for(std::size_t index{}; index < m_text.size();)
+    {
+        static_cast<void>(decode_utf8(m_text, index));
+        dots += password_dot;
+    }
+    return dots;
+}
+std::size_t LineEdit::shown_offset(std::size_t byte) const
+{
+    if(!m_password)
+    {
+        return byte;
+    }
+    std::size_t characters{};
+    for(std::size_t index{}; index < std::min(byte, m_text.size()); ++ characters)
+    {
+        static_cast<void>(decode_utf8(m_text, index));
+    }
+    return characters * password_dot.size();
+}
+std::size_t LineEdit::text_offset(std::size_t shown_byte) const
+{
+    if(!m_password)
+    {
+        return shown_byte;
+    }
+    std::size_t index{};
+    for(auto characters{shown_byte / password_dot.size()}; characters > 0 && index < m_text.size(); -- characters)
+    {
+        static_cast<void>(decode_utf8(m_text, index));
+    }
     return index;
 }
 std::unique_ptr<LineEdit> line_edit()

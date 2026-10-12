@@ -138,10 +138,11 @@ declare namespace oui {
     function paste(): string;
 
     /**
-     * Asks for a line of text, starting with text; null when cancelled. Not in an interactive script.
+     * Asks for a line of text, starting with text; null when cancelled. For a password, what is typed shows as dots, or not
+     * at all when asked on the terminal. Not in an interactive script.
      * In: oui_run, and OUI Code's Tools > Run Script and Tools > Interactive Script.
      */
-    function prompt(title: string, label?: string, text?: string): Promise<string | null>;
+    function prompt(title: string, label?: string, text?: string, options?: {password?: boolean}): Promise<string | null>;
 
     /**
      * Ends the program once what it is doing now is done.
@@ -518,7 +519,7 @@ declare namespace oui {
      * In: oui_run.
      */
     class LineEdit extends Widget {
-        constructor(options?: {text?: string, placeholder?: string, onChange?: (text: string) => void, onSubmit?: (text: string) => void});
+        constructor(options?: {text?: string, placeholder?: string, password?: boolean, onChange?: (text: string) => void, onSubmit?: (text: string) => void});
 
         /**
          * What is written in it.
@@ -543,6 +544,13 @@ declare namespace oui {
          * In: oui_run.
          */
         placeholder: string;
+
+        /**
+         * Whether it is for a password: a dot shows for each character, copying and cutting take nothing, and Control with an
+         * arrow goes to an end rather than to a word's. Its text is what was typed.
+         * In: oui_run.
+         */
+        password: boolean;
 
         /**
          * What is selected, from start to end, as places in its text; the same twice where the cursor is.

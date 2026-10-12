@@ -66,7 +66,7 @@ Window "Find in Files" context=FindInFiles width=60
 | `Tabs` | | `fixed` | `Tab`s |
 | `Tab` | its title | | one widget, or none |
 | `Label` | what it says | `buddy`, `bold`, `heading`, `wrap`, `background` | |
-| `LineEdit` | | `text`, `placeholder`, `background` | |
+| `LineEdit` | | `text`, `placeholder`, `background`, `password` | |
 | `TextEdit` | | `read_only`, `wrap` | |
 | `MarkdownView` | | `background`, `foreground` | |
 | `CheckButton` | what it says | `checked`, `background` | |
@@ -92,7 +92,7 @@ What each builds, and what its properties do, as `Builder::make` in ui.cpp does 
 | `Tabs` | `TabView` | `fixed` its tabs cannot be closed |
 | `Tab "title"` | a page of the `Tabs` | a tab with no widget shows nothing under it: a choice the code follows, as over a list it fills |
 | `Label "text"` | `Label` | `buddy=id` the widget its letter goes to; `bold`; `heading` bold in the dialog's heading colour; `wrap` the text breaks into lines; `background=colour` |
-| `LineEdit` | `LineEdit` | `text="..."` what it starts with; `placeholder="..."` what it says while empty; `background=colour` |
+| `LineEdit` | `LineEdit` | `text="..."` what it starts with; `placeholder="..."` what it says while empty; `background=colour`; `password` a dot shows for each character typed |
 | `TextEdit` | `TextEdit` | `read_only`; `wrap` long lines break |
 | `MarkdownView` | `MarkdownView` | `background=colour`, `foreground=colour` |
 | `CheckButton "text"` | `CheckButton` | `checked`; `background=colour` |

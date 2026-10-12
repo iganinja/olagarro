@@ -164,7 +164,7 @@
 // What pressing it does.
 // api(oui_run): class oui.LineEdit extends oui.Widget
 // A field of one line.
-// api(oui_run): new oui.LineEdit(options?: {text?: string, placeholder?: string, onChange?: (text: string) => void, onSubmit?: (text: string) => void})
+// api(oui_run): new oui.LineEdit(options?: {text?: string, placeholder?: string, password?: boolean, onChange?: (text: string) => void, onSubmit?: (text: string) => void})
 // api(oui_run): oui.LineEdit#text: string
 // What is written in it.
 // api(oui_run): oui.LineEdit#onChange: (text: string) => void
@@ -173,6 +173,9 @@
 // Called when Enter is pressed in it.
 // api(oui_run): oui.LineEdit#placeholder: string
 // What it shows, quieter, while it is empty.
+// api(oui_run): oui.LineEdit#password: boolean
+// Whether it is for a password: a dot shows for each character, copying and cutting take nothing, and Control with an
+// arrow goes to an end rather than to a word's. Its text is what was typed.
 // api(oui_run): oui.LineEdit#selection: [number, number]
 // What is selected, from start to end, as places in its text; the same twice where the cursor is.
 // api(oui_run): oui.LineEdit#select(start: number, end?: number): this
@@ -533,10 +536,12 @@ class Button extends Widget {
 
 class LineEdit extends Widget {
     #placeholder = "";
+    #password = false;
     constructor(options = {}) {
         super(n.lineEdit());
         if (options.text !== undefined) this.text = options.text;
         if (options.placeholder) this.placeholder = options.placeholder;
+        if (options.password) this.password = true;
         if (options.onChange) this.onChange = options.onChange;
         if (options.onSubmit) this.onSubmit = options.onSubmit;
     }
@@ -546,6 +551,11 @@ class LineEdit extends Widget {
     set placeholder(value) {
         this.#placeholder = String(value);
         n.setPlaceholder(this.id, this.#placeholder);
+    }
+    get password() { return this.#password; }
+    set password(value) {
+        this.#password = Boolean(value);
+        n.setPassword(this.id, this.#password);
     }
     get selection() { return n.getSelection(this.id); }
     select(start, end = start) { n.select(this.id, Number(start), Number(end)); return this; }
