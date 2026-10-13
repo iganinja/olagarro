@@ -15,7 +15,7 @@
 using namespace olagarro;
 
 void show_preferences(oui::Application& application, oui::Settings& settings, Editors& editors,
-                      UnsavedBackup& unsaved_backup, Suggester& suggester)
+                      UnsavedBackup& unsaved_backup, oui::Suggester& suggester)
 {
     auto ui{build_oui_code_ui(OuiCodeUi::preferences)};
     // "auto" follows the system; the rest are English, which the sources are written in, and the languages OUI Code

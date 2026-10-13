@@ -1,7 +1,6 @@
 #pragma once
 
-#include "completion.h"
-
+#include <oui/completion.h>
 #include <oui/widget.h>
 
 #include <signalslot/signalslot.h>
@@ -11,17 +10,20 @@
 #include <utility>
 #include <vector>
 
+namespace olagarro::oui
+{
+
 // How the call the cursor is in is called, shown over its line with Application::show_popup while one writes its
 // arguments: the signature, the parameter the cursor's argument goes to marked, and what it does. Typing goes on in
 // the document; it takes only Escape, to close.
-class SignatureTip final : public olagarro::oui::Widget
+class SignatureTip final : public Widget
 {
   public:
     // Over `anchor`, the cell of the name called, or under it when there is no room above.
-    explicit SignatureTip(olagarro::oui::Point anchor);
+    explicit SignatureTip(Point anchor);
 
     void show(Signature signature, std::size_t argument);
-    void set_anchor(olagarro::oui::Point anchor);
+    void set_anchor(Point anchor);
     [[nodiscard]] const Signature& signature() const;
     // The parameter marked, when the argument goes to one.
     [[nodiscard]] std::optional<std::size_t> parameter() const;
@@ -32,10 +34,10 @@ class SignatureTip final : public olagarro::oui::Widget
         return m_cancelled.connect(std::forward<Callback>(callback));
     }
 
-    [[nodiscard]] olagarro::oui::Size measure(const olagarro::oui::Constraints& constraints) const override;
-    void arrange(const olagarro::oui::Rect& screen) override;
-    void paint(olagarro::oui::Painter& painter, const olagarro::oui::Theme& theme) const override;
-    bool handle_event(const olagarro::oui::Event& event) override;
+    [[nodiscard]] Size measure(const Constraints& constraints) const override;
+    void arrange(const Rect& screen) override;
+    void paint(Painter& painter, const Theme& theme) const override;
+    bool handle_event(const Event& event) override;
 
   private:
     // A row as shown: a stretch of the signature, or of a line of what it does.
@@ -50,9 +52,11 @@ class SignatureTip final : public olagarro::oui::Widget
     // The rows, no wider than `width` cells.
     [[nodiscard]] std::vector<Row> rows(int width) const;
 
-    olagarro::oui::Point m_anchor;
+    Point m_anchor;
     Signature m_signature;
     std::size_t m_argument{};
     std::vector<Row> m_rows;
     olagarro::signal_slot::Signal<> m_cancelled;
 };
+
+} // namespace olagarro::oui

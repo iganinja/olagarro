@@ -1,14 +1,17 @@
-#include "completion.h"
+#include <oui/completion.h>
 
 #include <algorithm>
 #include <cctype>
 #include <set>
 #include <utility>
 
+namespace olagarro::oui
+{
+
 namespace
 {
 
-// What a name is made of in the languages OUI Code knows: letters, digits, _ and $, and whatever is not ASCII.
+// What a name is made of in the languages suggested for: letters, digits, _ and $, and whatever is not ASCII.
 [[nodiscard]] bool in_word(char character)
 {
     const auto byte{static_cast<unsigned char>(character)};
@@ -18,8 +21,8 @@ namespace
 [[nodiscard]] std::string lowercase(std::string_view text)
 {
     std::string lower{text};
-    std::transform(lower.begin(), lower.end(), lower.begin(),
-                   [](char character) { return static_cast<char>(std::tolower(static_cast<unsigned char>(character))); });
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](char character)
+                   { return static_cast<char>(std::tolower(static_cast<unsigned char>(character))); });
     return lower;
 }
 
@@ -42,7 +45,8 @@ namespace
     }
     for(std::size_t index{}; index < prefix.size(); ++ index)
     {
-        if(std::tolower(static_cast<unsigned char>(word[index])) != std::tolower(static_cast<unsigned char>(prefix[index])))
+        if(std::tolower(static_cast<unsigned char>(word[index])) !=
+           std::tolower(static_cast<unsigned char>(prefix[index])))
         {
             return false;
         }
@@ -192,7 +196,8 @@ std::optional<Call> call_at(std::string_view text, std::size_t cursor)
         ++ index;
     }
     // The innermost "(", though the cursor be in a list or an object inside it, as in oui.column([a, b]).
-    const auto call{std::find_if(open.rbegin(), open.rend(), [](const Open& bracket) { return bracket.bracket == '('; })};
+    const auto call{
+        std::find_if(open.rbegin(), open.rend(), [](const Open& bracket) { return bracket.bracket == '('; })};
     if(call == open.rend())
     {
         return std::nullopt;
@@ -357,6 +362,10 @@ ScriptApi::ScriptApi(std::string_view declarations)
             const auto outer{here()};
             m_members[outer].push_back({name, is_class ? "class" : "namespace", {}});
             scopes.push_back({name, is_class, doc});
+            if(is_class)
+            {
+                m_classes.insert(here());
+            }
             if(const auto extends{line.find(" extends ")}; is_class && extends != std::string::npos)
             {
                 // A base in the same namespace is written without it.
@@ -369,9 +378,14 @@ ScriptApi::ScriptApi(std::string_view declarations)
             // A class's members are its instances'; its constructor is called as the class, with `new`.
             const auto name{name_of(0)};
             const auto rest{without_semicolon(line.substr(name.size()))};
+            // What a class's members are declared with is written from the namespace the class is in.
+            const auto class_name{here()};
+            const auto dot{class_name.rfind('.')};
+            const auto outer{dot == std::string::npos ? std::string{} : class_name.substr(0, dot)};
             if(name == "constructor")
             {
                 m_signatures[here()] = signature_of(scopes.back().name, rest, scopes.back().doc);
+                m_scopes[here()] = outer;
             }
             else if(!name.empty())
             {
@@ -379,6 +393,11 @@ ScriptApi::ScriptApi(std::string_view declarations)
                 if(!rest.empty() && rest.front() == '(')
                 {
                     m_signatures[here() + "#" + name] = signature_of(name, rest, doc);
+                    m_scopes[here() + "#" + name] = outer;
+                }
+                else
+                {
+                    m_fields[here() + "#" + name] = Signature{name + rest, {}, doc};
                 }
             }
         }
@@ -388,6 +407,7 @@ ScriptApi::ScriptApi(std::string_view declarations)
             const auto signature{without_semicolon(line.substr(9 + name.size()))};
             m_members[here()].push_back({name, shortened(signature), {}});
             m_signatures[whole(name)] = signature_of(name, signature, doc);
+            m_scopes[whole(name)] = here();
         }
         else if(line.rfind("const ", 0) == 0)
         {
@@ -410,7 +430,7 @@ std::optional<Signature> ScriptApi::signature(const Call& call, const std::vecto
         return std::nullopt;
     }
     // What an instance has, in its class or the classes it derives from.
-    for(auto current{class_made_as(call.qualifier, documents)}; !current.empty();)
+    for(auto current{type_of(call.qualifier, documents)}; !current.empty();)
     {
         if(const auto found{m_signatures.find(current + "#" + call.name)}; found != m_signatures.end())
         {
@@ -420,6 +440,239 @@ std::optional<Signature> ScriptApi::signature(const Call& call, const std::vecto
         current = base == m_bases.end() ? std::string{} : base->second;
     }
     return std::nullopt;
+}
+
+const Signature* ScriptApi::declared(std::string_view whole) const
+{
+    if(const auto found{m_signatures.find(whole)}; found != m_signatures.end())
+    {
+        return &found->second;
+    }
+    const auto field{m_fields.find(whole)};
+    return field == m_fields.end() ? nullptr : &field->second;
+}
+
+std::string ScriptApi::resolved(std::string_view type, std::string_view scope) const
+{
+    const auto name{trim(type)};
+    if(name.empty() ||
+       !std::all_of(name.begin(), name.end(), [](char character) { return in_word(character) || character == '.'; }))
+    {
+        return {};
+    }
+    // From the namespace it is written in outwards: "Image" in paint is paint.Image before a top-level Image.
+    for(std::string outer{scope};;)
+    {
+        const auto whole{outer.empty() ? name : outer + "." + name};
+        if(m_classes.count(whole) != 0)
+        {
+            return whole;
+        }
+        if(outer.empty())
+        {
+            return {};
+        }
+        const auto dot{outer.rfind('.')};
+        outer = dot == std::string::npos ? std::string{} : outer.substr(0, dot);
+    }
+}
+
+std::string ScriptApi::returned(const std::string& key) const
+{
+    const auto signature{m_signatures.find(key)};
+    if(signature == m_signatures.end())
+    {
+        return {};
+    }
+    // The type after the brackets of the parameters: "(radius: number): Image".
+    const auto& text{signature->second.text};
+    const auto open{text.find('(')};
+    if(open == std::string::npos)
+    {
+        return {};
+    }
+    auto depth{0};
+    for(auto index{open}; index < text.size(); ++ index)
+    {
+        if(text[index] == '(')
+        {
+            ++ depth;
+        }
+        else if(text[index] == ')' && -- depth == 0)
+        {
+            const auto colon{text.find(':', index)};
+            if(colon == std::string::npos)
+            {
+                return {};
+            }
+            const auto scope{m_scopes.find(key)};
+            return resolved(std::string_view{text}.substr(colon + 1), scope == m_scopes.end() ? "" : scope->second);
+        }
+    }
+    return {};
+}
+
+std::string ScriptApi::type_of(std::string_view name, const std::vector<std::string_view>& documents) const
+{
+    return type_of(name, documents, 0);
+}
+
+std::string ScriptApi::type_of(std::string_view name, const std::vector<std::string_view>& documents, int depth) const
+{
+    // Far enough for `a = b.c(`, `b = d.e(`..., and no further, should two names be made of each other.
+    if(name.empty() || depth > 4)
+    {
+        return {};
+    }
+    if(auto made{class_made_as(name, documents)}; !made.empty())
+    {
+        return made;
+    }
+    const auto skip_blanks{[](std::string_view document, std::size_t at)
+                           {
+                               while(at < document.size() && (document[at] == ' ' || document[at] == '\t'))
+                               {
+                                   ++ at;
+                               }
+                               return at;
+                           }};
+    for(const auto document : documents)
+    {
+        for(auto at{document.find(name)}; at != std::string_view::npos; at = document.find(name, at + 1))
+        {
+            const auto end{at + name.size()};
+            if((at > 0 && (in_word(document[at - 1]) || document[at - 1] == '.')) ||
+               (end < document.size() && in_word(document[end])))
+            {
+                continue;
+            }
+            // `name = a.b.c(`: what c returns.
+            auto equals{skip_blanks(document, end)};
+            if(equals >= document.size() || document[equals] != '=' ||
+               (equals + 1 < document.size() && (document[equals + 1] == '=' || document[equals + 1] == '>')))
+            {
+                continue;
+            }
+            const auto from{skip_blanks(document, equals + 1)};
+            auto to{from};
+            while(to < document.size() && (in_word(document[to]) || document[to] == '.'))
+            {
+                ++ to;
+            }
+            if(to == from || skip_blanks(document, to) >= document.size() || document[skip_blanks(document, to)] != '(')
+            {
+                continue;
+            }
+            const auto path{document.substr(from, to - from)};
+            const auto dot{path.rfind('.')};
+            std::string found;
+            if(dot == std::string_view::npos)
+            {
+                found = returned(std::string{path});
+            }
+            else
+            {
+                const auto qualifier{path.substr(0, dot)};
+                const auto called{std::string{path.substr(dot + 1)}};
+                if(members(qualifier) != nullptr)
+                {
+                    found = returned(std::string{qualifier} + "." + called);
+                }
+                else
+                {
+                    // What an instance's method returns, in its class or those it derives from.
+                    for(auto current{type_of(qualifier, documents, depth + 1)}; !current.empty() && found.empty();)
+                    {
+                        found = returned(current + "#" + called);
+                        const auto base{m_bases.find(current)};
+                        current = base == m_bases.end() ? std::string{} : base->second;
+                    }
+                }
+            }
+            if(!found.empty())
+            {
+                return found;
+            }
+        }
+    }
+    // A parameter of a function written with the name of a method a class declares with typed parameters: the
+    // callbacks an API's objects have, as `render(image, values) {` or `render: (image, values) =>`.
+    for(const auto& [key, signature] : m_signatures)
+    {
+        const auto hash{key.find('#')};
+        if(hash == std::string::npos)
+        {
+            continue;
+        }
+        const auto method{std::string_view{key}.substr(hash + 1)};
+        for(const auto document : documents)
+        {
+            for(auto at{document.find(method)}; at != std::string_view::npos; at = document.find(method, at + 1))
+            {
+                const auto end{at + method.size()};
+                if((at > 0 && (in_word(document[at - 1]) || document[at - 1] == '.')) ||
+                   (end < document.size() && in_word(document[end])))
+                {
+                    continue;
+                }
+                auto open{skip_blanks(document, end)};
+                if(open < document.size() && document[open] == ':')
+                {
+                    open = skip_blanks(document, open + 1);
+                    if(document.substr(open, 8) == "function")
+                    {
+                        open = skip_blanks(document, open + 8);
+                    }
+                }
+                if(open >= document.size() || document[open] != '(')
+                {
+                    continue;
+                }
+                const auto close{document.find(')', open)};
+                if(close == std::string_view::npos)
+                {
+                    continue;
+                }
+                const auto after{skip_blanks(document, close + 1)};
+                if(after >= document.size() || (document[after] != '{' && document.substr(after, 2) != "=>"))
+                {
+                    continue;
+                }
+                // The parameters written, by place, against those declared.
+                const auto written{document.substr(open + 1, close - open - 1)};
+                std::size_t place{};
+                for(std::size_t start{};; ++ place)
+                {
+                    const auto comma{written.find(',', start)};
+                    auto parameter{trim(written.substr(start, comma == std::string_view::npos ? std::string_view::npos
+                                                                                              : comma - start))};
+                    parameter = parameter.substr(0, parameter.find('='));
+                    if(trim(parameter) == name && place < signature.parameters.size())
+                    {
+                        const auto [first, last]{signature.parameters[place]};
+                        const auto declared{std::string_view{signature.text}.substr(first, last - first)};
+                        const auto colon{declared.find(':')};
+                        const auto scope{m_scopes.find(key)};
+                        if(colon != std::string_view::npos)
+                        {
+                            if(auto type{
+                                   resolved(declared.substr(colon + 1), scope == m_scopes.end() ? "" : scope->second)};
+                               !type.empty())
+                            {
+                                return type;
+                            }
+                        }
+                    }
+                    if(comma == std::string_view::npos)
+                    {
+                        break;
+                    }
+                    start = comma + 1;
+                }
+            }
+        }
+    }
+    return {};
 }
 
 std::vector<Suggestion> ScriptApi::instance_members(std::string_view name) const
@@ -444,7 +697,7 @@ const std::vector<Suggestion>* ScriptApi::members(std::string_view qualifier) co
 }
 
 std::vector<Suggestion> suggestions_for(const Writing& writing, const std::vector<std::string_view>& documents,
-                                        const Language* language, const ScriptApi* api)
+                                        const std::vector<Suggestion>* language, const ScriptApi* api)
 {
     const auto lower{lowercase(writing.prefix)};
     // Two rounds: those that start exactly as written, then those that do whatever the case.
@@ -467,7 +720,7 @@ std::vector<Suggestion> suggestions_for(const Writing& writing, const std::vecto
     if(known == nullptr && api != nullptr && !writing.qualifier.empty() &&
        writing.qualifier.find('.') == std::string::npos)
     {
-        instance = api->instance_members(class_made_as(writing.qualifier, documents));
+        instance = api->instance_members(api->type_of(writing.qualifier, documents));
     }
     if(known != nullptr || !instance.empty())
     {
@@ -482,7 +735,7 @@ std::vector<Suggestion> suggestions_for(const Writing& writing, const std::vecto
         {
             if(language != nullptr)
             {
-                for(const auto& suggestion : language->suggestions)
+                for(const auto& suggestion : *language)
                 {
                     offer(suggestion);
                 }
@@ -540,3 +793,5 @@ std::vector<Suggestion> suggestions_for(const Writing& writing, const std::vecto
     }
     return exact;
 }
+
+} // namespace olagarro::oui

@@ -159,6 +159,7 @@ add_library(olagarro_oui
     oui/src/command.cpp
     oui/src/command_line.cpp
     oui/src/command_palette.cpp
+    oui/src/completion.cpp
     oui/src/container.cpp
     oui/src/cell_buffer.cpp
     oui/src/file_dialog.cpp
@@ -189,6 +190,7 @@ add_library(olagarro_oui
     oui/src/scroll_view.cpp
     oui/src/spacer.cpp
     oui/src/settings.cpp
+    oui/src/signature_tip.cpp
     oui/src/slider.cpp
     oui/src/tab_view.cpp
     oui/src/tab_switcher.cpp
@@ -207,6 +209,7 @@ add_library(olagarro_oui
     oui/src/regex.cpp
     oui/src/text_search.cpp
     oui/src/split_view.cpp
+    oui/src/suggester.cpp
     oui/src/syntax_highlighter.cpp
     oui/src/scrollbar.cpp
     oui/src/table.cpp
@@ -474,7 +477,6 @@ if(OLAGARRO_BUILD_EXAMPLES)
         examples/oui_code/ui/interactive_ui.oui)
     add_executable(olagarro_oui_code
         examples/oui_code/main.cpp
-        examples/oui_code/completion.cpp
         examples/oui_code/dialogs.cpp
         examples/oui_code/edit_commands.cpp
         examples/oui_code/documents.cpp
@@ -505,8 +507,6 @@ if(OLAGARRO_BUILD_EXAMPLES)
         examples/oui_code/search_commands.cpp
         examples/oui_code/self_tests.cpp
         examples/oui_code/session.cpp
-        examples/oui_code/signature_tip.cpp
-        examples/oui_code/suggester.cpp
         examples/oui_code/task_list.cpp
         examples/oui_code/tools_commands.cpp
         examples/oui_code/view_commands.cpp
@@ -837,6 +837,8 @@ if(OLAGARRO_BUILD_TESTS)
              tests/oui/file_picker_test.cpp
              tests/oui/file_picker_dialog_test.cpp
              tests/oui/command_palette_test.cpp
+             tests/oui/completion_test.cpp
+             tests/oui/suggester_test.cpp
              tests/oui/text_file_test.cpp
              tests/oui/dialogs_test.cpp
              tests/oui/file_picker_integration_test.cpp
@@ -891,14 +893,11 @@ if(OLAGARRO_BUILD_TESTS)
             add_executable(olagarro_oui_code_tests tests/oui_code/ignore_rules_test.cpp
                 tests/oui_code/scripting_test.cpp
                 examples/oui_code/ignore_rules.cpp
-                examples/oui_code/completion.cpp
                 examples/oui_code/find_bar.cpp
                 examples/oui_code/languages.cpp
                 examples/oui_code/live_script.cpp
                 examples/oui_code/script_run.cpp
                 examples/oui_code/scripting.cpp
-                examples/oui_code/signature_tip.cpp
-                examples/oui_code/suggester.cpp
                 examples/oui_code/task_list.cpp
                 examples/oui_code/ui_descriptions.cpp
                 examples/oui_code/interactive_view.cpp
@@ -907,11 +906,9 @@ if(OLAGARRO_BUILD_TESTS)
                 examples/oui_code/ui_skeleton.cpp
                 tests/oui_code/ui_skeleton_test.cpp
                 tests/oui_code/generated_window.cpp
-                tests/oui_code/completion_test.cpp
                 tests/oui_code/find_bar_test.cpp
                 tests/oui_code/live_script_test.cpp
                 tests/oui_code/script_run_test.cpp
-                tests/oui_code/suggester_test.cpp
                 tests/oui_code/task_list_test.cpp
                 examples/oui_code/help.cpp
                 tests/oui_code/help_test.cpp

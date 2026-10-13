@@ -132,6 +132,9 @@
       "Tab": "Tab",
       "Up": "Arriba"
     },
+    "Suggestions": {
+      "Nothing to suggest": "Nada que sugerir"
+    },
     "TabSwitcher": {
       "Tab List": "Lista de pestañas"
     },

@@ -1,4 +1,4 @@
-#include "signature_tip.h"
+#include <oui/signature_tip.h>
 
 #include <oui/painter.h>
 #include <oui/theme.h>
@@ -6,7 +6,8 @@
 
 #include <algorithm>
 
-using namespace olagarro;
+namespace olagarro::oui
+{
 
 namespace
 {
@@ -189,3 +190,5 @@ bool SignatureTip::handle_event(const oui::Event& event)
     // The mouse over it is its own, and does nothing.
     return std::holds_alternative<oui::MouseEvent>(event);
 }
+
+} // namespace olagarro::oui

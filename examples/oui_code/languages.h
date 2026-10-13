@@ -1,5 +1,6 @@
 #pragma once
 
+#include <oui/completion.h>
 #include <oui/script/script_engine.h>
 #include <oui/syntax_highlighter.h>
 
@@ -11,14 +12,7 @@
 #include <vector>
 
 // What a language suggests as one writes: a word, as a keyword, or a piece of text with a name, as a loop.
-struct Suggestion
-{
-    std::string label;
-    // What kind it is, shown beside it.
-    std::string detail;
-    // What goes in; the label when empty. "$0" in it, if anywhere, is where the cursor goes after.
-    std::string text;
-};
+using Suggestion = olagarro::oui::Suggestion;
 
 // A language OUI Code knows: what files are in it, what starts a comment, which brackets pair, how its text is
 // coloured and what it suggests. Scripts define them with oui.languages.register.

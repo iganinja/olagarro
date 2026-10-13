@@ -46,10 +46,10 @@ The build treats warnings as errors, tests included.
 | `SignalSlotTests.*` | `olagarro_signalslot_tests`, `tests/signalslot/main.cpp` | [signals](signalslot.md) |
 | `Olagarro.SignalSlotSanitized` | the same tests built with AddressSanitizer and UBSan | each callback destroyed once, never used after, never leaked |
 | `ConcurrencyTests.*` | `olagarro_concurrency_unit_tests` | [`concurrent_for`](concurrency.md) |
-| `Oui...Tests.*` | `olagarro_oui_tests`, the files in `tests/oui` but `teardown_test.cpp` | OUI's widgets, layout, terminal, scripts, themes... |
+| `Oui...Tests.*` | `olagarro_oui_tests`, the files in `tests/oui` but `teardown_test.cpp` | OUI's widgets, layout, terminal, scripts, themes, suggestions... |
 | `Olagarro.OuiSanitized` | `tests/oui/teardown_test.cpp` with all of OUI's sources, sanitized | what goes wrong only as an application is taken down |
 | `Olagarro.OuiLifecycleStress` | `olagarro_oui_tests` with one filter | `OuiApplicationTests.StressesWidgetLifetimeAndModalIsolation`, with a 30 s limit |
-| OUI Code's suites | `olagarro_oui_code_tests`, `tests/oui_code/*.cpp` with OUI Code's sources | completion, the find bar, scripts, the UI preview, the session... |
+| OUI Code's suites | `olagarro_oui_code_tests`, `tests/oui_code/*.cpp` with OUI Code's sources | the find bar, scripts, the UI preview, the session... |
 | `Olagarro.OuiTerminalSmoke` | `examples/oui/terminal_demo.cpp --smoke-test` | the demo starts and draws |
 | `Olagarro.OuiCodeSmoke` | `oui_code --smoke-test` | OUI Code starts, renders once, and exits |
 | `Olagarro.OuiCodeStress` | `oui_code --stress-test` | OUI Code's dialogs and commands, played from a script of events, within 30 s |

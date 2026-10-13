@@ -1,5 +1,4 @@
-#include "completion.h"
-
+#include <oui/completion.h>
 #include <oui/file_system.h>
 
 #include <gtest/gtest.h>
@@ -9,6 +8,7 @@
 #include <vector>
 
 using namespace olagarro;
+using namespace olagarro::oui;
 
 namespace
 {
@@ -96,8 +96,8 @@ TEST(CompletionTests, SuggestsWhatAnInstanceOfTheApisClassesHas)
 
 TEST(CompletionTests, ALanguageSuggestsItsWordsAndPiecesOfText)
 {
-    Language language;
-    language.suggestions = {{"function", "keyword", ""}, {"for", "loop", "for(let i = 0; i < $0; ++ i) {\n}"}};
+    const std::vector<Suggestion> language{{"function", "keyword", ""},
+                                           {"for", "loop", "for(let i = 0; i < $0; ++ i) {\n}"}};
     const auto found{suggestions_for(writing_at("fo", 2), {"format"}, &language, nullptr)};
     ASSERT_EQ(labels(found), (std::vector<std::string>{"for", "format"}));
     EXPECT_EQ(found[0].detail, "loop");
@@ -173,3 +173,72 @@ TEST(CompletionTests, KnowsHowWhatTheApiDeclaresIsCalled)
 }
 
 } // namespace
+
+namespace
+{
+
+// An API of images, as a paint program's plugins have: a namespace with a function, a class, and a class whose
+// methods are callbacks a script writes.
+const char* const image_api{R"ts(declare namespace paint {
+    function clouds(width: number, height: number): Image;
+    function effect(definition: Definition): void;
+    class Image {
+        width: number;
+        gaussianBlur(radius: number): Image;
+        over(below: Image, opacity?: number): Image;
+    }
+    class Definition {
+        name: string;
+        render(image: Image, values: object): Image;
+    }
+}
+)ts"};
+
+} // namespace
+
+TEST(CompletionTests, WhatAFunctionOrMethodReturnsIsKnownByWhatItIsDeclaredToReturn)
+{
+    const ScriptApi api{image_api};
+    const std::string_view document{"const sky = paint.clouds(64, 64);\nconst soft = sky.gaussianBlur(2);\n"};
+    EXPECT_EQ(api.type_of("sky", {document}), "paint.Image");
+    EXPECT_EQ(api.type_of("soft", {document}), "paint.Image") << "a method of what a function returned";
+    EXPECT_EQ(api.type_of("nothing", {document}), "");
+    const std::string text{std::string{document} + "soft."};
+    const auto found{labels(suggestions_for(writing_at(text, text.size()), {text}, nullptr, &api))};
+    EXPECT_NE(std::find(found.begin(), found.end(), "gaussianBlur"), found.end());
+    EXPECT_NE(std::find(found.begin(), found.end(), "width"), found.end());
+}
+
+TEST(CompletionTests, AParameterOfACallbackHasTheTypeItsMethodDeclares)
+{
+    const ScriptApi api{image_api};
+    const std::string_view method{"paint.effect({\n    render(image, values) {\n        return image;\n    },\n});\n"};
+    EXPECT_EQ(api.type_of("image", {method}), "paint.Image");
+    EXPECT_EQ(api.type_of("values", {method}), "") << "an object is no class of the API";
+    const std::string_view arrow{"paint.effect({render: (picture) => picture});\n"};
+    EXPECT_EQ(api.type_of("picture", {arrow}), "paint.Image");
+    const std::string_view called{"image.render(image, values);\n"};
+    EXPECT_EQ(api.type_of("image", {called}), "") << "a call is not a function written";
+    const std::string text{std::string{method} + "image.over("};
+    const auto call{call_at(text, text.size())};
+    ASSERT_TRUE(call);
+    const auto signature{api.signature(*call, {text})};
+    ASSERT_TRUE(signature);
+    EXPECT_EQ(signature->text, "over(below: Image, opacity?: number): Image");
+}
+
+TEST(CompletionTests, WhatIsDeclaredCanBeLookedUpByItsWholeName)
+{
+    const ScriptApi api{"declare namespace paint {\n    /**\n     * Clouds.\n     */\n"
+                        "    function clouds(width: number): Image;\n    class Image {\n        /**\n"
+                        "         * Its width.\n         */\n        width: number;\n    }\n}\n"};
+    const auto* const clouds{api.declared("paint.clouds")};
+    ASSERT_NE(clouds, nullptr);
+    EXPECT_EQ(clouds->text, "clouds(width: number): Image");
+    EXPECT_EQ(clouds->doc, std::vector<std::string>{"Clouds."});
+    const auto* const width{api.declared("paint.Image#width")};
+    ASSERT_NE(width, nullptr) << "a field, too";
+    EXPECT_EQ(width->text, "width: number");
+    EXPECT_EQ(width->doc, std::vector<std::string>{"Its width."});
+    EXPECT_EQ(api.declared("paint.nothing"), nullptr);
+}

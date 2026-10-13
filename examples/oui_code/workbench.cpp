@@ -27,7 +27,7 @@ Workbench::Workbench(oui::Application& application, oui::Settings& settings, Wor
       m_scripts_folder{settings.file_path().parent_path() / oui::path_from_utf8("oui_code_scripts")},
       m_script_api{embedded_oui_script_api().front()},
       m_suggester{application,
-                  [this]() -> std::optional<Suggester::Context>
+                  [this]() -> std::optional<oui::Suggester::Context>
                   {
                       auto& group{m_editors.active()};
                       const auto index{group.tabs.selected_index()};
@@ -40,10 +40,14 @@ Workbench::Workbench(oui::Application& application, oui::Settings& settings, Wor
                       {
                           return std::nullopt;
                       }
-                      Suggester::Context context;
+                      oui::Suggester::Context context;
                       context.editor = editor;
-                      context.language = group.documents[index].language.get();
-                      context.script = context.language != nullptr && context.language->id == "javascript";
+                      const auto* const language{group.documents[index].language.get()};
+                      context.language = language != nullptr ? &language->suggestions : nullptr;
+                      // OUI's own scripts: their names and calls are the API's.
+                      context.api = language != nullptr && language->id == "javascript" ? &m_script_api : nullptr;
+                      // A user interface description: what fits there, as OUI describes it.
+                      context.description = language != nullptr && language->id == "oui";
                       for(auto& each : m_editors.groups())
                       {
                           for(std::size_t tab{}; tab < each.documents.size(); ++ tab)
@@ -55,8 +59,7 @@ Workbench::Workbench(oui::Application& application, oui::Settings& settings, Wor
                           }
                       }
                       return context;
-                  },
-                  m_script_api},
+                  }},
       m_navigation{application, m_editors, [this](const std::filesystem::path& file) { open_from_panel(file); }}
 {
 #ifdef OLAGARRO_OUI_CODE_WINDOW

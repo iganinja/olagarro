@@ -277,12 +277,15 @@ the language's `processGeneratedCode` script if one is chosen. The language chos
 
 ### Suggestions
 
-[completion.cpp](../examples/oui_code/completion.cpp) works out what the cursor is writing (`writing_at`), which call it
-is inside (`call_at`), and what to suggest: words of the open documents, the language's suggestions, and in a JavaScript
-document what `oui/oui.d.ts` declares, through `ScriptApi`. [suggester.cpp](../examples/oui_code/suggester.cpp) is the
-list that follows the typing, and [signature_tip.cpp](../examples/oui_code/signature_tip.cpp) the call's signature over
-the line. The `Workbench` gives the `Suggester` a function that returns its `Context` (the focused document, its
-language, every open text) and calls `after_event` after each event, from its event observer (`watch_events`).
+The suggestions are OUI's own, in the library, for any program with code to write:
+[completion.h](../oui/include/oui/completion.h) works out what the cursor is writing (`writing_at`), which call it is
+inside (`call_at`), and what to suggest: words of the open documents, the language's suggestions, and in a JavaScript
+document what `oui/oui.d.ts` declares, through `ScriptApi`, which also works out which of its classes a name is
+(`type_of`). [suggester.h](../oui/include/oui/suggester.h) is the list that follows the typing, and
+[signature_tip.h](../oui/include/oui/signature_tip.h) the call's signature over the line. The `Workbench` gives the
+`Suggester` a function that returns its `Context` (the focused document, its language's suggestions, the API for a
+script, every open text, whether it is a user interface description) and calls `after_event` after each event, from
+its event observer (`watch_events`).
 
 ## Other tabs
 

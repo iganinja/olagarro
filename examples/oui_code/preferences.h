@@ -2,7 +2,7 @@
 
 #include "editors.h"
 #include "recovery.h"
-#include "suggester.h"
+#include <oui/suggester.h>
 
 #include <oui/application.h>
 #include <oui/settings.h>
@@ -11,4 +11,4 @@
 // changed on disk and with unsaved work. Each choice is kept as it is made; OK applies the indentation to the open
 // documents.
 void show_preferences(olagarro::oui::Application& application, olagarro::oui::Settings& settings, Editors& editors,
-                      UnsavedBackup& unsaved_backup, Suggester& suggester);
+                      UnsavedBackup& unsaved_backup, olagarro::oui::Suggester& suggester);

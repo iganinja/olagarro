@@ -1,6 +1,5 @@
 #pragma once
 
-#include "completion.h"
 #include "editors.h"
 #include "find_bar.h"
 #include "session_entry.h"
@@ -10,15 +9,16 @@
 #include "recovery.h"
 #include "script_run.h"
 #include "scripting.h"
-#include "suggester.h"
 
 #include <oui/application.h>
+#include <oui/completion.h>
 #include <oui/dock_layout.h>
 #include <oui/folder_view.h>
 #include <oui/menu_bar.h>
 #include <oui/settings.h>
 #include <oui/split_view.h>
 #include <oui/status_bar.h>
+#include <oui/suggester.h>
 #include <oui/tab_switcher.h>
 #include <oui/text_edit.h>
 #include <oui/window.h>
@@ -285,8 +285,8 @@ class Workbench
 
     UnsavedBackup m_unsaved_backup{m_application, m_settings, m_editors};
     // What OUI's scripts can use, for the suggestions in scripts.
-    ScriptApi m_script_api;
-    Suggester m_suggester;
+    olagarro::oui::ScriptApi m_script_api;
+    olagarro::oui::Suggester m_suggester;
     NavigationHistory m_navigation;
     ProjectSearch m_project_search{m_application};
     olagarro::oui::TabSwitcher m_tab_switcher;

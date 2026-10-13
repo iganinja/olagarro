@@ -1,4 +1,4 @@
-#include "suggester.h"
+#include <oui/suggester.h>
 
 #include <oui/translation.h>
 #include <oui/ui.h>
@@ -8,7 +8,8 @@
 #include <memory>
 #include <utility>
 
-using namespace olagarro;
+namespace olagarro::oui
+{
 
 namespace
 {
@@ -34,11 +35,11 @@ struct Found
 
 // In a user interface description, what fits where the cursor is; elsewhere what completes the word written. Without
 // `suggestions`, only where it starts and whether it is enough: the words of every document are not looked through.
-[[nodiscard]] Found found_at(const Suggester::Context& context, const ScriptApi& api, bool suggestions)
+[[nodiscard]] Found found_at(const Suggester::Context& context, bool suggestions)
 {
     const auto text{context.editor->text()};
     const auto cursor{context.editor->cursor_offset()};
-    if(context.language != nullptr && context.language->id == "oui")
+    if(context.description)
     {
         auto fits{oui::ui_suggestions(text, cursor)};
         Found found{fits.start, {}, true, true};
@@ -51,17 +52,15 @@ struct Found
     const auto writing{writing_at(text, cursor)};
     const auto enough{writing.prefix.size() >= 2 || (writing.prefix.empty() && !writing.qualifier.empty())};
     return Found{writing.start,
-                 suggestions
-                     ? suggestions_for(writing, context.documents, context.language, context.script ? &api : nullptr)
-                     : std::vector<Suggestion>{},
+                 suggestions ? suggestions_for(writing, context.documents, context.language, context.api)
+                             : std::vector<Suggestion>{},
                  enough, false};
 }
 
 } // namespace
 
-Suggester::Suggester(oui::Application& application, std::function<std::optional<Context>()> context,
-                     const ScriptApi& api)
-    : m_application{application}, m_context{std::move(context)}, m_api{api}
+Suggester::Suggester(oui::Application& application, std::function<std::optional<Context>()> context)
+    : m_application{application}, m_context{std::move(context)}
 {
 }
 
@@ -108,7 +107,7 @@ void Suggester::follow_word(const Context& context, std::optional<char32_t> type
 {
     const auto& text{context.editor->text()};
     const auto cursor{context.editor->cursor_offset()};
-    const auto where{found_at(context, m_api, false)};
+    const auto where{found_at(context, false)};
     if(m_list != nullptr)
     {
         // It follows the word while the cursor stays in it, and goes when it leaves.
@@ -122,7 +121,7 @@ void Suggester::follow_word(const Context& context, std::optional<char32_t> type
         {
             return;
         }
-        auto found{found_at(context, m_api, true)};
+        auto found{found_at(context, true)};
         if(found.suggestions.empty())
         {
             close();
@@ -153,7 +152,7 @@ void Suggester::follow_word(const Context& context, std::optional<char32_t> type
     {
         return;
     }
-    auto found{found_at(context, m_api, true)};
+    auto found{found_at(context, true)};
     if(!found.suggestions.empty())
     {
         show(context, found.start, std::move(found.suggestions));
@@ -168,7 +167,7 @@ void Suggester::suggest()
     {
         return;
     }
-    auto found{found_at(*context, m_api, true)};
+    auto found{found_at(*context, true)};
     if(found.suggestions.empty())
     {
         say_nothing(*context, found.start);
@@ -286,8 +285,8 @@ void Suggester::close()
 void Suggester::follow_call(const Context& context)
 {
     auto* const editor{context.editor};
-    const auto call{context.script ? call_at(editor->text(), editor->cursor_offset()) : std::nullopt};
-    const auto signature{call ? m_api.signature(*call, context.documents) : std::nullopt};
+    const auto call{context.api != nullptr ? call_at(editor->text(), editor->cursor_offset()) : std::nullopt};
+    const auto signature{call ? context.api->signature(*call, context.documents) : std::nullopt};
     if(!signature)
     {
         m_dismissed.reset();
@@ -331,3 +330,5 @@ void Suggester::close_signature()
         m_application.close_popup();
     }
 }
+
+} // namespace olagarro::oui
