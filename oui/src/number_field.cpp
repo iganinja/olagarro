@@ -182,9 +182,10 @@ void NumberField::paint(Painter& painter, const Theme& theme) const
     }
     Container::paint(painter, theme);
     const auto right{m_bounds.x + m_bounds.width};
+    // As icons, drawn at any size, not as characters a font may lack.
     const TextStyle arrows{theme.button_foreground, theme.button_background};
-    painter.draw_text({right - 2, m_bounds.y}, "▼", arrows);
-    painter.draw_text({right - 1, m_bounds.y}, "▲", arrows);
+    painter.draw_icon({right - 2, m_bounds.y}, Icon::sorted_down, arrows);
+    painter.draw_icon({right - 1, m_bounds.y}, Icon::sorted_up, arrows);
 }
 
 bool NumberField::handle_event(const Event& event)
