@@ -30,9 +30,19 @@ class Clipboard
     // xclip on X11, so other programs can paste it, and kept in the clipboard itself where there is neither. A type
     // is letters, digits and "/+.-_" only; false for one that is not, or when the system's clipboard refused it.
     [[nodiscard]] bool set_data(std::string_view type, std::string_view bytes);
+    // The same data in several types at once, as an image as PNG and as BMP for programs that take nothing else. On
+    // Windows every one is offered: image/png as the "PNG" format other programs use, image/bmp, a BMP file, as a
+    // device-independent bitmap (CF_DIB). wl-copy and xclip take one type at a time, so there only the first.
+    struct Item
+    {
+        std::string type;
+        std::string bytes;
+    };
+    [[nodiscard]] bool set_data(const std::vector<Item>& items);
     // The types of data the clipboard holds now, as another program or this one offered them.
     [[nodiscard]] std::vector<std::string> types() const;
-    // What it holds of `type`, none when it holds nothing of it.
+    // What it holds of `type`, none when it holds nothing of it. On Windows image/bmp is a device-independent bitmap
+    // given back as a BMP file, as screenshots and older programs offer images.
     [[nodiscard]] std::optional<std::string> data(std::string_view type) const;
 
   private:

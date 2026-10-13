@@ -156,6 +156,11 @@ std::string Clipboard::text() const
     return pclose(pipe) == 0 ? result : m_fallback;
 }
 
+bool Clipboard::set_data(const std::vector<Item>& items)
+{
+    return !items.empty() && set_data(items.front().type, items.front().bytes);
+}
+
 bool Clipboard::set_data(std::string_view type, std::string_view bytes)
 {
     if(!is_type(type))
