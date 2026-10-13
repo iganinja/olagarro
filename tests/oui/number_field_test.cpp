@@ -58,3 +58,16 @@ TEST(OuiNumberFieldTests, UpAndDownTheWheelAndTheArrowsStepIt)
     EXPECT_EQ(field.value(), 4);
     EXPECT_EQ(field.text_field().text(), "4");
 }
+
+TEST(OuiNumberFieldTests, ANumberTypedIsTheValueAtOnceAndShowsKeptWhenCommitted)
+{
+    oui::NumberField field;
+    field.set_range(0, 100);
+    field.text_field().set_text("42");
+    EXPECT_EQ(field.value(), 42) << "leaving the field without Enter loses nothing";
+    field.text_field().set_text("420");
+    EXPECT_EQ(field.value(), 100);
+    EXPECT_EQ(field.text_field().text(), "420") << "not rewritten while being typed";
+    field.commit();
+    EXPECT_EQ(field.text_field().text(), "100");
+}

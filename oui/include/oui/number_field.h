@@ -5,6 +5,8 @@
 #include <signalslot/signalslot.h>
 
 #include <memory>
+#include <optional>
+#include <string_view>
 #include <utility>
 
 namespace olagarro::oui
@@ -13,8 +15,8 @@ namespace olagarro::oui
 class LineEdit;
 
 // A number to type, with arrows after it that step it down and up: Up and Down step it too, Page Up and Page Down ten
-// steps, and the wheel over it. What is typed is taken on Enter, kept in range and on a step; what is not a number
-// changes nothing. While it is not being typed in, it shows its value.
+// steps, and the wheel over it. A number typed is its value at once, kept in range and on a step; what is not a
+// number changes nothing. While it is not being typed in, it shows its value as it was kept.
 class NumberField final : public Container
 {
   public:
@@ -29,6 +31,8 @@ class NumberField final : public Container
     void set_value(double value);
     [[nodiscard]] double value() const;
     [[nodiscard]] LineEdit& text_field();
+    // Shows the value as it was kept, as Enter does: what is typed is taken already, or left when it is no number.
+    void commit();
 
     // Called with the new value when it changes.
     template <typename Callback> olagarro::signal_slot::Connection on_changed(Callback&& callback)
@@ -43,9 +47,10 @@ class NumberField final : public Container
 
   private:
     [[nodiscard]] double fitted(double value) const;
+    // Makes `value`, kept in range and on a step, the value, telling of it when it changed; the text stays.
+    void take(double value);
+    [[nodiscard]] static std::optional<double> parse(std::string_view typed);
     void step_by(double steps);
-    // Takes what was typed, or shows the value again when it is not a number.
-    void take_typed();
     void show_value() const;
 
     LineEdit* m_field{};
@@ -56,6 +61,7 @@ class NumberField final : public Container
     double m_value{0.0};
     olagarro::signal_slot::Signal<double> m_changed;
     olagarro::signal_slot::Connection m_submitted;
+    olagarro::signal_slot::Connection m_typed;
 };
 
 [[nodiscard]] std::unique_ptr<NumberField> number_field();

@@ -24,7 +24,17 @@ constexpr int arrows_width{2};
 NumberField::NumberField()
 {
     m_field = &add(line_edit());
-    m_submitted = m_field->on_submitted([this](std::string_view) { take_typed(); });
+    m_submitted = m_field->on_submitted([this](std::string_view) { commit(); });
+    // A number typed is the value at once, kept in range and on a step, without the text being rewritten under the
+    // cursor; leaving the field shows it as it was kept.
+    m_typed = m_field->on_changed(
+        [this](std::string_view typed)
+        {
+            if(const auto number{parse(typed)})
+            {
+                take(*number);
+            }
+        });
     m_field->set_key_handler(
         [this](const Event& event)
         {
@@ -89,14 +99,31 @@ double NumberField::fitted(double value) const
 
 void NumberField::set_value(double value)
 {
-    const auto fitted_value{fitted(value)};
-    const auto changed{fitted_value != m_value};
-    m_value = fitted_value;
+    take(value);
     show_value();
-    if(changed)
+}
+
+void NumberField::take(double value)
+{
+    const auto fitted_value{fitted(value)};
+    if(fitted_value == m_value)
     {
-        m_changed.fire(m_value);
+        return;
     }
+    m_value = fitted_value;
+    m_changed.fire(m_value);
+}
+
+std::optional<double> NumberField::parse(std::string_view typed)
+{
+    const std::string text{typed};
+    char* end{};
+    const auto number{std::strtod(text.c_str(), &end)};
+    if(text.empty() || end == text.c_str() || *end != '\0' || !std::isfinite(number))
+    {
+        return std::nullopt;
+    }
+    return number;
 }
 
 double NumberField::value() const
@@ -111,22 +138,18 @@ LineEdit& NumberField::text_field()
 
 void NumberField::step_by(double steps)
 {
-    take_typed();
+    commit();
     const auto step{m_step > 0.0 ? m_step : 1.0};
     set_value(m_value + step * steps);
 }
 
-void NumberField::take_typed()
+void NumberField::commit()
 {
-    const std::string typed{m_field->text()};
-    char* end{};
-    const auto number{std::strtod(typed.c_str(), &end)};
-    if(typed.empty() || end == typed.c_str() || *end != '\0' || !std::isfinite(number))
+    if(const auto number{parse(m_field->text())})
     {
-        show_value();
-        return;
+        take(*number);
     }
-    set_value(number);
+    show_value();
 }
 
 void NumberField::show_value() const
