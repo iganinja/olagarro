@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace olagarro::oui
 {
@@ -25,16 +26,32 @@ class Clipboard
     [[nodiscard]] bool set_text(std::string_view text);
     [[nodiscard]] std::string text() const;
 
+    // Data of a type, as an image as image/png, in place of what the clipboard held: through wl-copy on Wayland or
+    // xclip on X11, so other programs can paste it, and kept in the clipboard itself where there is neither. A type
+    // is letters, digits and "/+.-_" only; false for one that is not, or when the system's clipboard refused it.
+    [[nodiscard]] bool set_data(std::string_view type, std::string_view bytes);
+    // The types of data the clipboard holds now, as another program or this one offered them.
+    [[nodiscard]] std::vector<std::string> types() const;
+    // What it holds of `type`, none when it holds nothing of it.
+    [[nodiscard]] std::optional<std::string> data(std::string_view type) const;
+
   private:
     struct Tool
     {
         std::string copy;
         std::string paste;
+        // With {} for the type; empty for a tool that only carries text.
+        std::string copy_data;
+        std::string paste_data;
+        std::string list_types;
     };
     [[nodiscard]] const std::optional<Tool>& tool() const;
 
     Backend* m_terminal;
     std::string m_fallback;
+    // Data kept here where no program carries it: its type and its bytes.
+    std::string m_fallback_type;
+    std::string m_fallback_data;
     mutable std::optional<std::optional<Tool>> m_tool;
 };
 

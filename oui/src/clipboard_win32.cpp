@@ -118,4 +118,26 @@ std::string Clipboard::text() const
     return m_fallback;
 }
 
+// Data stays in the clipboard itself on Windows for now: copying images to and from other programs is still to come.
+bool Clipboard::set_data(std::string_view type, std::string_view bytes)
+{
+    if(type.empty())
+    {
+        return false;
+    }
+    m_fallback_type = type;
+    m_fallback_data = bytes;
+    return true;
+}
+
+std::vector<std::string> Clipboard::types() const
+{
+    return m_fallback_type.empty() ? std::vector<std::string>{} : std::vector<std::string>{m_fallback_type};
+}
+
+std::optional<std::string> Clipboard::data(std::string_view type) const
+{
+    return type == m_fallback_type && !type.empty() ? std::optional<std::string>{m_fallback_data} : std::nullopt;
+}
+
 } // namespace olagarro::oui
