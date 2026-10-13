@@ -280,8 +280,8 @@ class DesktopServer::Impl
             case protocol::Message::pointer:
             {
                 // One byte, a Pointer there is; anything else is not a program of ours.
-                if(received.payload.size() != 1 || static_cast<unsigned char>(received.payload.front()) >
-                                                       static_cast<unsigned char>(Pointer::resize_rows))
+                if(received.payload.size() != 1 ||
+                   static_cast<unsigned char>(received.payload.front()) > static_cast<unsigned char>(Pointer::none))
                 {
                     return false;
                 }

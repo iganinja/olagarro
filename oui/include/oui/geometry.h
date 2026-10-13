@@ -6,6 +6,12 @@
 namespace olagarro::oui
 {
 
+struct Point
+{
+    int x{0};
+    int y{0};
+};
+
 struct Size
 {
     int width{0};

@@ -17,12 +17,6 @@ inline constexpr std::uint8_t text_underline{2};
 inline constexpr std::uint8_t text_italic{4};
 inline constexpr std::uint8_t text_dim{8};
 
-struct Point
-{
-    int x{0};
-    int y{0};
-};
-
 struct TextStyle
 {
     Color foreground{255, 255, 255};
@@ -251,6 +245,9 @@ class Painter
     virtual void draw_field_frame(const Rect& bounds, bool focused, const Theme& theme);
     // Pixels from the top left corner of `bounds`, cut to it: a terminal, which has none, shows the background.
     virtual void draw_image(const Rect& bounds, const PixelImage& image, const Theme& theme);
+    // Where `cells` are in pixels, from the top left of the application's area, as MouseEvent::pixel counts, where the
+    // painter draws in pixels; none in a terminal. Rows are not all the same height, so this is the only sure way.
+    [[nodiscard]] virtual std::optional<Rect> pixel_bounds(const Rect& cells) const;
     // Casts a shadow over what is already painted in `rect`: in cells, what is there stays visible, in `foreground` on
     // `background`, as Turbo Vision's shadows; elsewhere the area takes `background`.
     virtual void shade(const Rect& rect, Color foreground, Color background);

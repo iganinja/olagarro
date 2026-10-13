@@ -837,6 +837,12 @@ void GraphicalPainter::draw_image(const Rect& bounds, const PixelImage& image, c
     m_canvas.set_clip(previous);
 }
 
+std::optional<Rect> GraphicalPainter::pixel_bounds(const Rect& cells) const
+{
+    const auto area{pixels(cells)};
+    return Rect{area.x - m_area.x, area.y - m_area.y, area.width, area.height};
+}
+
 int GraphicalPainter::field_padding(Size cell)
 {
     return cell.width / 2;
@@ -962,8 +968,9 @@ void GraphicalPainter::draw_progress(const Rect& bounds, const ProgressLook& loo
     m_canvas.fill({inside.x, inside.y, done, inside.height}, m_style.title);
     if(words > 0)
     {
-        static_cast<void>(label({area.x + length + m_cell.width, area.y, area.width - length - m_cell.width, area.height},
-                                look.text, m_style.text, Align::start));
+        static_cast<void>(
+            label({area.x + length + m_cell.width, area.y, area.width - length - m_cell.width, area.height}, look.text,
+                  m_style.text, Align::start));
     }
 }
 

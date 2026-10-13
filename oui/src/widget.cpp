@@ -32,6 +32,10 @@ Pointer Widget::pointer_at(Point) const
 {
     return Pointer::arrow;
 }
+bool Widget::takes_raw_pointer() const
+{
+    return false;
+}
 void Widget::set_tooltip(std::string text)
 {
     m_tooltip = std::move(text);

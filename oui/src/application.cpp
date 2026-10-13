@@ -608,6 +608,45 @@ void Application::set_backend(std::unique_ptr<Backend> backend)
 
 void Application::dispatch_event(const Event& event)
 {
+    if(is_wanted(event))
+    {
+        deliver_event(event);
+    }
+}
+
+bool Application::is_wanted(const Event& event)
+{
+    const auto* const mouse{std::get_if<MouseEvent>(&event)};
+    if(mouse == nullptr || m_content == nullptr)
+    {
+        return true;
+    }
+    const auto moves{mouse->hover || mouse->dragging || mouse->right_dragging || mouse->middle_dragging};
+    if(!moves && !mouse->middle)
+    {
+        return true;
+    }
+    const auto* const target{m_mouse_capture != nullptr && !m_mouse_capture_lifetime.expired()
+                                 ? m_mouse_capture
+                                 : m_content->hit_test(mouse->x, mouse->y)};
+    const auto raw{target != nullptr && target->takes_raw_pointer()};
+    if(mouse->middle)
+    {
+        return raw;
+    }
+    // A terminal reports a move only from one cell to another; a drag goes by its place in the cell too, as it may be
+    // selecting text set in a proportional font.
+    if(!raw && m_last_motion && m_last_motion->cell.x == mouse->x && m_last_motion->cell.y == mouse->y &&
+       (!mouse->dragging || m_last_motion->offset == mouse->cell_offset))
+    {
+        return false;
+    }
+    m_last_motion = Motion{{mouse->x, mouse->y}, mouse->cell_offset};
+    return true;
+}
+
+void Application::deliver_event(const Event& event)
+{
     if(m_event_observer)
     {
         m_event_observer(event);
@@ -962,7 +1001,11 @@ void Application::run_frame()
         {
             break;
         }
-        dispatch_event(*event);
+        if(!is_wanted(*event))
+        {
+            continue;
+        }
+        deliver_event(*event);
         handled_events = true;
     }
     if(ran_timers || ran_posted || handled_events)

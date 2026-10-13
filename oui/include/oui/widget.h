@@ -50,6 +50,9 @@ class Widget
     [[nodiscard]] virtual std::optional<std::string> tooltip_at(Point point) const;
     // What the pointer looks like over `point`, or anywhere while this widget is dragging something with it.
     [[nodiscard]] virtual Pointer pointer_at(Point point) const;
+    // Whether it hears the pointer as it is, as a canvas drawn on does: every pixel it moves and not only every cell,
+    // the middle button, and drags with the right and the middle buttons. Other widgets hear none of that.
+    [[nodiscard]] virtual bool takes_raw_pointer() const;
     void set_tooltip(std::string text);
 
     virtual void collect_focusable(std::vector<Widget*>& widgets);

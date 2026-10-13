@@ -6,6 +6,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <cmath>
 #include <deque>
 #include <stdexcept>
 
@@ -507,11 +508,56 @@ class WindowBackend final : public DesktopWindow
                      GraphicalPainter::row_at(y - content.y, content.height, cell_size().height)};
     }
 
+    // A pixel in the window, in the content area's pixels: negative or past its size outside it.
+    [[nodiscard]] Point content_pixel(float window_x, float window_y) const
+    {
+        const auto scale{pixel_scale()};
+        const auto& content{content_area()};
+        return {static_cast<int>(std::floor(window_x * scale)) - content.x,
+                static_cast<int>(std::floor(window_y * scale)) - content.y};
+    }
+
+    // The cell a pixel would be in, as if the cells went on past the content area: where a drag that left it is.
+    [[nodiscard]] Point cell_beyond(Point pixel) const
+    {
+        const auto& content{content_area()};
+        const auto floor_divide{[](int value, int by) { return value >= 0 ? value / by : -((-value + by - 1) / by); }};
+        const auto row{pixel.y >= 0 && pixel.y < content.height
+                           ? GraphicalPainter::row_at(pixel.y, content.height, cell_size().height)
+                           : floor_divide(pixel.y, cell_size().height)};
+        return {floor_divide(pixel.x, cell_size().width), row};
+    }
+
     // How far into its cell a pixel lies, from the cell's left.
     [[nodiscard]] int offset_in_cell(float window_x) const
     {
         const auto x{static_cast<int>(window_x * pixel_scale()) - content_area().x};
         return std::max(0, x) % cell_size().width;
+    }
+
+    [[nodiscard]] static SDL_SystemCursor system_cursor(Pointer pointer)
+    {
+        switch(pointer)
+        {
+        case Pointer::resize_columns:
+            return SDL_SYSTEM_CURSOR_EW_RESIZE;
+        case Pointer::resize_rows:
+            return SDL_SYSTEM_CURSOR_NS_RESIZE;
+        case Pointer::crosshair:
+            return SDL_SYSTEM_CURSOR_CROSSHAIR;
+        case Pointer::hand:
+        case Pointer::grabbing:
+            // SDL has a pointing hand, not an open and a closed one.
+            return SDL_SYSTEM_CURSOR_POINTER;
+        case Pointer::move:
+            return SDL_SYSTEM_CURSOR_MOVE;
+        case Pointer::text:
+            return SDL_SYSTEM_CURSOR_TEXT;
+        case Pointer::arrow:
+        case Pointer::none:
+            break;
+        }
+        return SDL_SYSTEM_CURSOR_DEFAULT;
     }
 
     // The system's own pointer for `pointer`, made the first time it is wanted.
@@ -525,10 +571,14 @@ class WindowBackend final : public DesktopWindow
         auto& cursor{m_cursors[static_cast<std::size_t>(pointer)]};
         if(cursor == nullptr)
         {
-            cursor = SDL_CreateSystemCursor(pointer == Pointer::resize_columns ? SDL_SYSTEM_CURSOR_EW_RESIZE
-                                            : pointer == Pointer::resize_rows  ? SDL_SYSTEM_CURSOR_NS_RESIZE
-                                                                               : SDL_SYSTEM_CURSOR_DEFAULT);
+            cursor = SDL_CreateSystemCursor(system_cursor(pointer));
         }
+        if(pointer == Pointer::none)
+        {
+            SDL_HideCursor();
+            return;
+        }
+        SDL_ShowCursor();
         SDL_SetCursor(cursor);
     }
 
@@ -712,15 +762,19 @@ class WindowBackend final : public DesktopWindow
             {
                 break;
             }
-            const auto at{cell.value_or(m_last_motion.value_or(Point{}))};
+            const auto pixel{content_pixel(event.button.x, event.button.y)};
+            const auto at{cell.value_or(cell_beyond(pixel))};
             MouseEvent mouse{at.x, at.y, pressed};
             mouse.cell_offset = offset_in_cell(event.button.x);
+            mouse.pixel = pixel;
             mouse.released = !pressed;
             mouse.right = event.button.button == SDL_BUTTON_RIGHT;
+            mouse.middle = event.button.button == SDL_BUTTON_MIDDLE;
             mouse.shift = shift;
             mouse.control = control;
             mouse.alt = alt;
-            if(event.button.button == SDL_BUTTON_LEFT || event.button.button == SDL_BUTTON_RIGHT)
+            if(event.button.button == SDL_BUTTON_LEFT || event.button.button == SDL_BUTTON_RIGHT ||
+               event.button.button == SDL_BUTTON_MIDDLE)
             {
                 m_pending.push_back(mouse);
             }
@@ -733,27 +787,37 @@ class WindowBackend final : public DesktopWindow
                 show_cursor(Pointer::arrow);
                 break;
             }
-            const auto cell{cell_at(event.motion.x, event.motion.y)};
+            const auto dragging{(event.motion.state & SDL_BUTTON_LMASK) != 0};
+            const auto right_dragging{(event.motion.state & SDL_BUTTON_RMASK) != 0};
+            const auto middle_dragging{(event.motion.state & SDL_BUTTON_MMASK) != 0};
+            const auto pixel{content_pixel(event.motion.x, event.motion.y)};
+            auto cell{cell_at(event.motion.x, event.motion.y)};
             if(!cell)
             {
-                // The frame and the title bar are the window's, where the arrow is.
+                // The frame and the title bar are the window's, where the arrow is; a drag that left the content
+                // goes on, from where it would be.
                 show_cursor(Pointer::arrow);
-                break;
+                if(!dragging && !right_dragging && !middle_dragging)
+                {
+                    break;
+                }
+                cell = cell_beyond(pixel);
             }
-            show_cursor(m_pointer);
-            // A terminal reports a move only from one cell to another; a drag goes by pixels, as it may be selecting
-            // text set in a proportional font.
-            const auto dragging{(event.motion.state & SDL_BUTTON_LMASK) != 0};
-            const auto offset{offset_in_cell(event.motion.x)};
-            if(m_last_motion && m_last_motion->x == cell->x && m_last_motion->y == cell->y &&
-               (!dragging || offset == m_last_offset))
+            else
+            {
+                show_cursor(m_pointer);
+            }
+            // Every pixel it moves: the application tells who hears more than a move from cell to cell.
+            if(m_last_pixel && m_last_pixel->x == pixel.x && m_last_pixel->y == pixel.y)
             {
                 break;
             }
-            m_last_motion = cell;
-            m_last_offset = offset;
+            m_last_pixel = pixel;
             MouseEvent mouse{cell->x, cell->y, false};
-            mouse.cell_offset = offset;
+            mouse.cell_offset = offset_in_cell(event.motion.x);
+            mouse.pixel = pixel;
+            mouse.right_dragging = right_dragging;
+            mouse.middle_dragging = middle_dragging;
             if(dragging)
             {
                 mouse.dragging = true;
@@ -780,9 +844,10 @@ class WindowBackend final : public DesktopWindow
             const auto notches{static_cast<int>(m_wheel)};
             m_wheel -= static_cast<float>(notches);
             const auto modifiers{SDL_GetModState()};
-            for(const auto& mouse : wheel_events(*cell, notches, (modifiers & SDL_KMOD_CTRL) != 0,
-                                                 (modifiers & SDL_KMOD_ALT) != 0, (modifiers & SDL_KMOD_SHIFT) != 0))
+            for(auto mouse : wheel_events(*cell, notches, (modifiers & SDL_KMOD_CTRL) != 0,
+                                          (modifiers & SDL_KMOD_ALT) != 0, (modifiers & SDL_KMOD_SHIFT) != 0))
             {
+                mouse.pixel = content_pixel(x, y);
                 m_pending.push_back(mouse);
             }
             break;
@@ -801,8 +866,7 @@ class WindowBackend final : public DesktopWindow
     int m_texture_height{};
     Uint32 m_wake_event{};
     std::deque<Event> m_pending;
-    std::optional<Point> m_last_motion;
-    int m_last_offset{};
+    std::optional<Point> m_last_pixel;
     float m_wheel{};
     bool m_focused{true};
     WindowGeometry m_normal;
@@ -811,7 +875,7 @@ class WindowBackend final : public DesktopWindow
     // The pointer the application wants over what it shows, the one showing, and the system's, by Pointer.
     Pointer m_pointer{Pointer::arrow};
     Pointer m_shown{Pointer::arrow};
-    std::array<SDL_Cursor*, 3> m_cursors{};
+    std::array<SDL_Cursor*, static_cast<std::size_t>(Pointer::none) + 1> m_cursors{};
 };
 
 } // namespace

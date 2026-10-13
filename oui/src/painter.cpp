@@ -297,7 +297,8 @@ void Painter::draw_text_cursor(Point position, std::string_view character, const
 
 void Painter::draw_progress(const Rect& bounds, const ProgressLook& look, const Theme& theme)
 {
-    // The track in whole cells, what is done of it filled, and the cell it ends in filled by eighths, as far as it goes.
+    // The track in whole cells, what is done of it filled, and the cell it ends in filled by eighths, as far as it
+    // goes.
     static constexpr std::string_view eighths[]{"", "▏", "▎", "▍", "▌", "▋", "▊", "▉"};
     const auto words{look.text.empty() ? 0 : shown_width(look.text) + 1};
     const auto length{std::max(0, bounds.width - words)};
@@ -457,6 +458,11 @@ void Painter::draw_field_frame(const Rect&, bool, const Theme&)
 void Painter::draw_image(const Rect& bounds, const PixelImage&, const Theme& theme)
 {
     fill_rect(bounds, theme.background);
+}
+
+std::optional<Rect> Painter::pixel_bounds(const Rect&) const
+{
+    return std::nullopt;
 }
 
 void Painter::shade(const Rect& rect, Color, Color background)

@@ -819,6 +819,7 @@ if(OLAGARRO_BUILD_TESTS)
 
        add_executable(olagarro_oui_tests
              tests/oui/layout_test.cpp
+             tests/oui/raw_pointer_test.cpp
              tests/oui/settings_test.cpp
              tests/oui/contrast_test.cpp
              tests/oui/text_attributes_test.cpp

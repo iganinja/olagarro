@@ -1,5 +1,8 @@
 #pragma once
 
+#include <oui/geometry.h>
+
+#include <optional>
 #include <variant>
 
 namespace olagarro::oui
@@ -59,13 +62,22 @@ struct TextEvent
     bool shift{false};
 };
 
-// What the mouse pointer looks like, as a widget under it asks: an arrow, or a line it can drag, between columns or
-// between rows. A terminal has the one it has.
+// What the mouse pointer looks like, as a widget under it asks: an arrow, a line it can drag, between columns or
+// between rows, or what a canvas shows for what it does there. A terminal has the one it has.
 enum class Pointer
 {
     arrow,
     resize_columns,
     resize_rows,
+    crosshair,
+    // An open hand, over something that can be grabbed and moved, and the hand closed while it moves it.
+    hand,
+    grabbing,
+    // Arrows four ways, over something that moves when dragged.
+    move,
+    text,
+    // Nothing: the widget draws its own.
+    none,
 };
 
 struct MouseEvent
@@ -87,6 +99,15 @@ struct MouseEvent
     // Where in its cell the pointer is, from the cell's left, in the units text_metrics() measures; 0 in a
     // terminal, where a cell is the finest place.
     int cell_offset{0};
+    // Where the pointer is in pixels, from the top left of the application's area, where the backend draws in
+    // pixels; none in a terminal. A widget finds its own area in pixels through Painter::pixel_bounds.
+    std::optional<Point> pixel{};
+    // The middle button, on a press or a release. Only a widget that takes the raw pointer hears it.
+    bool middle{false};
+    // On a move: the right or the middle button is held, as a canvas paints or pans with them. `dragging` is the
+    // left button's. Only a widget that takes the raw pointer hears these moves as more than the pointer passing.
+    bool right_dragging{false};
+    bool middle_dragging{false};
 };
 
 // The terminal window gained or lost the keyboard focus, for instance when the user switched away.

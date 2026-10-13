@@ -194,6 +194,11 @@ class Application
     void paint_tooltip(Painter& painter, Size size) const;
     // A pointer that moves, presses or leaves for the keyboard hides the tooltip; one that rests shows it.
     void follow_pointer(const MouseEvent& mouse);
+    // Whether anyone is to hear `event`: a move within the cell the pointer was already in, the middle button and
+    // drags with the right or the middle button are only for a widget that takes the raw pointer. It notes the moves
+    // it lets through, to tell the next one by.
+    [[nodiscard]] bool is_wanted(const Event& event);
+    void deliver_event(const Event& event);
     void show_pointer(const Widget* target);
     void hide_tooltip();
     bool edit_focused_field(const Event& event);
@@ -274,6 +279,13 @@ class Application
     Pointer m_pointer{Pointer::arrow};
     // Where the pointer was last, to ask again what it should look like there.
     std::optional<Point> m_pointer_position;
+    // The cell, and the place in it, of the last move let through.
+    struct Motion
+    {
+        Point cell;
+        int offset{};
+    };
+    std::optional<Motion> m_last_motion;
     bool m_needs_render{true};
     std::size_t m_modal_depth{};
     Theme m_theme{};

@@ -141,8 +141,31 @@ TEST(OuiGraphicsTests, TheLastRowEndsAtTheBottomWhenTheRowsDoNotFillTheHeight)
     {
         heights.push_back(GraphicalPainter::row_offset(row + 1, 80, 24) - GraphicalPainter::row_offset(row, 80, 24));
     }
-    EXPECT_LE(*std::max_element(heights.begin(), heights.end()) - *std::min_element(heights.begin(), heights.end()),
-              1);
+    EXPECT_LE(*std::max_element(heights.begin(), heights.end()) - *std::min_element(heights.begin(), heights.end()), 1);
+}
+
+TEST(OuiGraphicsTests, CellsAreInPixelsWherePainted)
+{
+    // Three rows of 24 in 80 pixels, so the rows are not all 24 tall: the cells' pixels are where they are painted.
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{120, 80};
+    canvas.fill({0, 0, 120, 80}, {1, 2, 3});
+    const auto style{classic_style()};
+    GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    const oui::Rect cells{2, 1, 3, 2};
+    painter.fill_rect(cells, {200, 0, 0});
+    const auto area{painter.pixel_bounds(cells)};
+    ASSERT_TRUE(area.has_value());
+    for(int y{}; y < 80; ++ y)
+    {
+        for(int x{}; x < 120; ++ x)
+        {
+            const auto inside{x >= area->x && x < area->x + area->width && y >= area->y && y < area->y + area->height};
+            EXPECT_EQ(same(canvas.pixel_at(x, y), {200, 0, 0}), inside) << x << ", " << y;
+        }
+    }
 }
 
 TEST(OuiGraphicsTests, APixelIsInTheRowThatIsPaintedThere)
