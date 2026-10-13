@@ -40,6 +40,7 @@ notices() {
     printf 'The programs carry code from these projects, under their licences.\n\n'
     notice "QuickJS-ng, the JavaScript engine" "$root/third_party/quickjs-ng/LICENSE"
     notice "stb_truetype, which reads the interface font" "$root/licenses/stb_truetype.txt"
+    notice "NanoSVG, which draws SVG pictures" "$root/third_party/nanosvg/LICENSE.txt"
     notice "Spleen, the cell font" "$root/oui/fonts/spleen_license.txt"
     notice "Jersey 10, the interface font" "$root/oui/fonts/jersey10_ofl.txt"
     if [[ "$kind" == gui || "$kind" == all ]]; then

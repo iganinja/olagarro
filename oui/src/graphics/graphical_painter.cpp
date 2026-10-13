@@ -833,7 +833,14 @@ void GraphicalPainter::draw_image(const Rect& bounds, const PixelImage& image, c
     const auto area{pixels(bounds)};
     const auto previous{m_canvas.clip()};
     m_canvas.set_clip(intersect(previous, area));
-    m_canvas.copy(area.x, area.y, image.pixels, image.width, image.height, image.stride);
+    if(image.alpha)
+    {
+        m_canvas.mix_over(area.x, area.y, image.pixels, image.width, image.height, image.stride);
+    }
+    else
+    {
+        m_canvas.copy(area.x, area.y, image.pixels, image.width, image.height, image.stride);
+    }
     m_canvas.set_clip(previous);
 }
 

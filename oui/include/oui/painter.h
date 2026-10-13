@@ -166,13 +166,15 @@ struct LabelRun
 };
 
 // Pixels drawn somewhere else, such as another program's window: `width` by `height`, as 0x00RRGGBB, each row
-// `stride` pixels after the one before.
+// `stride` pixels after the one before. With `alpha`, they are 0xAARRGGBB with straight alpha, as an icon, and are
+// mixed over what is under them.
 struct PixelImage
 {
     const std::uint32_t* pixels{};
     int width{};
     int height{};
     int stride{};
+    bool alpha{false};
 };
 
 // How far a progress bar has gone, from 0 to 1, and what it says after it.

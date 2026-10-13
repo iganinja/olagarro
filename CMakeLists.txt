@@ -252,8 +252,10 @@ add_library(olagarro_oui_graphics
     oui/src/graphics/font.cpp
     oui/src/graphics/icon.cpp
     oui/src/graphics/graphical_painter.cpp
+    oui/src/graphics/nanosvg_api.cpp
     oui/src/graphics/pixel_backend.cpp
-    oui/src/graphics/stb_truetype_api.cpp)
+    oui/src/graphics/stb_truetype_api.cpp
+    oui/src/graphics/svg.cpp)
 add_library(olagarro::OUIGraphics ALIAS olagarro_oui_graphics)
 # The whole screen through the kernel's mode setting needs nothing but Linux's own headers.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -266,6 +268,9 @@ target_link_libraries(olagarro_oui_graphics PUBLIC olagarro::OUI)
 target_include_directories(olagarro_oui_graphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 # stb_truetype is used as it comes, so OUI's warnings stay off it.
 set_source_files_properties(oui/src/graphics/stb_truetype_api.cpp PROPERTIES
+    COMPILE_OPTIONS "$<IF:$<CXX_COMPILER_ID:MSVC>,/W0,-w>")
+# NanoSVG too.
+set_source_files_properties(oui/src/graphics/nanosvg_api.cpp PROPERTIES
     COMPILE_OPTIONS "$<IF:$<CXX_COMPILER_ID:MSVC>,/W0,-w>")
 olagarro_embed_files(olagarro_oui_graphics NAMESPACE olagarro::oui FUNCTION embedded_oui_fonts
     FILES oui/fonts/spleen_12x24.psfu oui/fonts/jersey10_regular.ttf oui/fonts/spleen_8x16.psfu

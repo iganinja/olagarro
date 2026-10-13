@@ -61,6 +61,8 @@ class Canvas
     void draw_line(PixelPoint from, PixelPoint to, float width, Color color);
     // Copies `width` by `height` pixels, each row `stride` after the one before, with their top left corner at x, y.
     void copy(int x, int y, const std::uint32_t* pixels, int width, int height, int stride);
+    // As copy, but the pixels are 0xAARRGGBB with straight alpha and are mixed over what is there by it.
+    void mix_over(int x, int y, const std::uint32_t* pixels, int width, int height, int stride);
     // `alpha` makes the glyph see-through, 255 being solid.
     void draw_glyph(const GlyphBitmap& glyph, int pen_x, int baseline, Color color, int alpha = 255);
 

@@ -2,9 +2,9 @@
 
 The release packages carry these, as `THIRD_PARTY_NOTICES.txt` beside the programs, made by `tools/package_release.sh`
 from the files each kind of package needs. In the source, each third-party piece keeps its licence beside it: QuickJS-ng
-in `third_party/quickjs-ng/LICENSE`, stb_truetype at the end of `third_party/stb/stb_truetype.h`, Spleen in
-`oui/fonts/spleen_license.txt` and Jersey 10 in `oui/fonts/jersey10_ofl.txt`. The files here are the ones the source
-does not hold:
+in `third_party/quickjs-ng/LICENSE`, stb_truetype at the end of `third_party/stb/stb_truetype.h`, NanoSVG in
+`third_party/nanosvg/LICENSE.txt`, Spleen in `oui/fonts/spleen_license.txt` and Jersey 10 in
+`oui/fonts/jersey10_ofl.txt`. The files here are the ones the source does not hold:
 
 | File | What it covers | Where it is from |
 |------|----------------|------------------|

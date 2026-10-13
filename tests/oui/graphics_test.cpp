@@ -9,6 +9,7 @@
 #include <oui/graphics/graphical_painter.h>
 #include <oui/graphics/icon.h>
 #include <oui/graphics/pixel_backend.h>
+#include <oui/graphics/svg.h>
 #include <oui/label.h>
 #include <oui/layout.h>
 #include <oui/text_layout.h>
@@ -166,6 +167,41 @@ TEST(OuiGraphicsTests, CellsAreInPixelsWherePainted)
             EXPECT_EQ(same(canvas.pixel_at(x, y), {200, 0, 0}), inside) << x << ", " << y;
         }
     }
+}
+
+TEST(OuiGraphicsTests, DrawsAnSvgPictureAtTheSizeAsked)
+{
+    // Red on the left half, nothing on the right, in a 16 by 16 view drawn at 32 by 32.
+    const auto picture{draw_svg(R"(<svg height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">)"
+                                R"(<path d="M0 0h8v16H0z" fill="#ff0000"/></svg>)",
+                                32, 32)};
+    ASSERT_TRUE(picture.has_value());
+    ASSERT_EQ(picture->width, 32);
+    ASSERT_EQ(picture->height, 32);
+    EXPECT_EQ(picture->pixels.at(5 * 32 + 3), 0xffff0000u);
+    EXPECT_EQ(picture->pixels.at(5 * 32 + 28) >> 24, 0u) << "the right half is see-through";
+    EXPECT_FALSE(draw_svg("not a picture", 16, 16).has_value());
+}
+
+TEST(OuiGraphicsTests, AnImageWithAlphaIsMixedOverWhatIsUnderIt)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{24, 24};
+    canvas.fill({0, 0, 24, 24}, {0, 0, 255});
+    const auto style{classic_style()};
+    GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    // Solid red, half red, and nothing.
+    const std::vector<std::uint32_t> pixels{0xffff0000u, 0x80ff0000u, 0x00ff0000u};
+    PixelImage image{pixels.data(), 3, 1, 3};
+    image.alpha = true;
+    painter.draw_image({0, 0, 2, 1}, image, Theme{});
+    EXPECT_TRUE(same(canvas.pixel_at(0, 0), {255, 0, 0}));
+    const auto half{canvas.pixel_at(1, 0)};
+    EXPECT_NEAR(half.red, 128, 2);
+    EXPECT_NEAR(half.blue, 127, 2);
+    EXPECT_TRUE(same(canvas.pixel_at(2, 0), {0, 0, 255}));
 }
 
 TEST(OuiGraphicsTests, APixelIsInTheRowThatIsPaintedThere)

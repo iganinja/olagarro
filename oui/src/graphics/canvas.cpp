@@ -100,6 +100,19 @@ void Canvas::copy(int x, int y, const std::uint32_t* pixels, int width, int heig
         std::copy(source, source + area.width, &m_pixels[static_cast<std::size_t>(row * m_width + area.x)]);
     }
 }
+void Canvas::mix_over(int x, int y, const std::uint32_t* pixels, int width, int height, int stride)
+{
+    const auto area{intersect({x, y, width, height}, m_clip)};
+    for(auto row{area.y}; row < area.y + area.height; ++ row)
+    {
+        const auto* const source{pixels + static_cast<std::ptrdiff_t>(row - y) * stride + (area.x - x)};
+        for(auto column{0}; column < area.width; ++ column)
+        {
+            const auto pixel{source[column]};
+            blend(area.x + column, row, unpack(pixel), static_cast<int>(pixel >> 24u));
+        }
+    }
+}
 void Canvas::blend(int x, int y, Color color, int alpha)
 {
     if(alpha <= 0 || x < m_clip.x || y < m_clip.y || x >= m_clip.x + m_clip.width || y >= m_clip.y + m_clip.height)
