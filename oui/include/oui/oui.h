@@ -31,12 +31,14 @@
 #include <oui/grid.h>
 #include <oui/label.h>
 #include <oui/progress_bar.h>
+#include <oui/slider.h>
 #include <oui/layout.h>
 #include <oui/line_edit.h>
 #include <oui/list.h>
 #include <oui/markdown_view.h>
 #include <oui/menu.h>
 #include <oui/menu_bar.h>
+#include <oui/number_field.h>
 #include <oui/painter.h>
 #include <oui/panel.h>
 #include <oui/popup_list.h>

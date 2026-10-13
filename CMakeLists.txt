@@ -182,12 +182,14 @@ add_library(olagarro_oui
     oui/src/markdown_view.cpp
     oui/src/menu.cpp
     oui/src/menu_bar.cpp
+    oui/src/number_field.cpp
     oui/src/painter.cpp
     oui/src/panel.cpp
     oui/src/raster_backend.cpp
     oui/src/scroll_view.cpp
     oui/src/spacer.cpp
     oui/src/settings.cpp
+    oui/src/slider.cpp
     oui/src/tab_view.cpp
     oui/src/tab_switcher.cpp
     oui/src/text_layout.cpp
@@ -825,6 +827,8 @@ if(OLAGARRO_BUILD_TESTS)
        add_executable(olagarro_oui_tests
              tests/oui/layout_test.cpp
              tests/oui/raw_pointer_test.cpp
+             tests/oui/slider_test.cpp
+             tests/oui/number_field_test.cpp
              tests/oui/settings_test.cpp
              tests/oui/contrast_test.cpp
              tests/oui/text_attributes_test.cpp

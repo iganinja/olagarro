@@ -981,6 +981,29 @@ void GraphicalPainter::draw_progress(const Rect& bounds, const ProgressLook& loo
     }
 }
 
+void GraphicalPainter::draw_slider(const Rect& bounds, const SliderLook& look, const Theme&)
+{
+    // A thin sunken track along the middle of the row and a raised thumb on it, as wide as the row is tall, its middle
+    // where the value is; Slider follows the pointer by the same measures.
+    const auto area{pixels(bounds)};
+    if(area.width <= 1 || area.height <= 0)
+    {
+        return;
+    }
+    const auto thumb_width{std::min(area.height, area.width / 2)};
+    const auto travel{std::max(1, area.width - thumb_width)};
+    const auto track_height{std::max(4, area.height / 6)};
+    bevel({area.x + thumb_width / 2, area.y + (area.height - track_height) / 2, area.width - thumb_width, track_height},
+          true, m_style.well);
+    const auto left{area.x + static_cast<int>(std::lround(std::clamp(look.position, 0.0, 1.0) * travel))};
+    const PixelRect thumb{left, area.y + area.height / 8, thumb_width, area.height - 2 * (area.height / 8)};
+    bevel(thumb, false, look.enabled ? m_style.face : m_style.shadow);
+    if(look.focused)
+    {
+        focus_ring(thumb);
+    }
+}
+
 void GraphicalPainter::draw_field_frame(const Rect& bounds, bool focused, const Theme&)
 {
     const auto area{pixels(bounds)};

@@ -184,6 +184,14 @@ struct ProgressLook
     std::string_view text;
 };
 
+// Where a slider's thumb is along its track, from 0 at the start to 1 at the end, and how it shows.
+struct SliderLook
+{
+    double position{0.0};
+    bool focused{false};
+    bool enabled{true};
+};
+
 class Painter
 {
   public:
@@ -243,6 +251,8 @@ class Painter
     virtual void draw_drag_image(Point position, int cell_offset, std::string_view text, const Theme& theme);
     // A progress bar over the cells of `bounds`: its track, as much of it filled as is done, and its text after it.
     virtual void draw_progress(const Rect& bounds, const ProgressLook& look, const Theme& theme);
+    // A slider in one row: the track along it and the thumb where the value is.
+    virtual void draw_slider(const Rect& bounds, const SliderLook& look, const Theme& theme);
     // The edge of a text field, drawn after its content: the terminal shows none.
     virtual void draw_field_frame(const Rect& bounds, bool focused, const Theme& theme);
     // Pixels from the top left corner of `bounds`, cut to it: a terminal, which has none, shows the background.

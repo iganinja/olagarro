@@ -295,6 +295,25 @@ void Painter::draw_text_cursor(Point position, std::string_view character, const
     draw_text(position, character, {style.background, style.foreground, style.attributes});
 }
 
+void Painter::draw_slider(const Rect& bounds, const SliderLook& look, const Theme& theme)
+{
+    // A line of cells, and a block where the thumb is.
+    if(bounds.width <= 0)
+    {
+        return;
+    }
+    const auto thumb{
+        static_cast<int>(std::lround(std::clamp(look.position, 0.0, 1.0) * std::max(0, bounds.width - 1)))};
+    const TextStyle track{look.enabled ? theme.scrollbar_foreground : theme.disabled_foreground,
+                          theme.scrollbar_background};
+    const TextStyle knob{look.focused ? theme.focus_text : theme.item_selected_foreground,
+                         look.focused ? theme.focus_background : theme.item_selected_background};
+    for(int cell{}; cell < bounds.width; ++ cell)
+    {
+        draw_text({bounds.x + cell, bounds.y}, cell == thumb ? "█" : "─", cell == thumb ? knob : track);
+    }
+}
+
 void Painter::draw_progress(const Rect& bounds, const ProgressLook& look, const Theme& theme)
 {
     // The track in whole cells, what is done of it filled, and the cell it ends in filled by eighths, as far as it
