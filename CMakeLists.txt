@@ -830,6 +830,7 @@ if(OLAGARRO_BUILD_TESTS)
              tests/oui/slider_test.cpp
              tests/oui/number_field_test.cpp
              tests/oui/clipboard_data_test.cpp
+             tests/oui/script_float_array_test.cpp
              tests/oui/settings_test.cpp
              tests/oui/contrast_test.cpp
              tests/oui/text_attributes_test.cpp

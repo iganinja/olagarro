@@ -4,6 +4,7 @@
 
 #include <quickjs.h>
 
+#include <cstring>
 #include <limits>
 #include <memory>
 #include <string>
@@ -348,6 +349,37 @@ Value Value::get(std::string_view property) const
     return runtime.wrap(value);
 }
 
+bool Value::is_float_array() const
+{
+    return m_handle != nullptr && JS_GetTypedArrayType(m_handle->value) == JS_TYPED_ARRAY_FLOAT32;
+}
+
+std::vector<float> Value::to_floats() const
+{
+    if(!is_float_array())
+    {
+        throw ScriptError{"a Float32Array is wanted"};
+    }
+    auto* const context{m_handle->runtime->context};
+    std::size_t offset{};
+    std::size_t length{};
+    std::size_t element_size{};
+    const auto buffer{JS_GetTypedArrayBuffer(context, m_handle->value, &offset, &length, &element_size)};
+    if(JS_IsException(buffer))
+    {
+        throw m_handle->runtime->pending_error();
+    }
+    std::size_t size{};
+    const auto* const bytes{JS_GetArrayBuffer(context, &size, buffer)};
+    std::vector<float> values(length / sizeof(float));
+    if(bytes != nullptr && offset + length <= size)
+    {
+        std::memcpy(values.data(), bytes + offset, values.size() * sizeof(float));
+    }
+    JS_FreeValue(context, buffer);
+    return values;
+}
+
 std::size_t Value::length() const
 {
     if(!is_object())
@@ -590,6 +622,15 @@ Value ScriptEngine::undefined()
 Value ScriptEngine::null()
 {
     return m_runtime->wrap(JS_NULL);
+}
+
+Value ScriptEngine::float_array(const float* values, std::size_t count)
+{
+    auto* const context{m_runtime->context};
+    auto buffer{JS_NewArrayBufferCopy(context, reinterpret_cast<const std::uint8_t*>(values), count * sizeof(float))};
+    const auto array{JS_NewTypedArray(context, 1, &buffer, JS_TYPED_ARRAY_FLOAT32)};
+    JS_FreeValue(context, buffer);
+    return m_runtime->wrap(array);
 }
 
 Value ScriptEngine::array(const std::vector<Value>& elements)

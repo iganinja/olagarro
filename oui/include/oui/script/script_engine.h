@@ -50,6 +50,7 @@ class Value
     [[nodiscard]] bool is_array() const;
     [[nodiscard]] bool is_function() const;
     [[nodiscard]] bool is_regexp() const;
+    [[nodiscard]] bool is_float_array() const;
 
     // As JavaScript converts them: String(value), Boolean(value), Number(value).
     [[nodiscard]] std::string to_string() const;
@@ -58,6 +59,9 @@ class Value
 
     // A property; undefined when it has none.
     [[nodiscard]] Value get(std::string_view property) const;
+    // A Float32Array's numbers, copied; a ScriptError for anything else. Pixels go back and forth this way, whole,
+    // rather than a number at a time.
+    [[nodiscard]] std::vector<float> to_floats() const;
     // An array's length and its elements.
     [[nodiscard]] std::size_t length() const;
     [[nodiscard]] Value at(std::size_t index) const;
@@ -122,6 +126,8 @@ class ScriptEngine
     [[nodiscard]] Value undefined();
     [[nodiscard]] Value null();
     [[nodiscard]] Value array(const std::vector<Value>& elements);
+    // A Float32Array holding a copy of `count` numbers.
+    [[nodiscard]] Value float_array(const float* values, std::size_t count);
 
   private:
     std::shared_ptr<detail::Runtime> m_runtime;
