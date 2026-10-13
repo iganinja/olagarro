@@ -222,6 +222,24 @@ class WindowBackend final : public DesktopWindow
     }
 
     bool reports_modifiers() const override { return true; }
+    bool is_key_held(Key key) const override
+    {
+        // The SDL key that names it, and whether the key in its place on the keyboard is down.
+        static constexpr SDL_Keycode keys[]{SDLK_TAB,    SDLK_RETURN, SDLK_SPACE,  SDLK_BACKSPACE, SDLK_DELETE,
+                                            SDLK_ESCAPE, SDLK_LEFT,   SDLK_RIGHT,  SDLK_UP,        SDLK_DOWN,
+                                            SDLK_HOME,   SDLK_END,    SDLK_PAGEUP, SDLK_PAGEDOWN,  SDLK_INSERT};
+        int count{};
+        const auto* const state{SDL_GetKeyboardState(&count)};
+        for(const auto each : keys)
+        {
+            if(named_key(each, false) == key)
+            {
+                const auto scancode{SDL_GetScancodeFromKey(each, nullptr)};
+                return scancode > 0 && scancode < count && state[scancode];
+            }
+        }
+        return false;
+    }
 
     WindowGeometry geometry() const override
     {

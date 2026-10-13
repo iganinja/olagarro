@@ -34,6 +34,13 @@ class Backend
     }
     // Whether it sends ModifiersEvent, so a program can act when a modifier is let go.
     [[nodiscard]] virtual bool reports_modifiers() const { return false; }
+    // Whether `key` is held down now, where the backend can tell, as a window can, for what a key does while held,
+    // such as Space dragging a canvas; a terminal cannot, and says no.
+    [[nodiscard]] virtual bool is_key_held(Key key) const
+    {
+        static_cast<void>(key);
+        return false;
+    }
     // Ends a wait_for_input in progress, or the next one; safe to call from any thread.
     virtual void wake() {}
     // Offers copied text to whatever shows the application, where that can take it: a terminal backend
