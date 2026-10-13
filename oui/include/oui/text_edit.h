@@ -43,6 +43,10 @@ class TextEdit final : public Widget
     // Keeps the text as it is: typing, deleting, pasting and undo do nothing; moving and selecting still work.
     void set_read_only(bool read_only);
     [[nodiscard]] bool is_read_only() const;
+    // What is typed and the keys that move and delete go to the editor before the application's shortcuts, as in an
+    // application whose shortcuts are single keys, such as a paint program's tools; off by default. Keys with Ctrl
+    // that edit nothing here, as Ctrl+S, still reach the shortcuts.
+    void set_claims_typing(bool claims);
     template <typename Callback> olagarro::signal_slot::Connection on_changed(Callback&& callback)
     {
         return m_changed.connect(std::forward<Callback>(callback));
@@ -129,6 +133,7 @@ class TextEdit final : public Widget
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     void arrange(const Rect& bounds) override;
     bool handle_event(const Event& event) override;
+    [[nodiscard]] bool claims_key(const Event& event) const override;
     void paint(Painter& painter, const Theme& theme) const override;
 
   private:
@@ -266,6 +271,7 @@ class TextEdit final : public Widget
     bool m_auto_indent{false};
     int m_tab_display_width{4};
     bool m_read_only{false};
+    bool m_claims_typing{false};
     // Counts text changes, so notifications know whether one happened.
     std::size_t m_revision{};
     // The search highlight, and its matches as of the text revision they were found in.

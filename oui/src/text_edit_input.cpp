@@ -14,6 +14,50 @@
 namespace olagarro::oui
 {
 
+void TextEdit::set_claims_typing(bool claims)
+{
+    m_claims_typing = claims;
+}
+
+bool TextEdit::claims_key(const Event& event) const
+{
+    if(!m_claims_typing)
+    {
+        return false;
+    }
+    if(const auto* const text{std::get_if<TextEvent>(&event)})
+    {
+        return !text->control && !text->alt;
+    }
+    const auto* const key{std::get_if<KeyEvent>(&event)};
+    if(key == nullptr || key->alt)
+    {
+        return false;
+    }
+    switch(key->key)
+    {
+    // With Ctrl too: a word at a time, or the start and end of the text.
+    case Key::backspace:
+    case Key::delete_:
+    case Key::left:
+    case Key::right:
+    case Key::up:
+    case Key::down:
+    case Key::home:
+    case Key::end:
+        return true;
+    case Key::enter:
+    case Key::space:
+    case Key::tab:
+    case Key::shift_tab:
+    case Key::page_up:
+    case Key::page_down:
+        return !key->control;
+    default:
+        return false;
+    }
+}
+
 bool TextEdit::handle_event(const Event& event)
 {
     ChangeNotifier notifier{*this};

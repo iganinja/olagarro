@@ -4565,6 +4565,46 @@ TEST(OuiFolderViewTests, KeepsItsOwnKeysFromTheApplicationsShortcuts)
     std::filesystem::remove_all(root, error);
 }
 
+TEST(OuiTextEditTests, ClaimingTypingKeepsSingleKeyShortcutsFromTakingWhatIsTyped)
+{
+    auto backend{std::make_unique<MemoryBackend>()};
+    auto* const backend_ref{backend.get()};
+    oui::Application application{std::move(backend)};
+    auto column{oui::column()};
+    auto& editor{column->add(std::make_unique<oui::TextEdit>())};
+    application.set_content(std::move(column));
+    int swaps{};
+    int erases{};
+    int saves{};
+    application.commands().register_command("swap", "Swap", [&swaps] { ++ swaps; });
+    application.commands().bind("swap", {U'x'});
+    application.commands().register_command("erase", "Erase", [&erases] { ++ erases; });
+    application.commands().bind("erase", oui::KeyShortcut{oui::Key::delete_});
+    application.commands().register_command("save", "Save", [&saves] { ++ saves; });
+    application.commands().bind("save", {U's', true});
+    application.render();
+    application.focus(editor);
+    editor.set_text("ab");
+
+    backend_ref->push_event(oui::TextEvent{U'x'});
+    backend_ref->push_event(oui::KeyEvent{oui::Key::delete_});
+    application.run_frame();
+    EXPECT_EQ(swaps, 1) << "without claiming, the shortcuts come first";
+    EXPECT_EQ(erases, 1);
+    EXPECT_EQ(editor.text(), "ab");
+
+    editor.set_claims_typing(true);
+    editor.select_range(0, 0);
+    backend_ref->push_event(oui::TextEvent{U'x'});
+    backend_ref->push_event(oui::KeyEvent{oui::Key::delete_});
+    backend_ref->push_event(oui::TextEvent{U's', true});
+    application.run_frame();
+    EXPECT_EQ(swaps, 1);
+    EXPECT_EQ(erases, 1);
+    EXPECT_EQ(editor.text(), "xb") << "x typed, then the a after it deleted";
+    EXPECT_EQ(saves, 1) << "Ctrl+S edits nothing, so it is still the application's";
+}
+
 // The text a frame shows on row `y`.
 [[nodiscard]] std::string frame_row(const oui::CellBuffer& frame, int y)
 {
