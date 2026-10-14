@@ -8,10 +8,9 @@ opens its document in the same view, and Alt+Left goes back.
 
 - [Overview](overview.md): every library and program, what each is for, how they depend on each other, and where
   everything is in the repository.
-- [Building](building.md): CMake, its options, the terminal and window builds, small static binaries, Windows, and
-  the tools that format the code and regenerate the script API.
-- [Testing](testing.md): the test suites, the end-to-end tests that drive programs in a pseudo terminal, and how to
-  run one case.
+- [Building](building.md): CMake, its options, the terminal and window builds, static binaries, Windows, and the
+  tool that formats the code.
+- [Testing](testing.md): the test suites, widgets tested without a terminal, and how to run one case.
 
 ## OUI, the user interface toolkit
 
@@ -27,15 +26,15 @@ opens its document in the same view, and Alt+Left goes back.
 
 ## Scripts
 
-- [Scripting with oui_run](scripting.md): writing programs and tools in JavaScript, for script writers.
-- [The script API](oui_api.md): every name scripts can use, with its signature; made from the sources.
-- [OUIScript](ouiscript.md): the JavaScript engine for those who embed it in C++, and how to add a call or a widget
-  to oui_run.
+- [OUIScript](ouiscript.md): the JavaScript engine for those who embed it in C++: values, promises, time limits,
+  the calls every scripting program shares, and highlighting rules.
 
-## OUI Code
-
-- [OUI Code](oui_code.md): how the editor is put together, for whoever changes it. Its user manual is
-  [its help](../examples/oui_code/help/help.md), which F1 opens.
+The programs that run scripts, OUI Code and oui_run, are in [OUI Code's
+repository](https://github.com/iganinja/oui_code), with their own documents: [scripting with
+oui_run](https://github.com/iganinja/oui_code/blob/master/doc/scripting.md), for script writers; [the script
+API](https://github.com/iganinja/oui_code/blob/master/doc/oui_api.md), every name scripts can use; [oui_run's
+host](https://github.com/iganinja/oui_code/blob/master/doc/oui_run.md), how to add a call or a widget to it; and [OUI
+Code's architecture](https://github.com/iganinja/oui_code/blob/master/doc/oui_code.md).
 
 ## The other libraries
 

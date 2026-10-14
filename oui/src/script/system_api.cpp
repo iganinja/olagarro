@@ -22,7 +22,7 @@ namespace
 {
 
 // The calls scripts see, built on the plain ones defined as `__ouiSystemNative`, which it then hides. What each is,
-// for tools/extract_api.js to put in oui/oui.d.ts:
+// for the tools/extract_api.js of the programs that run scripts to put in their oui.d.ts, as OUI Code's does:
 //
 // api(system): setTimeout(fn: (...args: any[]) => void, ms?: number, ...args: any[]): number
 // Calls fn with args once, ms milliseconds from now; clearTimeout with what it gives stops it.

@@ -1,5 +1,6 @@
-// What OUI's scripts can use, besides JavaScript itself. tools/extract_api.js makes it from the comments marked
-// "api" beside the code that defines each name: change those, and run it again, rather than this file.
+// Declarations as OUI Code's and oui_run's scripts had them, kept as they were for the tests of ScriptApi, the
+// suggestions and the signatures: an API of the size of a real one, with functions, values, namespaces and classes.
+// The ones those programs use are in https://github.com/iganinja/oui_code, made from the comments marked "api".
 
 /**
  * Stops what setInterval started.

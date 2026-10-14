@@ -1,10 +1,8 @@
-# Makes a release from a version's tag, as v0.1.0: the tests first, in the terminal build and in the one with the
-# window module, on x86-64 and ARM64 Linux and on Apple's and Intel's Macs, then the programs of each system,
-# processor and kind with tools/build_portable.sh, each on GitHub's machines of that system and processor, then the
-# release's files with tools/package_release.sh, published as the tag's release. Started by hand from the Actions
-# tab, it does the same and leaves the files as the run's artifact instead of publishing them. A tag's Debian packages then go to the
-# APT repository on GitHub Pages, made and signed by tools/apt_repository.sh with the key in the APT_SIGNING_KEY
-# secret.
+# Makes a release from a version's tag, as v0.4.0: the tests, in the terminal build and in the one with the window
+# module, on x86-64 and ARM64 Linux and on Apple's and Intel's Macs, then the tag's release, its notes made from the
+# changes since the last one. Olagarro is a library, so the release is its source; the programs made with it publish
+# their own, as OUI Code's at https://github.com/iganinja/oui_code. Started by hand from the Actions tab, it runs the
+# tests only.
 name: Release
 
 on:
@@ -69,108 +67,14 @@ jobs:
           cmake --build build -- -k 0
           ctest --test-dir build --output-on-failure -j4 --timeout 300
 
-  build:
-    name: Build (${{ matrix.name }})
-    needs: test
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      matrix:
-        include:
-          - name: linux-x86_64-terminal
-            runner: ubuntu-24.04
-            options: ""
-          - name: linux-x86_64-gui
-            runner: ubuntu-24.04
-            options: --gui
-          - name: linux-aarch64-terminal
-            runner: ubuntu-24.04-arm
-            options: ""
-          - name: linux-aarch64-gui
-            runner: ubuntu-24.04-arm
-            options: --gui
-          - name: macos-arm64-terminal
-            runner: macos-15
-            options: ""
-          - name: macos-arm64-gui
-            runner: macos-15
-            options: --gui
-          - name: macos-x86_64-terminal
-            runner: macos-15-intel
-            options: ""
-          - name: macos-x86_64-gui
-            runner: macos-15-intel
-            options: --gui
-          - name: windows-x86_64-terminal
-            runner: ubuntu-24.04
-            options: --windows
-          - name: windows-x86_64-gui
-            runner: ubuntu-24.04
-            options: --windows --gui
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install what the build needs on a Mac
-        if: runner.os == 'macOS'
-        run: brew install ninja
-      - name: Build the programs
-        run: tools/build_portable.sh ${{ matrix.options }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: ${{ matrix.name }}
-          path: dist/${{ matrix.name }}
-          if-no-files-found: error
-
   release:
     name: Release
-    needs: build
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          # The whole history and its tags: the Debian packages take their version from git describe.
-          fetch-depth: 0
-      - uses: actions/download-artifact@v8
-        with:
-          path: dist
-      - name: Make the release's files
-        run: tools/package_release.sh
-      - name: Publish the tag's release
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/release/* --title "$GITHUB_REF_NAME" --generate-notes
-      - name: Keep the files of a run started by hand
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: release
-          path: dist/release
-
-  apt-repository:
-    name: APT repository
-    needs: release
+    needs: test
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
-      - name: Take the release's Debian packages
+      - name: Publish the tag's release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download "$GITHUB_REF_NAME" --pattern "*.deb" --dir debs
-      - name: Make the signed repository
-        env:
-          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
-        run: |
-          printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
-          tools/apt_repository.sh debs site
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
-      - id: deployment
-        uses: actions/deploy-pages@v5
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes

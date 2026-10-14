@@ -3,14 +3,14 @@
 #
 # usage: tools/build.sh [--release] [--gui] [--static] [--no-tests] [--clean]
 #   --release   Build type Release in build-release/ (default: Debug in build/).
-#   --gui       Build the programs able to open in a desktop window, as oui_code_gui and the rest, in build-gui/
+#   --gui       Build the programs able to open in a desktop window, as oui_term_gui and the rest, in build-gui/
 #               (or build-gui-release/). SDL3 is linked statically: an installed one if CMake finds it,
 #               otherwise its source is fetched once.
 #   --static    Link the programs fully statically, so they run on older Linux systems too; with --gui, only the
 #               C++ runtime goes inside, as a window needs the system's display libraries and its C library.
 #   --no-tests  Skip ctest.
 #   --clean     Delete the build directory first, for a cold build.
-# Runnable examples such as oui_code land in bin/.
+# Runnable examples such as oui_term land in bin/.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

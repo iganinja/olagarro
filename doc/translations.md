@@ -83,15 +83,15 @@ A `Translation` is a parsed catalog ready for lookups: `language()`, `name()`, `
 
 ## Where catalogs live
 
-Each part of the repository has its own catalogs, one file per language, in a `translations` folder beside its
-sources:
+OUI and each program built on it have their own catalogs, one file per language, in a `translations` folder beside
+their sources:
 
 | Catalogs | Cover the texts of | Embedded as |
 |----------|--------------------|-------------|
 | [oui/translations](../oui/translations) | the library, `oui/include` and `oui/src` | `embedded_oui_catalogs()`, inside OUI |
-| [examples/oui_code/translations](../examples/oui_code/translations) | OUI Code, its sources and `.oui` descriptions | `embedded_oui_code_catalogs()` |
-| [examples/oui_run/translations](../examples/oui_run/translations) | oui_run | `embedded_oui_run_catalogs()` |
-| [examples/oui_calc/translations](../examples/oui_calc/translations) | oui_calc | `embedded_oui_calc_catalogs()` |
+| [oui_code/translations](https://github.com/iganinja/oui_code/tree/master/oui_code/translations), in OUI Code's repository | OUI Code, its sources and `.oui` descriptions | `embedded_oui_code_catalogs()` |
+| [oui_run/translations](https://github.com/iganinja/oui_code/tree/master/oui_run/translations), the same | oui_run | `embedded_oui_run_catalogs()` |
+| [oui_calc/translations](https://github.com/iganinja/oui_code/tree/master/oui_calc/translations), the same | oui_calc | `embedded_oui_calc_catalogs()` |
 
 Today each folder has `es.json`. OUI's catalog covers what OUI itself shows (dialogs, file dialogs, menus it makes,
 key names in shortcuts, theme names), so a program built on OUI gets them translated without carrying them. A
@@ -106,9 +106,10 @@ function that returns each file's contents, gzip-compressed in the binary and in
 ```cmake
 olagarro_embed_files(olagarro_oui NAMESPACE olagarro::oui FUNCTION embedded_oui_catalogs
     FILES oui/translations/es.json)
-olagarro_embed_files(olagarro_oui_run FUNCTION embedded_oui_run_catalogs
-    FILES examples/oui_run/translations/es.json)
+olagarro_embed_files(oui_run FUNCTION embedded_oui_run_catalogs FILES oui_run/translations/es.json)
 ```
+
+The first is OUI's, in this repository's `CMakeLists.txt`; the second is oui_run's, in OUI Code's.
 
 The program declares the function and turns its files into translations:
 
@@ -156,8 +157,8 @@ Programs install at the start of `main`, before anything shows or makes a text:
 - oui_run, oui_calc, oui_term and oui_desktop install `system_language()`.
 - OUI Code reads the `language` setting, `"auto"` by default, which follows `system_language()`; its **Edit >
   Preferences** offers **System language**, **English** and one entry per catalog it carries, by the catalog's `name`
-  (`show_preferences` in [preferences.cpp](../examples/oui_code/preferences.cpp)). Its tests run in English, as the
-  sources write it.
+  (`show_preferences` in [preferences.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/preferences.cpp)).
+  Its tests run in English, as the sources write it.
 
 ## Placeholders: format_text
 
@@ -178,7 +179,7 @@ text unchanged. It is for code that meets a text the user typed or the interface
 the sources call it. OUI Code uses it to place a script's commands in a menu the script names in either language:
 
 ```cpp
-// examples/oui_code/tools_commands.cpp
+// OUI Code's tools_commands.cpp
 comparable(item.title()) == comparable(name) ||
     comparable(oui::untranslate("Menu", item.title())) == comparable(name)
 ```
@@ -209,18 +210,18 @@ For French, say:
    `"name": "Français"`, and translate every text. Keep the contexts and the English keys exactly; keep each `&`
    (moving it to a letter of the translation) and each `{0}`.
 2. **Embed it.** Add the file to the `FILES` of `embedded_oui_catalogs` in [CMakeLists.txt](../CMakeLists.txt).
-3. **Each program's catalog.** The same for `examples/oui_code/translations`, `examples/oui_run/translations` and
-   `examples/oui_calc/translations`, and their `olagarro_embed_files` lines. The catalog test checks every `.json`
-   in each folder, so a program cannot be half translated: either a language's file covers it all, or it is not
-   there.
-4. **Texts that are not in catalogs.** Some texts come whole per language: OUI Code's help
-   (`examples/oui_code/help/help.md` and `help.es.md`, chosen in `help_markdown` in
-   [help.cpp](../examples/oui_code/help.cpp)), the calculator's help (`oui/help/calculator.md` and `calculator.es.md`,
-   chosen in `calculator_help` in [calculator_view.cpp](../oui/src/calculator_view.cpp)) pick their file by its name,
-   so a new language needs only its file, `help.fr.md`, added to their `olagarro_embed_files` lines; without it, the
-   English one shows. The commands
-   OUI Code's scripts define give their titles by language code, `{en: ..., es: ...}`; a title without the new code
-   shows in English.
+3. **Each program's catalog.** The same for each program's, as `oui_code/translations`, `oui_run/translations` and
+   `oui_calc/translations` in OUI Code's repository, and their `olagarro_embed_files` lines. The catalog test checks
+   every `.json` in each folder, so a program cannot be half translated: either a language's file covers it all, or
+   it is not there.
+4. **Texts that are not in catalogs.** Some texts come whole per language: OUI Code's help (`oui_code/help/help.md` and
+`help.es.md`, chosen in `help_markdown` in
+[help.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/help.cpp)), the calculator's help
+(`oui/help/calculator.md` and `calculator.es.md`, chosen in `calculator_help` in
+[calculator_view.cpp](../oui/src/calculator_view.cpp)) pick their file by its name, so a new language needs only its
+file, `help.fr.md`, added to their `olagarro_embed_files` lines; without it, the English one shows. The commands OUI
+Code's scripts define give their titles by language code, `{en: ..., es: ...}`; a title without the new code shows in
+English.
 5. **Update the test that counts OUI's catalogs.** `OuisBuiltInCatalogsAreTheOnesInTheRepository` in
    [translation_test.cpp](../tests/oui/translation_test.cpp) expects exactly one built-in catalog, Spanish.
 
@@ -240,12 +241,14 @@ would extract them:
 | Test | Checks |
 |------|--------|
 | `OuisCatalogsCoverItsTexts` | `oui/translations` against `oui/include` and `oui/src` |
-| `OuiCodesCatalogsCoverItsTexts` | `examples/oui_code/translations` against `examples/oui_code` |
-| `OuiRunsCatalogsCoverItsTexts` | `examples/oui_run/translations` against `examples/oui_run` |
-| `OuiCalcsCatalogsCoverItsTexts` | `examples/oui_calc/translations` against `examples/oui_calc` |
 | `OuisBuiltInCatalogsAreTheOnesInTheRepository` | OUI has one built-in catalog, `es`, named `Español` |
 
-The four coverage tests read every `.h` and `.cpp` under the folders, comments blanked out, and every `.oui`
+OUI Code's repository checks its programs' catalogs the same way, in its own
+[translation_test.cpp](https://github.com/iganinja/oui_code/blob/master/tests/translation_test.cpp):
+`OuiCodesCatalogsCoverItsTexts`, `OuiRunsCatalogsCoverItsTexts` and `OuiCalcsCatalogsCoverItsTexts`, each program's
+`translations` against its folder.
+
+The coverage tests read every `.h` and `.cpp` under the folders, comments blanked out, and every `.oui`
 description with a `context=`; `translation.cpp` and `ui.cpp` are skipped, as they define and apply translations
 rather than call them with texts. For every `.json` catalog in the translations folder they report:
 

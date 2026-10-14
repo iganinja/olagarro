@@ -1,6 +1,6 @@
 # Overview
 
-Olagarro is a set of C++17 libraries and the programs built on them. This document is where to start: what each
+Olagarro is a set of C++17 libraries and a few programs built on them. This document is where to start: what each
 library and program is for, how they depend on each other, where things are in the repository, and the ideas that run
 through all of it. Each part has a document of its own for the detail.
 
@@ -38,23 +38,24 @@ descriptions](oui_descriptions.md) (`.oui` files), [rendering](oui_rendering.md)
 
 ## The programs
 
-The programs live in `examples/`. Each is a short `main.cpp` that picks where the program shows, with the rest of it
-in sources beside it or in OUI itself. All of them land in `bin/` (see [Building](building.md)).
+The programs here live in `examples/`. Each is a short `main.cpp` that picks where the program shows, with the rest of
+it in sources beside it or in OUI itself. They land in `bin/` (see [Building](building.md)).
 
 | Program | Source | What it is |
 |---------|--------|------------|
-| `oui_code` | `examples/oui_code` | OUI Code, a text editor and file explorer: tabs and split groups, projects, Find in Files, a terminal panel, scripts that define its languages and commands. [OUI Code](oui_code.md) |
-| `oui_run` | `examples/oui_run` | Runs a JavaScript file as a program, the way node does, with OUI's calls under `oui`; a script can open a window made of OUI's widgets. [Scripting](scripting.md) |
 | `oui_term` | `examples/oui_term` | A terminal: the user's shell, or the program given, in OUI's `TerminalView`. |
-| `oui_calc` | `examples/oui_calc` | A calculator as a prompt, on OUI's `CalculatorView`: it works out what is written and keeps a log. |
-| `oui_desktop` | `examples/oui_desktop` | OUI's own desktop, Linux only: a task bar that starts the other programs and shows their windows. |
+| `oui_desktop` | `examples/oui_desktop` | OUI's own desktop, Linux only: a task bar that starts the programs beside it and shows their windows. |
 | `olagarro_oui_terminal_demo` | `examples/oui/terminal_demo.cpp` | A small OUI program that the tests run as a smoke test. |
 
-Built with the window module, each program but the demo has a `_gui` name (`oui_code_gui`, and so on), to sit
-beside the terminal one, and accepts `--window`; started with no terminal, from the desktop's menu or an icon, it
-opens its window without it. A release's `gui` kind names them as the terminal ones. Built with `OLAGARRO_OUI_DRM=ON`, `oui_code`, `oui_term`, `oui_calc` and `oui_desktop` accept
-`--drm`, the whole screen of a Linux console. On Linux, `oui_code`, `oui_term` and `oui_calc` accept `--desktop`, to
-show in a window on OUI's desktop, and `oui_desktop` runs in characters with `--terminal`.
+Built with the window module, `oui_term` and `oui_desktop` take a `_gui` name (`oui_term_gui`, `oui_desktop_gui`), to
+sit beside the terminal ones, and accept `--window`. Built with `OLAGARRO_OUI_DRM=ON`, both accept `--drm`, the whole
+screen of a Linux console. On Linux, `oui_term` accepts `--desktop`, to show in a window on OUI's desktop, and
+`oui_desktop` runs in characters with `--terminal`. The desktop's task bar starts `oui_term`, and OUI Code and oui_calc
+when they are beside it, by the names they have in a build of the same kind.
+
+Larger programs made with OUI have repositories of their own, which carry olagarro as a git submodule:
+[OUI Code](https://github.com/iganinja/oui_code) holds OUI Code, the text editor, oui_run, which runs JavaScript files
+as programs, and oui_calc, a calculator; [OUI Paint](https://github.com/iganinja/oui_paint) is an image editor.
 
 ## Dependencies
 
@@ -77,14 +78,10 @@ And the programs:
 
 | Program | Always | With `OLAGARRO_OUI_WINDOW` | With `OLAGARRO_OUI_DRM` |
 |---------|--------|----------------------------|-------------------------|
-| `oui_code` | OUI, oui_script | oui_window | oui_graphics |
-| `oui_run` | OUI, oui_script | oui_window | |
 | `oui_term` | OUI | oui_window | oui_graphics |
-| `oui_calc` | OUI | oui_window | oui_graphics |
 | `oui_desktop` | OUI | oui_window, oui_graphics | oui_graphics |
 
-On Linux, with either option on, `oui_term`, `oui_calc` and `oui_code` also show in pixels on OUI's desktop, and so
-link oui_graphics.
+On Linux, with either option on, `oui_term` also shows in pixels on OUI's desktop, and so links oui_graphics.
 
 The small libraries (ByteStream, SignalSlot, Tasks, CTTasks, Concurrency) stand alone: OUI uses only SignalSlot of
 them, for its widgets' signals, such as `Button::clicked`.
@@ -99,20 +96,18 @@ them, for its widgets' signals, such as `Button::clicked`.
 | `oui/src` | One source for each widget or part, with `_posix` and `_win32` sources for what differs by system (terminal, processes, pseudo-terminals, files, clipboard, settings, crash reports, language); `graphics/` and `script/` as above. A big class takes several sources named after it, as `text_edit.cpp`, `text_edit_input.cpp`, `text_edit_view.cpp`. |
 | `oui/fonts` | The fonts built into oui_graphics: Spleen bitmap fonts for cells, Jersey 10 for interface text, with their licences. |
 | `oui/translations`, `oui/help` | OUI's own Spanish catalog, and the calculator's help in English and Spanish, built into the library. |
-| `oui/oui.d.ts` | What scripts can use, as TypeScript declarations for editors; generated, see [Building](building.md#regenerating-the-script-api). |
-| `examples/` | The programs, a folder each. OUI Code's windows are `.oui` descriptions in `examples/oui_code/ui`, its languages and commands are scripts in `examples/oui_code/scripts`; oui_run's recipes and small programs are in `examples/oui_run/recipes` and `programs`. |
-| `tests/` | A folder for each library and program: GoogleTest suites in C++, and end-to-end tests in JavaScript run by oui_run. `tests/lib/terminal_session.js` drives a program in a pseudo-terminal. `tests/package_consumer` is a small project that consumes the installed package. |
+| `examples/` | The programs, a folder each, and the terminal demo in `examples/oui`. |
+| `tests/` | A folder for each library: GoogleTest suites in C++. `tests/package_consumer` is a small project that consumes the installed package. |
 | `cmake/` | `OlagarroEmbedFiles.cmake`, which builds files into a program, and the package configuration template. |
-| `tools/` | Build scripts and the scripts that format the C++ and generate the API files. |
-| `third_party/` | QuickJS-ng and stb_truetype, as upstream wrote them. |
+| `tools/` | `build.sh`, and the scripts, run with oui_run, that format the C++ and generate OUI's table of composed characters. |
+| `third_party/` | QuickJS-ng, stb_truetype and NanoSVG, as upstream wrote them. |
 | `modules/` | The C++20 module adapters. |
-| `doc/` | This documentation; `oui_api.md` is generated. |
-| `install.sh`, `install.ps1` | Install the released programs on Linux and on Windows, from a menu or with options. |
-| `licenses/` | The licences of what the released programs carry that the source does not keep beside its code. |
-| `.github/workflows/` | `release.yml`, which builds and publishes a release from a version's tag. |
+| `doc/` | This documentation. |
+| `licenses/` | The licences of what programs built on OUI carry that the source does not keep beside its code: stb_truetype's, SDL3's, and those of the C runtimes of static builds. |
+| `.github/workflows/` | `release.yml`, which tests a version's tag and makes its release. |
 
-Build output stays out of the repository's history: `build/` and `build-*/` are build trees, `bin/` holds the
-programs, and `dist/` the portable binaries.
+Build output stays out of the repository's history: `build/` and `build-*/` are build trees, and `bin/` holds the
+programs.
 
 ## Ideas that run through everything
 
@@ -129,27 +124,28 @@ each window is a whole number of cells of the same size, so what each program dr
 
 ### One code path for the terminal and the window
 
-A program builds one widget tree and one `Application`; only the `Backend` it hands the application differs. OUI Code's
+A program builds one widget tree and one `Application`; only the `Backend` it hands the application differs. oui_term's
 `main.cpp` picks it from the command line:
 
 ```cpp
-#ifdef OLAGARRO_OUI_CODE_WINDOW
-    else if(in_window)
+    if(in_window)
     {
+#ifdef OLAGARRO_OUI_TERM_WINDOW
+        oui::WindowOptions window_options;
+        window_options.title = "OUI Term";
         // ...
-        auto screen{oui::window_backend(window_options)};
-        window_screen = screen.get();
-        backend = std::move(screen);
-    }
+        backend = oui::window_backend(window_options);
+        theme = oui::classic_theme();
+#else
+        std::fputs("oui_term: this build cannot open windows\n", stderr);
+        return 2;
 #endif
+    }
     // ...
     else
     {
-        oui::TerminalOptions terminal_options;
-        terminal_options.force_legacy = legacy_render;
-        backend = oui::terminal_backend(terminal_options);
+        backend = oui::terminal_backend();
     }
-
     oui::Application application{std::move(backend)};
 ```
 
@@ -167,11 +163,12 @@ C++ provides the machinery; much of what a program does is written in JavaScript
 OUI Code's languages (how each is coloured, indented and commented) and its text commands are scripts built into the
 program; its dialogs and panels are `.oui` user interface descriptions, which `build_ui` turns into widgets while C++
 finds them by id and wires them. oui_run makes JavaScript a way to write whole programs, and the repository's own tools
-(`tools/format_cpp.js`, `tools/extract_api.js`) and end-to-end tests are scripts it runs. Every name a script can use
-has a comment marked `api` beside the C++ or JavaScript that defines it, from which `oui/oui.d.ts` and
-[the API reference](oui_api.md) are generated. Files built into a program (scripts, catalogs, help, fonts, `.oui`
-descriptions) go in compressed through `olagarro_embed_files`, so each program is a single file. See
-[OUIScript](ouiscript.md), [Scripting](scripting.md) and [user interface descriptions](oui_descriptions.md).
+(`tools/format_cpp.js`, `tools/generate_unicode_composition.js`) are scripts it runs. Every name a script can use has
+a comment marked `api` beside the C++ or JavaScript that defines it, from which OUI Code's repository generates
+`oui.d.ts` and [the API reference](https://github.com/iganinja/oui_code/blob/master/doc/oui_api.md). Files built into
+a program (scripts, catalogs, help, fonts, `.oui` descriptions) go in compressed through `olagarro_embed_files`, so
+each program is a single file. See [OUIScript](ouiscript.md), [user interface descriptions](oui_descriptions.md) and
+[scripting with oui_run](https://github.com/iganinja/oui_code/blob/master/doc/scripting.md).
 
 ### No global state
 
@@ -189,24 +186,24 @@ The programs are meant to be copied to a machine and run, with nothing installed
 OUI uses neither C++ streams nor `std::regex`, which in a static build bring in all of the C++ library's locales
 (about 200 KB); files go through `olagarro::oui::read_file` and C's files, regular expressions through
 `olagarro::oui::Regex`, on QuickJS's engine, and a test (`tests/oui/lean_sources_test.cpp`) enforces it. SDL3 is
-linked statically, and the release builds are optimised for size. [Building](building.md) has the numbers.
+linked statically, and `OLAGARRO_STATIC_LINK` drops every function nobody calls. [Building](building.md) tells how.
 
 ### Tests
 
 Every bug fix comes with a test that reproduces it. The libraries have GoogleTest suites; OUI's widgets are tested
 without a terminal through `ScriptedBackend`, which replays events and keeps the frames the application drew, and in
-pixels through `ImageBackend`. OUI Code and oui_calc are also tested as a person uses them, in a pseudo-terminal,
-by scripts run with oui_run; the signals and OUI itself run again under AddressSanitizer and
+pixels through `ImageBackend`; the signals and OUI itself run again under AddressSanitizer and
 UndefinedBehaviorSanitizer. Everything runs under `ctest`. [Testing](testing.md) explains it.
 
 ## Where to read next
 
-- [Building](building.md): configuring, the build trees, portable and Windows binaries, tests and tools.
+- [Building](building.md): configuring, the build trees, static and Windows binaries, tests and tools.
 - [Layout](oui_layout.md), [descriptions](oui_descriptions.md), [rendering](oui_rendering.md), [themes](themes.md),
   [translations](translations.md): OUI.
-- [OUIScript](ouiscript.md), [scripting with oui_run](scripting.md), [the API reference](oui_api.md): scripts.
-- [OUI Code](oui_code.md): the editor.
+- [OUIScript](ouiscript.md): scripts, from C++.
 - [Testing](testing.md).
 - [Signals and slots](signalslot.md), [ByteStream](bytestream.md), [Tasks](tasks_library.md),
   [Concurrency](concurrency.md): the small libraries.
 - `CONTRIBUTING.md` in the repository root: the code conventions.
+- [OUI Code's documents](https://github.com/iganinja/oui_code/blob/master/doc/README.md): the editor, oui_run and
+  scripting with it.

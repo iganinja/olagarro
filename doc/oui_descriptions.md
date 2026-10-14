@@ -179,7 +179,7 @@ widgets are, so the code wires them before showing the window, and reads them in
 `show_modal` destroys the window as it returns (see [dialogs](oui_layout.md#dialogs)).
 
 OUI Code's Interactive UI tab is itself a description with slots, filled in `UiPreviewView`'s constructor
-([ui_preview.cpp](../examples/oui_code/ui_preview.cpp)):
+([ui_preview.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/ui_preview.cpp)):
 
 ```cpp
 auto ui{build_oui_code_ui(OuiCodeUi::interactive_ui)};
@@ -207,9 +207,10 @@ std::vector<std::string_view> embedded_my_program_ui();
 auto ui{oui::build_ui(embedded_my_program_ui().at(0))};
 ```
 
-A file comes back whole, uncompressed the first time the function is called; editing it rebuilds the source on the
-next build. OUI Code names its descriptions with an enum in the same order, `OuiCodeUi` in
-[ui_descriptions.h](../examples/oui_code/ui_descriptions.h), and builds one with `build_oui_code_ui(which)`.
+A file comes back whole, uncompressed the first time the function is called; editing it rebuilds the source on the next
+build. OUI Code names its descriptions with an enum in the same order, `OuiCodeUi` in
+[ui_descriptions.h](https://github.com/iganinja/oui_code/blob/master/oui_code/ui_descriptions.h), and builds one with
+`build_oui_code_ui(which)`.
 
 The Greeter of [OUI for C++ programs](oui_layout.md#a-complete-program), described:
 
@@ -241,10 +242,11 @@ application.focus(name);
 
 ## Using one from a script
 
-oui_run builds descriptions too ([scripting](scripting.md#described-in-a-oui-file)). `oui.ui(text)` takes one in a
-string, and `oui.uiFromFile(path)` reads one, a relative path found from the script's folder wherever the script is
-run from. Each widget with an id is a property of the result, as the script object of its kind; `ui.root` is the
-root, and `ui.put(id, widget)` fills a slot. An id cannot be `root` or `put`.
+oui_run builds descriptions too
+([scripting](https://github.com/iganinja/oui_code/blob/master/doc/scripting.md#described-in-a-oui-file)). `oui.ui(text)`
+takes one in a string, and `oui.uiFromFile(path)` reads one, a relative path found from the script's folder wherever the
+script is run from. Each widget with an id is a property of the result, as the script object of its kind; `ui.root` is
+the root, and `ui.put(id, widget)` fills a slot. An id cannot be `root` or `put`.
 
 ```js
 const ui = oui.uiFromFile("ui/ask.oui");
@@ -254,10 +256,10 @@ oui.window(ui);
 ```
 
 `oui.window(ui)` opens a description whose root is a `Window`, with its title, and on the desktop as wide as its
-`width=` says; `new oui.Dialog(ui)` shows it as a dialog. A script's descriptions are built with
-`UiTexts::as_written`: their texts show as written, never translated, and need no `context`. A description that is
-wrong throws in the script, with the file's name, the line and the column. [The API reference](oui_api.md#ouiui)
-has the details.
+`width=` says; `new oui.Dialog(ui)` shows it as a dialog. A script's descriptions are built with `UiTexts::as_written`:
+their texts show as written, never translated, and need no `context`. A description that is wrong throws in the script,
+with the file's name, the line and the column. [The API
+reference](https://github.com/iganinja/oui_code/blob/master/doc/oui_api.md#ouiui) has the details.
 
 ## Translations
 
@@ -329,12 +331,13 @@ The column points at the widget, or at the property that is wrong.
 
 ## Interactive UI in OUI Code
 
-**Tools > Interactive UI** in OUI Code opens a tab with a description on the left and what it builds on the right,
-built again 300 ms after the last change, to try as it would be used: type in its fields, tick its boxes, press its
-buttons. On a `.oui` document it works on that file, in the one tab there is for it; from anything else it starts a
-new description from an example, `interactive_ui_template` in [ui_preview.cpp](../examples/oui_code/ui_preview.cpp).
-The tab is `UiPreviewView`, opened by `Workbench::start_interactive_ui` in
-[tools_commands.cpp](../examples/oui_code/tools_commands.cpp).
+**Tools > Interactive UI** in OUI Code opens a tab with a description on the left and what it builds on the right, built
+again 300 ms after the last change, to try as it would be used: type in its fields, tick its boxes, press its buttons.
+On a `.oui` document it works on that file, in the one tab there is for it; from anything else it starts a new
+description from an example, `interactive_ui_template` in
+[ui_preview.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/ui_preview.cpp). The tab is `UiPreviewView`,
+opened by `Workbench::start_interactive_ui` in
+[tools_commands.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/tools_commands.cpp).
 
 - **Building.** `UiPreviewView::show` builds the description translated when its root names a context, as a
   program's would be, and as written when not, as a script's. Each `Slot` shows as a label with its id in brackets,
@@ -344,9 +347,10 @@ The tab is `UiPreviewView`, opened by `Workbench::start_interactive_ui` in
 - **Suggestions** come from `ui_suggestions` (see [For editors](#for-editors)) as the description is written.
 
 **Generate**, over the preview, writes code to start from in a new tab, in the language chosen beside it, which is
-remembered: `script_skeleton` or `cpp_skeleton` in [ui_skeleton.cpp](../examples/oui_code/ui_skeleton.cpp). Both
-load the description by its file's name, so one with no file yet is saved first; one that does not read gives no
-code. Each widget with an id is wired to what it is usually wanted for:
+remembered: `script_skeleton` or `cpp_skeleton` in
+[ui_skeleton.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/ui_skeleton.cpp). Both load the description
+by its file's name, so one with no file yet is saved first; one that does not read gives no code. Each widget with an id
+is wired to what it is usually wanted for:
 
 | Widget | JavaScript | C++ |
 |--------|------------|-----|
@@ -366,16 +370,18 @@ The C++ is a function named after the file, `show_rename_files` for `rename_file
 `embedded_rename_files_ui()`, wires it and shows it with `show_modal`; a comment over it gives the
 `olagarro_embed_files` line that defines that function, and one under it a version that reads the file from disk
 instead. Ids become variables, with `_` for what a C++ name cannot have and after a keyword: `case_` for `case`.
-`tests/oui_code/generated_window.cpp` is what comes out for `tests/oui_code/rename_files.oui`, and it is compiled
-with the tests, so what Generate writes builds. The generated function builds with `UiTexts::translated`, the
-default, so a description with texts needs `context=` on its root for it to build at run time.
+`tests/oui_code/generated_window.cpp`, in OUI Code's repository, is what comes out for
+`tests/oui_code/rename_files.oui`, and it is compiled with the tests, so what Generate writes builds. The generated
+function builds with `UiTexts::translated`, the default, so a description with texts needs `context=` on its root for it
+to build at run time.
 
-**After Generate.** Beside Generate, a script can be chosen to run after it, one for each language, remembered in
-OUI Code's settings: a module that exports `processGeneratedCode(code, {language, file, dryRun})`, `language` being
+**After Generate.** Beside Generate, a script can be chosen to run after it, one for each language, remembered in OUI
+Code's settings: a module that exports `processGeneratedCode(code, {language, file, dryRun})`, `language` being
 `"javascript"` or `"cpp"` and `file` the description's whole path. It gets what Generate wrote, to save it where the
 project wants it or build with it, and what it returns shows at the end of its output. **New...** in the same list
-writes one in an Interactive Script tab, where it runs as a dry run on the code Generate would write now; saved, it
-is the script for that language. OUI Code's help has the rest, and [OUI Code](oui_code.md) how its tabs work.
+writes one in an Interactive Script tab, where it runs as a dry run on the code Generate would write now; saved, it is
+the script for that language. OUI Code's help has the rest, and [OUI Code's
+architecture](https://github.com/iganinja/oui_code/blob/master/doc/oui_code.md) how its tabs work.
 
 ## For editors
 

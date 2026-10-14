@@ -11,14 +11,9 @@ ctest --test-dir build --output-on-failure
 ```
 
 On Linux, `tools/build.sh` does the three steps (`--release`, `--no-tests`, and
-`--clean` for a cold build). `--static` links `oui_code` fully statically: the
-binary then runs on Linux systems whose C and C++ runtime is older than the
-build machine's, at the cost of about 1.5 MB of glibc and libstdc++.
-
-The programs a release carries, for another machine, `tools/build_portable.sh` builds
-in containers (podman or docker), and `tools/package_release.sh` makes the release's
-files of them: [building](doc/building.md#release-binaries) tells how. The runnable
-examples, `oui_code` among them, land in `bin/`.
+`--clean` for a cold build). `--static` links the programs fully statically: they
+then run on Linux systems whose C and C++ runtime is older than the build
+machine's. The runnable examples, `oui_term` among them, land in `bin/`.
 
 Linux prerequisites (Debian, Ubuntu, Mint):
 
@@ -26,8 +21,8 @@ Linux prerequisites (Debian, Ubuntu, Mint):
 sudo apt install cmake ninja-build g++ libgtest-dev libgmock-dev clang-format
 ```
 
-`oui_code` uses `wl-copy`/`wl-paste`, `xclip`, or `xsel` when present to share
-the desktop clipboard; without them it copies through the terminal (OSC 52).
+OUI's clipboard uses `wl-copy`/`wl-paste`, `xclip`, or `xsel` when present to
+share the desktop's; without them it copies through the terminal (OSC 52).
 
 The build treats warnings as errors. Fix every warning instead of suppressing it.
 
@@ -52,14 +47,15 @@ The build treats warnings as errors. Fix every warning instead of suppressing it
   space after the operator: `++ iterator`, never `iterator++`.
 - Format C++ with `oui_run tools/format_cpp.js`, from the repository, before submitting a change, or with
   `oui_run tools/format_cpp.js FILE...` for some files. It applies the repository `.clang-format` configuration
-  and restores the required spaces in prefix increments and decrements.
+  and restores the required spaces in prefix increments and decrements. oui_run comes with
+  [OUI Code](https://github.com/iganinja/oui_code).
 - New code, identifiers, comments, and technical proposals are written in English.
 - Every name scripts can use, `oui.readFile` or `console.log`, has a comment marked `api` beside the code that
-  defines it, as `tools/extract_api.js` describes; `oui_run tools/extract_api.js` makes `oui/oui.d.ts`, for editors,
-  and `doc/oui_api.md`, for readers, from them, and a test fails when either is out of date or `oui` has a name
-  without one.
+  defines it, as in `oui/src/script/system_api.cpp`. [OUI Code's repository](https://github.com/iganinja/oui_code)
+  makes its `oui.d.ts`, for editors, and its `doc/oui_api.md`, for readers, from the comments in OUI's sources and in
+  its programs', and a test there fails when either is out of date or oui_run's `oui` has a name without one.
 - Public APIs make ownership explicit.
-- OUI and its programs do not use C++'s streams (`<fstream>`, `<sstream>`, `<iostream>`...) or `std::regex`: in a
+- OUI and the programs here do not use C++'s streams (`<fstream>`, `<sstream>`, `<iostream>`...) or `std::regex`: in a
   static build they bring all of libc++'s or libstdc++'s locales, about 200 KB. Files go through
   `olagarro::oui::read_file` and C's files, regular expressions through `olagarro::oui::Regex`; a test checks it.
 
@@ -68,15 +64,8 @@ The build treats warnings as errors. Fix every warning instead of suppressing it
 - `oui/` is the library: its headers in `oui/include/oui`, one source for each widget or part in `oui/src`. A big
   class may take several sources, named after it: `text_edit.cpp` keeps TextEdit's state, and
   `text_edit_input.cpp`, `text_edit_lines.cpp`, `text_edit_search.cpp` and `text_edit_view.cpp` the rest.
-- `examples/oui_code` is OUI Code. `main.cpp` reads the command line and picks where it shows; `workbench.h` is the
-  window and all it holds. Its commands are in a file for each menu, `file_commands.cpp`, `edit_commands.cpp`,
-  `view_commands.cpp` and `tools_commands.cpp`, with `run_script.cpp`, `search_commands.cpp` (Find in Files),
-  `panel_commands.cpp` (the project tree and the explorer) and `comparison.cpp` (Compare Files, Compare with Saved and
-  the calculator tab). What they work on has files of its own: `documents`,
-  `editors` (the groups of tabs), `session` and `recovery` (what comes back next time), `dialogs`, `completion` and
-  `suggester`, and so on.
-- `examples/oui_run`, `examples/oui_term` and `examples/oui_desktop` are the other programs, each with a short
-  `main.cpp` and its parts beside it; the scripts OUI Code and oui_run carry are `.js` files, built into them.
+- `examples/oui_term` and `examples/oui_desktop` are programs built on OUI, each with a short `main.cpp` and its
+  parts beside it; `examples/oui` is the small terminal demo the tests run.
 
 ## Design
 

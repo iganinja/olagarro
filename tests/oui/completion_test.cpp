@@ -25,7 +25,8 @@ namespace
 
 [[nodiscard]] const ScriptApi& api()
 {
-    static const ScriptApi declared{oui::read_file(std::string{OLAGARRO_SOURCE_DIR} + "/oui/oui.d.ts").value_or("")};
+    static const ScriptApi declared{
+        oui::read_file(std::string{OLAGARRO_SOURCE_DIR} + "/tests/oui/sample_api.d.ts").value_or("")};
     return declared;
 }
 

@@ -29,17 +29,17 @@ resizing.get();   // waits, and rethrows the first exception a worker threw
 
 `concurrent_for(begin, end, function)` calls `function(index, element)` once for every element of `[begin, end)` and
 returns a `std::future<void>` that is ready when every call has returned. `index` is the element's position from
-`begin`, as a `std::size_t`; `element` is `*iterator`, so with a mutable range it is a reference the function can change in
-place, and with a `const_iterator` a const one.
+`begin`, as a `std::size_t`; `element` is `*iterator`, so with a mutable range it is a reference the function can change
+in place, and with a `const_iterator` a const one.
 
 The calls run on several threads at once:
 
 - **The function object is shared.** All workers call the same copy of it, so its call must be safe to make from
   several threads together. A lambda that writes to something it captured, or a `mutable` lambda with state of its
   own, needs that state guarded or split by index.
-- **Writing to separate elements is safe**, and so is writing to slot `index` of a vector sized beforehand. OUI
-  Code's Find in Files (`examples/oui_code/project_search.cpp`) searches each file on its own core this way, and
-  joins the results in file order afterwards:
+- **Writing to separate elements is safe**, and so is writing to slot `index` of a vector sized beforehand. OUI Code's
+  Find in Files (`oui_code/project_search.cpp` in [its repository](https://github.com/iganinja/oui_code)) searches each
+  file on its own core this way, and joins the results in file order afterwards:
 
 ```cpp
 std::vector<std::vector<FileMatch>> per_file(request.files.size());

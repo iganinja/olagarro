@@ -73,10 +73,10 @@ A default-constructed `Connection` refers to nothing; `disconnect` and `is_conne
 lifetime of whatever it captures:
 
 ```cpp
-// examples/oui_code/documents.h: what a running script session holds.
+// OUI Code's documents.h: what a running script session holds.
 olagarro::signal_slot::ScopedConnection code_changed;
 
-// examples/oui_code/tools_commands.cpp: the session hears the editor while it lives, and no longer.
+// OUI Code's tools_commands.cpp: the session hears the editor while it lives, and no longer.
 session->code_changed = signal_slot::ScopedConnection{session->view->code().on_changed(soon)};
 ```
 

@@ -137,11 +137,13 @@ for(const auto& theme : oui::terminal_themes())
 
 The theme fits what shows the program, so programs choose it with the backend: OUI Code, oui_calc and oui_term take
 `TurboCTheme::make()` in a terminal and `classic_theme()` in a window, on the whole screen or on a desktop of pixels
-(see `main.cpp` in each of `examples/oui_code`, `examples/oui_calc` and `examples/oui_term`).
+(see `main.cpp` in `examples/oui_term`, and in `oui_code` and `oui_calc` in [OUI Code's
+repository](https://github.com/iganinja/oui_code)).
 
 A `Theme` is a value: build one, change a field, set it. A program that wants a terminal theme with one difference
 copies it and changes the field before `set_theme`, as OUI Code does under the legacy Windows console
-(`Workbench::use_terminal_theme` in [workbench.cpp](../examples/oui_code/workbench.cpp)):
+(`Workbench::use_terminal_theme` in
+[workbench.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/workbench.cpp)):
 
 ```cpp
 if(m_options.legacy_render)
@@ -202,12 +204,13 @@ list; everything that offers themes reads that list.
    ```
 
    The test `OuiTranslationTests.OuisCatalogsCoverItsTexts` fails while any catalog lacks it.
-4. **Name it for scripts.** The `api(oui_run)` comment of `oui.setTheme` in
-   [examples/oui_run/prelude.js](../examples/oui_run/prelude.js) lists the ids; add the new one, then run
-   `oui_run tools/extract_api.js` from the repository to regenerate `oui/oui.d.ts` and `doc/oui_api.md` (the test
-   `Olagarro.OuiScriptApi` fails while they are out of date). [Scripting](scripting.md#windows) lists the ids in a
-   sentence too, and the comment over `terminal_themes()` in
-   [terminal_themes.h](../oui/include/oui/terminal_themes.h) describes the looks in order.
+4. **Name it for scripts.** The comment over `terminal_themes()` in
+[terminal_themes.h](../oui/include/oui/terminal_themes.h) describes the looks in order. Scripts name themes in [OUI
+Code's repository](https://github.com/iganinja/oui_code): the `api(oui_run)` comment of `oui.setTheme` in
+[oui_run/prelude.js](https://github.com/iganinja/oui_code/blob/master/oui_run/prelude.js) lists the ids, and
+[scripting](https://github.com/iganinja/oui_code/blob/master/doc/scripting.md#windows) lists them in a sentence. There
+the new id goes in both, and `oui_run tools/extract_api.js` makes its API files again, once its submodule points at a
+version of OUI with the theme; its test `OuiRun.ScriptApi` fails while they are out of date.
 5. **Check it reads.** [terminal_themes_test.cpp](../tests/oui/terminal_themes_test.cpp) runs over every theme
    `terminal_themes()` returns, with nothing to add:
    - `TurboComesFirstAndEachHasANameOfItsOwn`: `turbo` first, ids unique, names not empty;
@@ -350,7 +353,7 @@ std::vector<TerminalTheme> terminal_themes()
 ```
 
 Its name has `"Amber": "Ámbar"` under `"TerminalTheme"` in `oui/translations/es.json`, and `"amber"` is in the
-`oui.setTheme` comment of `prelude.js`, from which `oui_run tools/extract_api.js` makes the declarations. A script says
+`oui.setTheme` comment of oui_run's `prelude.js`, from which OUI Code's repository makes the declarations. A script says
 `oui.setTheme("amber")`, and OUI Code shows **Amber** under **View > Theme** when it runs in a terminal.
 
 ## Graphical themes
@@ -446,7 +449,7 @@ column. `background=` is taken by `Label`, `LineEdit`, `MarkdownView` and `Check
 `MarkdownView`; scripts set the colours of more widgets through their `background` and `color` properties.
 
 Scripts take either a name or a fixed colour written `"#rrggbb"`, six hexadecimal digits; `color_of` in
-[examples/oui_run/host.cpp](../examples/oui_run/host.cpp) tries the fixed form first:
+oui_run's [host.cpp](https://github.com/iganinja/oui_code/blob/master/oui_run/host.cpp) tries the fixed form first:
 
 ```js
 label.background = "table_background";   // follows the theme
@@ -460,12 +463,12 @@ meant to look right in every theme names the theme's colours.
 ## Themes in oui_run scripts
 
 `oui.setTheme(name)` sets the look of the script's window by id: one of `terminal_themes()`, `turbo`, `night`, `light`
-`monochrome`, `amber`, `phosphor` or `commander`, or `classic`, the graphical one, in a build with the window module (`oui_run_gui`). Any other name
-throws, listing the ids. It may be called before or after `oui.window()`.
+`monochrome`, `amber`, `phosphor` or `commander`, or `classic`, the graphical one, in a build with the window module
+(`oui_run_gui`). Any other name throws, listing the ids. It may be called before or after `oui.window()`.
 
 Without a call, the window opens with `TurboCTheme::make()` in a terminal and `classic_theme()` in a desktop window
-(`Host` in [host.cpp](../examples/oui_run/host.cpp) remembers whether the script chose one, so opening the window does
-not undo it).
+(`Host` in [host.cpp](https://github.com/iganinja/oui_code/blob/master/oui_run/host.cpp) remembers whether the script
+chose one, so opening the window does not undo it).
 
 ```js
 oui.setTheme("night");
@@ -478,17 +481,19 @@ frames.
 
 ## Themes in OUI Code
 
-OUI Code ([examples/oui_code](../examples/oui_code)) offers a **View > Theme** submenu with the looks for where it
-shows, and keeps the choice in its settings file, `oui_code.ini`, beside the executable when its folder can be written
-and in the user's configuration folder when not:
+OUI Code ([oui_code](https://github.com/iganinja/oui_code/tree/master/oui_code)) offers a **View > Theme** submenu with
+the looks for where it shows, and keeps the choice in its settings file, `oui_code.ini`, beside the executable when its
+folder can be written and in the user's configuration folder when not:
 
 | Where it shows | Submenu lists | Setting | Default |
 |----------------|---------------|---------|---------|
 | A terminal (characters) | `terminal_themes()` | `terminal_theme` | `turbo` |
 | A desktop window | `graphical_themes()` | `window_theme` | `classic` |
 
-The submenu is built each time it opens (`view_items` in [view_commands.cpp](../examples/oui_code/view_commands.cpp)),
-marks the current one, and on a choice applies it at once and saves the setting. At start-up `Workbench` reads the
-setting and applies it (`use_terminal_theme`, `use_window_theme` in
-[workbench.cpp](../examples/oui_code/workbench.cpp)); an id that is no longer among the themes leaves the default
-theme `main.cpp` set. On the whole screen (DRM) or a desktop of pixels it uses `classic_theme()` with no submenu.
+The submenu is built each time it opens (`view_items` in
+[view_commands.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/view_commands.cpp)), marks the current
+one, and on a choice applies it at once and saves the setting. At start-up `Workbench` reads the setting and applies it
+(`use_terminal_theme`, `use_window_theme` in
+[workbench.cpp](https://github.com/iganinja/oui_code/blob/master/oui_code/workbench.cpp)); an id that is no longer among
+the themes leaves the default theme `main.cpp` set. On the whole screen (DRM) or a desktop of pixels it uses
+`classic_theme()` with no submenu.

@@ -409,21 +409,6 @@ TEST_F(OuiTranslationTests, OuisCatalogsCoverItsTexts)
                                   {source_dir / "oui/include", source_dir / "oui/src"});
 }
 
-TEST_F(OuiTranslationTests, OuiCodesCatalogsCoverItsTexts)
-{
-    expect_catalogs_cover_sources(source_dir / "examples/oui_code/translations", {source_dir / "examples/oui_code"});
-}
-
-TEST_F(OuiTranslationTests, OuiRunsCatalogsCoverItsTexts)
-{
-    expect_catalogs_cover_sources(source_dir / "examples/oui_run/translations", {source_dir / "examples/oui_run"});
-}
-
-TEST_F(OuiTranslationTests, OuiCalcsCatalogsCoverItsTexts)
-{
-    expect_catalogs_cover_sources(source_dir / "examples/oui_calc/translations", {source_dir / "examples/oui_calc"});
-}
-
 TEST_F(OuiTranslationTests, OuisBuiltInCatalogsAreTheOnesInTheRepository)
 {
     ASSERT_EQ(oui_translations().size(), 1u);

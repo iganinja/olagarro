@@ -7,7 +7,7 @@ Its documentation is in [doc](doc/README.md), in Markdown: OUI Code shows it, it
 
 ![OUI Code with its File menu open, in a terminal on the left and in its own window on the right](doc/images/oui_code_terminal_and_window.png)
 
-OUI Code, the text editor built on OUI, the same program in a terminal and in a window of its own.
+OUI Code, a text editor made with OUI, the same program in a terminal and in a window of its own.
 
 ## Modules
 
@@ -19,58 +19,13 @@ OUI Code, the text editor built on OUI, the same program in a terminal and in a 
 - `OUI`: a small UI toolkit for terminals, desktop windows and the whole screen.
 - `OUIScript`: JavaScript for OUI programs, run by QuickJS.
 
-## Install
+## Made with OUI
 
-OUI Code, oui_run and oui_calc, ready to run. One line in a terminal, for your system:
-
-**Linux and macOS**
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh
-```
-
-**Windows**, in PowerShell
-
-```powershell
-irm https://raw.githubusercontent.com/iganinja/olagarro/master/install.ps1 | iex
-```
-
-**Debian, Ubuntu and the like**, kept up to date by `apt upgrade`
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/iganinja/olagarro/master/install.sh | sh -s -- --apt
-```
-
-Or download them from the [releases](https://github.com/iganinja/olagarro/releases).
-
-### What the installers do
-
-They show what there is and ask, then download it, check it against the release's sums and install it, with no
-root and no administrator but for `--apt`: in `~/.local/bin` on Linux and macOS, and on Windows in
-`%LOCALAPPDATA%\Programs\olagarro`, which they add to the PATH. There are programs for Linux and Windows on x86-64, for Linux on 64-bit ARM, as a Raspberry Pi 3,
-4 or 5 with a 64-bit system, and for macOS on Apple's processors and Intel's.
-
-Each program comes in two kinds, under the same name: for the terminal, and `gui`, which also opens in a window of
-its own. Typed in a terminal it stays there, and `--window` opens its window; started from the desktop's menu or an
-icon, with no terminal, it opens its window. The installers can also get the whole package, the three programs with
-their licences, and take options to choose without asking: `sh -s -- --all --gui` on Linux and macOS, `-All -Gui` on
-Windows, as the head of each script tells.
-
-### APT by hand
-
-`--apt` adds the project's APT repository and its key, with sudo, and installs from it; this is the same by hand:
-
-```sh
-sudo mkdir -p /etc/apt/keyrings
-sudo curl -fsSL https://iganinja.github.io/olagarro/olagarro.gpg -o /etc/apt/keyrings/olagarro.gpg
-echo "deb [signed-by=/etc/apt/keyrings/olagarro.gpg] https://iganinja.github.io/olagarro stable main" \
-    | sudo tee /etc/apt/sources.list.d/olagarro.list
-sudo apt update && sudo apt install oui-pack
-```
-
-`oui-pack` has the three for the terminal and `oui-pack-gui` the `gui` ones, which also puts OUI Code and OUI Calc in
-the desktop's menu; one or the other, in `/usr/bin`. `apt upgrade` brings each new release. Each release also carries
-them as `.deb` files, for `sudo dpkg -i`.
+- [OUI Code](https://github.com/iganinja/oui_code): OUI Code, a text editor and file explorer; oui_run, which runs
+  JavaScript files as programs; and oui_calc, a calculator. Its README tells how to install them, on Linux, macOS and
+  Windows, or from an APT repository.
+- [OUI Paint](https://github.com/iganinja/oui_paint): a raster image editor in the spirit of Paint.NET, with layers,
+  indexed images with palettes, and plugins in JavaScript.
 
 ## Build
 
@@ -82,14 +37,7 @@ cmake --install build --prefix /path/to/install
 ```
 
 On Linux, `tools/build.sh` does the same; `tools/build.sh --gui` builds the programs able to open in a desktop window
-as well, as `bin/oui_code_gui` and the rest.
-
-Each release carries OUI Code, oui_run and oui_calc for Linux and Windows on x86-64, for Linux on 64-bit ARM
-(aarch64) and for macOS (arm64 and x86_64), each in two kinds: `terminal`,
-which runs in the terminal it is started from, and `gui`, which also opens in a window of its own with `--window`. They
-come together in a package for each system and kind, as `olagarro-linux-x86_64-gui.tar.gz`, and each alone, as
-`oui_code-windows-x86_64-terminal.exe`, and need nothing installed beside them: OUI Code is 2.1 MB in the terminal
-kind for Linux. GitHub builds them from a version's tag, as [building](doc/building.md#release-binaries) tells.
+as well, as `bin/oui_term_gui` and the rest.
 
 ## CMake consumer
 
@@ -172,11 +120,10 @@ on Linux and Windows. It is event driven and uses no CPU while idle.
   clipboard, and name their windows as the task bar shows them. In a terminal,
   as over SSH, the same desktop shows in characters, and its programs draw cells.
 
-`examples/oui_code` is OUI Code, a text editor built on it; `examples/oui_term` is a terminal; `examples/oui_calc`
-a calculator, a prompt that works out what is written on it, as `(800*0.16) - (0.32*500)` or `interes = 800*0.03`,
-and keeps it in a log; and `examples/oui_desktop` the desktop, with a task bar that starts them in windows: in a
-window of another desktop with `--window`, on the whole screen of a Linux console with `--drm`, or in characters
-with `--terminal`, over SSH too.
+`examples/oui_term` is a terminal, the user's shell in a `TerminalView`, and `examples/oui_desktop` the desktop,
+with a task bar that starts oui_term, and OUI Code and oui_calc when the system has them, in windows: in a window of
+another desktop with `--window`, on the whole screen of a Linux console with `--drm`, or in characters with
+`--terminal`, over SSH too.
 
 ```cpp
 olagarro::oui::Application application;
@@ -206,16 +153,11 @@ engine.run(R"(app.greet("terminal");)", "hello.js");
 `RuleHighlighter` colours text by states of regular expression rules, as definitions of languages in
 scripts describe them; OUI Code defines its languages and text commands this way.
 
-`examples/oui_run` runs JavaScript the way node does: `console.log` writes to the terminal, commands run with
-their output as it comes, and the program ends when the script and what it started are done. Scripts are modules
-and import each other with relative paths. A script that wants more opens a window with `oui.window()` and builds
-it from OUI's widgets, in the terminal or, built with the window module and run with `--window`, on the desktop.
-`examples/oui_run/hello.js` is a plain script and `demo.js` a small panel. [Scripting](doc/scripting.md) shows how
-things are done, [the API reference](doc/oui_api.md) lists every name, and `examples/oui_run/recipes` has whole
-scripts for common jobs: searching and replacing in files, CSV and JSON, a command's output, renaming, a window;
-`examples/oui_run/programs` small programs: the game 2048, a process viewer, a file browser and a to-do list.
-`oui/oui.d.ts` has the API as TypeScript declarations, which editors read. Built for size (MinSizeRel, link-time
-optimisation, unused sections dropped, stripped) it is about 1.2 MB for the terminal and 2.8 MB with the window.
+oui_run, in [OUI Code's repository](https://github.com/iganinja/oui_code), runs JavaScript files as programs the
+way node does, with OUI's widgets for scripts that want a window. [Scripting with
+oui_run](https://github.com/iganinja/oui_code/blob/master/doc/scripting.md) shows how things are done, and [the API
+reference](https://github.com/iganinja/oui_code/blob/master/doc/oui_api.md) lists every name scripts can use, made
+from the comments marked `api` in OUI's sources and in the programs'.
 
 ## Concurrency
 
@@ -256,4 +198,5 @@ Olagarro is under the zlib licence, in [LICENSE](LICENSE). What it carries of ot
 | stb_truetype, which reads the interface font | `third_party/stb` | MIT or public domain, at the end of the file |
 | Spleen, the cell font | `oui/fonts/spleen_*` | BSD 2-clause, in `oui/fonts/spleen_license.txt` |
 | Jersey 10, the interface font | `oui/fonts/jersey10_regular.ttf` | SIL Open Font License 1.1, in `oui/fonts/jersey10_ofl.txt` |
+| NanoSVG, which draws SVG pictures | `third_party/nanosvg` | zlib, in its `LICENSE.txt` |
 | SDL3, fetched and linked in only with `OLAGARRO_OUI_WINDOW=ON` | not in the repository | zlib |

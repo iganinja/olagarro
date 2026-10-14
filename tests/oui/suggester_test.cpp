@@ -57,7 +57,7 @@ struct Fixture
     // interface description.
     bool script{false};
     bool description{false};
-    oui::ScriptApi api{oui::read_file(std::string{OLAGARRO_SOURCE_DIR} + "/oui/oui.d.ts").value_or("")};
+    oui::ScriptApi api{oui::read_file(std::string{OLAGARRO_SOURCE_DIR} + "/tests/oui/sample_api.d.ts").value_or("")};
     oui::Suggester suggester{
         application, [this]() -> std::optional<oui::Suggester::Context>
         { return oui::Suggester::Context{editor, &language, script ? &api : nullptr, {editor->text()}, description}; }};

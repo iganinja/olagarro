@@ -84,7 +84,7 @@ TEST(OuiInflateTests, EmbeddedFilesComeBackAsTheyWere)
     const std::filesystem::path source{OLAGARRO_SOURCE_DIR};
     const auto embedded{embedded_inflate_test_files()};
     ASSERT_EQ(embedded.size(), 2u);
-    EXPECT_EQ(embedded[0], file_text(source / "examples/oui_code/help/help.md"));
+    EXPECT_EQ(embedded[0], file_text(source / "doc/oui_layout.md"));
     EXPECT_EQ(embedded[1], file_text(source / "oui/fonts/spleen_16x32.psfu"));
 }
 

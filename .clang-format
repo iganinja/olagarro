@@ -11,5 +11,6 @@ AllowShortLoopsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: InlineOnly
 SortIncludes: Never
-# A comment marked "api" holds a declaration on one line, however long, for tools/extract_api.js: left as it is.
+# A comment marked "api" holds a declaration on one line, however long, for the extract_api.js of the programs that
+# run scripts, as OUI Code's: left as it is.
 CommentPragmas: "^ api\\("

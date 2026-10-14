@@ -13,7 +13,7 @@ namespace olagarro::oui
 {
 
 // What an editor suggests while one writes: words of the open documents, what the document's language offers, and,
-// in a script, what an API declares, as OUI's scripts have it in oui/oui.d.ts.
+// in a script, what an API declares, as OUI Code's oui.d.ts declares what its scripts can use.
 
 // Something to suggest: a word, as a keyword, or a piece of text with a name, as a loop.
 struct Suggestion
@@ -62,7 +62,7 @@ struct Signature
     [[nodiscard]] std::optional<std::size_t> parameter_of(std::size_t argument) const;
 };
 
-// What OUI's scripts can use, from the TypeScript declarations of oui/oui.d.ts: what is under each name, "oui" for
+// What scripts can use, from TypeScript declarations, as OUI Code's oui.d.ts: what is under each name, "oui" for
 // oui's own, "" for what is there without a name before it, as console and setTimeout.
 class ScriptApi
 {
