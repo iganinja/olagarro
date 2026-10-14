@@ -790,6 +790,12 @@ bool MenuBar::handle_mouse(const MouseEvent& mouse)
             return activate(*index);
         }
     }
+    // A submenu's entry with it open already: the index is the menu's, not the submenu's, whose entries `activate`
+    // would take it among.
+    if(items.at(*index).kind() == MenuItem::Kind::submenu)
+    {
+        return true;
+    }
     return mouse.pressed ? activate(*index) : true;
 }
 

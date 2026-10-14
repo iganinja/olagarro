@@ -114,6 +114,38 @@ TEST(OuiMenuScrollTests, AContextMenuOpensWhereItIsAskedAndRunsWhatIsChosen)
     EXPECT_FALSE(bar.is_open());
 }
 
+TEST(OuiMenuScrollTests, AClickOnASubmenusEntryThatHoveringOpenedRunsNothing)
+{
+    // Mode is the menu's third entry, on row 4 past the bar and the popup's frame: the pointer rests on it, which opens
+    // the submenu, then clicks it.
+    MouseEvent hovering{3, 4, false};
+    hovering.hover = true;
+    auto backend{scripted_backend({hovering, MouseEvent{3, 4, true}, MouseEvent{3, 4, false}}, {60, 12})};
+    auto& screen{*backend};
+    screen.set_one_event_per_frame(true);
+    Application application{std::move(backend)};
+    std::vector<std::string> ran;
+    for(const auto* const id : {"image.one", "image.two", "mode.a", "mode.b", "mode.c"})
+    {
+        application.commands().register_command(id, id, [&ran, id] { ran.emplace_back(id); });
+    }
+    auto content{column()};
+    auto& bar{menu_bar(application.commands(), *content)};
+    bar.add_menu("&Image", {"image.one", "image.two",
+                            menu_submenu("Mode", std::vector<MenuItem>{"mode.a", "mode.b", "mode.c"})});
+    content->add(vspacer(11));
+    application.set_content(std::move(content));
+    bar.open_menu(0);
+    for(int frame{}; frame < 5; ++ frame)
+    {
+        application.run_frame();
+    }
+    EXPECT_TRUE(ran.empty()) << "the submenu's third entry ran: " << (ran.empty() ? "" : ran.front());
+    EXPECT_TRUE(bar.is_open());
+    ASSERT_TRUE(screen.last_frame());
+    EXPECT_TRUE(shows(rows_of(*screen.last_frame()), U"mode.c")) << "the submenu stays open";
+}
+
 TEST(OuiMenuScrollTests, AClickOnAMenuEntryLeavesTheFocusWhereItWas)
 {
     // The entry's row: the bar is row 0, the popup's frame row 1, its first entry row 2.
