@@ -100,6 +100,8 @@ class GraphicalPainter final : public Painter
     void draw_popup_edge(const Rect& bounds, const Theme& theme) override;
     void draw_popup_separator(const Rect& row, const Theme& theme) override;
     void draw_icon(Point position, Icon icon, const TextStyle& style) override;
+    void draw_spin_arrows(const Rect& cells, const Theme& theme) override;
+    [[nodiscard]] bool stacks_spin_arrows() const override { return true; }
     void draw_marker(Point position, const Marker& marker, const TextStyle& style) override;
     void draw_check_mark(Point position, bool checked, const TextStyle& style) override;
     void draw_tooltip(const Rect& bounds, const std::vector<std::string>& lines, const Theme& theme) override;

@@ -36,6 +36,8 @@ class LineEdit final : public Widget
     {
         return m_changed.connect(std::forward<Callback>(callback));
     }
+    // Enter was pressed, with the text as it is. While nothing hears it, Enter goes on past the field, as to the
+    // window's default button.
     template <typename Callback> olagarro::signal_slot::Connection on_submitted(Callback&& callback)
     {
         return m_submitted.connect(std::forward<Callback>(callback));

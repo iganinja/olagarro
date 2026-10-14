@@ -27,12 +27,19 @@ TEST(OuiNumberFieldTests, WhatIsTypedIsTakenOnEnterKeptInRange)
     field.set_value(10);
     std::vector<double> changes;
     static_cast<void>(field.on_changed([&changes](double value) { changes.push_back(value); }));
+    // Enter goes from the field, where nothing hears it, up to the number field, which takes what was typed and lets
+    // it go on, as to the window's default button.
+    const auto enter{[&field]
+                     {
+                         EXPECT_FALSE(field.text_field().handle_event(oui::KeyEvent{oui::Key::enter}));
+                         EXPECT_FALSE(field.handle_event(oui::KeyEvent{oui::Key::enter}));
+                     }};
     field.text_field().set_text("250");
-    EXPECT_TRUE(field.text_field().handle_event(oui::KeyEvent{oui::Key::enter}));
+    enter();
     EXPECT_EQ(field.value(), 100);
     EXPECT_EQ(field.text_field().text(), "100");
     field.text_field().set_text("abc");
-    field.text_field().handle_event(oui::KeyEvent{oui::Key::enter});
+    enter();
     EXPECT_EQ(field.value(), 100) << "what is not a number changes nothing";
     EXPECT_EQ(field.text_field().text(), "100") << "and the value shows again";
     EXPECT_EQ(changes, (std::vector<double>{100}));

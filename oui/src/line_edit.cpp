@@ -222,10 +222,11 @@ bool LineEdit::handle_event(const Event& event)
         }
         return true;
     }
+    // Enter submits what is typed; heard by nothing, it goes on, as to the window's default button.
     if(key->key == Key::enter)
     {
         m_submitted.fire(m_text);
-        return true;
+        return m_submitted.is_heard();
     }
     return false;
 }

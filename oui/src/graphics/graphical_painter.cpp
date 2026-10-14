@@ -734,6 +734,26 @@ void GraphicalPainter::draw_icon(Point position, Icon icon, const TextStyle& sty
     }
 }
 
+void GraphicalPainter::draw_spin_arrows(const Rect& cells, const Theme& theme)
+{
+    // A raised button the field's height and a little wider than it is tall, split across: up in its upper half, down
+    // in its lower one.
+    const auto area{pixels(cells)};
+    const auto width{std::min(area.width, m_cell.height * 3 / 4)};
+    const PixelRect button{area.x + area.width - width, area.y, width, area.height};
+    m_canvas.fill(area, theme.dialog_background);
+    const auto half{button.height / 2};
+    bevel({button.x, button.y, button.width, half}, false, m_style.face);
+    bevel({button.x, button.y + half, button.width, button.height - half}, false, m_style.face);
+    const auto cx{static_cast<float>(button.x) + static_cast<float>(button.width) / 2};
+    const auto u{unit()};
+    const auto up_y{static_cast<float>(button.y) + static_cast<float>(half) / 2};
+    const auto down_y{static_cast<float>(button.y + half) + static_cast<float>(button.height - half) / 2};
+    m_canvas.fill_polygon({{cx - 4 * u, up_y + 2 * u}, {cx + 4 * u, up_y + 2 * u}, {cx, up_y - 2 * u}}, m_style.text);
+    m_canvas.fill_polygon({{cx - 4 * u, down_y - 2 * u}, {cx + 4 * u, down_y - 2 * u}, {cx, down_y + 2 * u}},
+                          m_style.text);
+}
+
 void GraphicalPainter::draw_check_mark(Point position, bool checked, const TextStyle& style)
 {
     const auto area{pixels({position.x, position.y, 4, 1})};

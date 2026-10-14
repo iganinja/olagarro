@@ -351,6 +351,23 @@ template <typename... Parameters> class Signal
         return {m_state, id};
     }
 
+    // Whether anything would hear it fire: a slot, or a callback still connected.
+    [[nodiscard]] bool is_heard() const
+    {
+        if(!m_state->slots().empty())
+        {
+            return true;
+        }
+        for(std::size_t index{}; index < m_state->count(); ++ index)
+        {
+            if(m_state->connected_at(index) != nullptr)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Calls the slots and the callbacks connected when it starts that are still connected when their turn comes.
     void fire(Parameters... parameters)
     {

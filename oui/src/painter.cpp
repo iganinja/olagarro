@@ -377,6 +377,13 @@ void Painter::draw_popup_separator(const Rect& row, const Theme& theme)
     draw_text({row.x, row.y}, "├" + repeated("─", row.width - 2) + "┤", {theme.menu_border, theme.menu_background});
 }
 
+void Painter::draw_spin_arrows(const Rect& cells, const Theme& theme)
+{
+    const TextStyle arrows{theme.button_foreground, theme.button_background};
+    draw_icon({cells.x, cells.y}, Icon::sorted_down, arrows);
+    draw_icon({cells.x + 1, cells.y}, Icon::sorted_up, arrows);
+}
+
 void Painter::draw_icon(Point position, Icon icon, const TextStyle& style)
 {
     switch(icon)

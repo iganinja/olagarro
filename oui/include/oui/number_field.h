@@ -54,13 +54,14 @@ class NumberField final : public Container
     void show_value() const;
 
     LineEdit* m_field{};
+    // Where the arrows were drawn, in pixels, when one is over the other; none when side by side.
+    mutable std::optional<Rect> m_stacked_arrows;
     double m_minimum{0.0};
     double m_maximum{100.0};
     double m_step{1.0};
     int m_decimals{0};
     double m_value{0.0};
     olagarro::signal_slot::Signal<double> m_changed;
-    olagarro::signal_slot::Connection m_submitted;
     olagarro::signal_slot::Connection m_typed;
 };
 

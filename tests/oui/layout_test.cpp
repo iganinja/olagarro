@@ -15,6 +15,7 @@
 #include <oui/label.h>
 #include <oui/layout.h>
 #include <oui/line_edit.h>
+#include <oui/number_field.h>
 #include <oui/list.h>
 #include <oui/menu.h>
 #include <oui/menu_bar.h>
@@ -4603,6 +4604,43 @@ TEST(OuiTextEditTests, ClaimingTypingKeepsSingleKeyShortcutsFromTakingWhatIsType
     EXPECT_EQ(erases, 1);
     EXPECT_EQ(editor.text(), "xb") << "x typed, then the a after it deleted";
     EXPECT_EQ(saves, 1) << "Ctrl+S edits nothing, so it is still the application's";
+}
+
+TEST(OuiLineEditTests, EnterInAFieldNothingHearsPressesTheDefaultButton)
+{
+    auto backend{std::make_unique<MemoryBackend>()};
+    auto* const backend_ref{backend.get()};
+    oui::Application application{std::move(backend)};
+    auto window{oui::window("Dialog")};
+    auto& content{oui::column(*window)};
+    auto& name{oui::line_edit(content)};
+    auto& number{oui::number_field(content)};
+    number.set_range(0, 100);
+    auto& heard{oui::line_edit(content)};
+    int clicks{};
+    int submitted{};
+    oui::button("OK", content, [&clicks] { ++ clicks; }).set_default(true);
+    static_cast<void>(heard.on_submitted([&submitted](std::string_view) { ++ submitted; }));
+    application.set_window(std::move(window));
+    application.run_frame();
+
+    application.focus(name);
+    backend_ref->push_event(oui::KeyEvent{oui::Key::enter});
+    application.run_frame();
+    EXPECT_EQ(clicks, 1) << "nothing hears the field: the default button does";
+
+    application.focus(number.text_field());
+    number.text_field().set_text("42");
+    backend_ref->push_event(oui::KeyEvent{oui::Key::enter});
+    application.run_frame();
+    EXPECT_EQ(number.value(), 42) << "what was typed taken";
+    EXPECT_EQ(clicks, 2) << "and the default button pressed";
+
+    application.focus(heard);
+    backend_ref->push_event(oui::KeyEvent{oui::Key::enter});
+    application.run_frame();
+    EXPECT_EQ(submitted, 1);
+    EXPECT_EQ(clicks, 2) << "a field that hears its Enter keeps it";
 }
 
 // The text a frame shows on row `y`.

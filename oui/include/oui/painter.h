@@ -236,6 +236,11 @@ class Painter
     // The line between groups of a drop-down menu's entries, across the row of the popup it is on.
     virtual void draw_popup_separator(const Rect& row, const Theme& theme);
     virtual void draw_icon(Point position, Icon icon, const TextStyle& style);
+    // A number field's arrows that step its value, in `cells` at its right, two cells: side by side, down then up, as
+    // a terminal can only draw them, or one over the other, up then down, as a window does.
+    virtual void draw_spin_arrows(const Rect& cells, const Theme& theme);
+    // Whether draw_spin_arrows puts them one over the other, so the upper half of the cells steps up.
+    [[nodiscard]] virtual bool stacks_spin_arrows() const { return false; }
     virtual void draw_marker(Point position, const Marker& marker, const TextStyle& style);
     // The mark before a checkable entry, as in a menu: four cells, "[■] " or "[ ] " in a terminal.
     virtual void draw_check_mark(Point position, bool checked, const TextStyle& style);

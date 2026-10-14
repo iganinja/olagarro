@@ -24,7 +24,6 @@ constexpr int arrows_width{2};
 NumberField::NumberField()
 {
     m_field = &add(line_edit());
-    m_submitted = m_field->on_submitted([this](std::string_view) { commit(); });
     // A number typed is the value at once, kept in range and on a step, without the text being rewritten under the
     // cursor; leaving the field shows it as it was kept.
     m_typed = m_field->on_changed(
@@ -181,15 +180,21 @@ void NumberField::paint(Painter& painter, const Theme& theme) const
         show_value();
     }
     Container::paint(painter, theme);
-    const auto right{m_bounds.x + m_bounds.width};
-    // As icons, drawn at any size, not as characters a font may lack.
-    const TextStyle arrows{theme.button_foreground, theme.button_background};
-    painter.draw_icon({right - 2, m_bounds.y}, Icon::sorted_down, arrows);
-    painter.draw_icon({right - 1, m_bounds.y}, Icon::sorted_up, arrows);
+    const Rect arrows{m_bounds.x + m_bounds.width - arrows_width, m_bounds.y, arrows_width, 1};
+    painter.draw_spin_arrows(arrows, theme);
+    // Where they are in pixels when one is over the other, for a click to tell which.
+    m_stacked_arrows = painter.stacks_spin_arrows() ? painter.pixel_bounds(arrows) : std::nullopt;
 }
 
 bool NumberField::handle_event(const Event& event)
 {
+    // Enter, from the field, takes what was typed, and goes on, as to the window's default button.
+    if(const auto* const key{std::get_if<KeyEvent>(&event)};
+       key != nullptr && key->key == Key::enter && !key->control && !key->alt)
+    {
+        commit();
+        return false;
+    }
     const auto* const mouse{std::get_if<MouseEvent>(&event)};
     if(mouse == nullptr || !is_enabled())
     {
@@ -205,6 +210,11 @@ bool NumberField::handle_event(const Event& event)
         return false;
     }
     const auto right{m_bounds.x + m_bounds.width};
+    if(m_stacked_arrows && mouse->pixel && mouse->x >= right - arrows_width && mouse->x < right)
+    {
+        step_by(mouse->pixel->y < m_stacked_arrows->y + m_stacked_arrows->height / 2 ? 1 : -1);
+        return true;
+    }
     if(mouse->x == right - 2)
     {
         step_by(-1);
