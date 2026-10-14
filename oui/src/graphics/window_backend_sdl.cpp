@@ -839,6 +839,10 @@ class WindowBackend final : public DesktopWindow
             mouse.pixel = pixel;
             mouse.right_dragging = right_dragging;
             mouse.middle_dragging = middle_dragging;
+            // Held while dragging too, as Shift keeping a shape square while it is drawn.
+            mouse.shift = shift;
+            mouse.control = control;
+            mouse.alt = alt;
             if(dragging)
             {
                 mouse.dragging = true;
