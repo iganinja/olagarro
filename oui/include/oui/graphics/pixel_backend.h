@@ -38,6 +38,13 @@ class PixelBackend : public Backend
     void set_zoom(int level);
     [[nodiscard]] int zoom() const;
     [[nodiscard]] static int zoom_levels();
+    // The columns an arrow pointer `pointer_size` pixels big covers from its tip, `cell_offset` pixels into a cell
+    // `cell_width` wide: an arrow reaches about three fifths of its size to the right of its tip, in the themes there
+    // are.
+    [[nodiscard]] static int columns_covered(int cell_offset, int cell_width, int pointer_size);
+    [[nodiscard]] int pointer_columns(int cell_offset) const override;
+    // The system's pointer's size in pixels; 24, the usual, unless a backend knows it.
+    [[nodiscard]] virtual int pointer_size() const { return 24; }
     [[nodiscard]] static int default_zoom();
     [[nodiscard]] bool zooms() const override;
     bool zoom_by(int step) override;

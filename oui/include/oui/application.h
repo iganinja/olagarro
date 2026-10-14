@@ -296,6 +296,8 @@ class Application
     {
         std::string text;
         Point at;
+        // The columns the pointer covers from its tip's, which the tooltip starts after.
+        int pointer_columns{2};
     };
     std::optional<Tooltip> m_tooltip;
     Timer m_tooltip_timer;

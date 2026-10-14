@@ -2,6 +2,7 @@
 #include <oui/graphics/window_backend.h>
 #include <oui/utf8.h>
 
+#include "system_pointer.h"
 #include "wheel.h"
 
 #include <SDL3/SDL.h>
@@ -272,6 +273,8 @@ class WindowBackend final : public DesktopWindow
     }
 
     void set_clipboard_text(std::string_view text) override { SDL_SetClipboardText(std::string{text}.c_str()); }
+
+    [[nodiscard]] int pointer_size() const override { return m_pointer_size; }
 
     void set_pointer(Pointer pointer) override
     {
@@ -894,6 +897,8 @@ class WindowBackend final : public DesktopWindow
     Pointer m_pointer{Pointer::arrow};
     Pointer m_shown{Pointer::arrow};
     std::array<SDL_Cursor*, static_cast<std::size_t>(Pointer::none) + 1> m_cursors{};
+    // The system's pointer's size in pixels, read once: the desktop sets it before programs start.
+    int m_pointer_size{system_pointer_size()};
 };
 
 } // namespace

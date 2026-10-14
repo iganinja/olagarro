@@ -86,14 +86,22 @@ class MemoryBackend final : public oui::Backend
     }
 
     void present(const oui::CellBuffer& buffer) override { m_last_frame = buffer; }
+    [[nodiscard]] int pointer_columns(int cell_offset) const override
+    {
+        static_cast<void>(cell_offset);
+        return m_pointer_columns;
+    }
 
     void push_event(const oui::Event& event) { m_events.push_back(event); }
+    // As a window with a big pointer says.
+    void set_pointer_columns(int columns) { m_pointer_columns = columns; }
 
     [[nodiscard]] const std::optional<oui::CellBuffer>& last_frame() const { return m_last_frame; }
 
   private:
     std::vector<oui::Event> m_events;
     std::optional<oui::CellBuffer> m_last_frame;
+    int m_pointer_columns{2};
 };
 
 class OverlayTestContainer final : public oui::Container
@@ -4728,6 +4736,12 @@ TEST(OuiTooltipTests, StartAfterThePointerOrEndBeforeItSoThePointerCoversNone)
     EXPECT_EQ(rest_at(2).substr(4, 7), " a tip ");
     // None: it ends in the column before.
     EXPECT_EQ(rest_at(17).substr(10, 7), " a tip ");
+
+    // A big pointer, as a window says its system's is: it starts after all the columns the pointer covers.
+    backend_ref->set_pointer_columns(5);
+    EXPECT_EQ(rest_at(2).substr(7, 7), " a tip ");
+    EXPECT_EQ(rest_at(2).substr(4, 3), "   ") << "nothing under the pointer";
+    backend_ref->set_pointer_columns(2);
 
     // Wider than either side: on the wider, broken to fit it, still clear of the pointer.
     told.set_tooltip("one two three four");

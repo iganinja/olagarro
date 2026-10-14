@@ -1122,9 +1122,10 @@ void Application::follow_pointer(const MouseEvent& mouse)
     // Shown once the pointer has rested a moment where it is, as tooltips are everywhere.
     constexpr std::chrono::milliseconds rest{600};
     const Point at{mouse.x, mouse.y};
+    const auto pointer_columns{m_backend->pointer_columns(mouse.cell_offset)};
     m_tooltip_timer =
         start_timer(rest,
-                    [this, at]
+                    [this, at, pointer_columns]
                     {
                         m_tooltip_timer.stop();
                         if(m_content == nullptr || m_modal_depth != 0)
@@ -1135,7 +1136,7 @@ void Application::follow_pointer(const MouseEvent& mouse)
                         {
                             if(auto text{widget->tooltip_at(at)})
                             {
-                                m_tooltip = Tooltip{std::move(*text), at};
+                                m_tooltip = Tooltip{std::move(*text), at, pointer_columns};
                                 m_needs_render = true;
                                 return;
                             }
@@ -1170,18 +1171,18 @@ void Application::paint_tooltip(Painter& painter, Size size) const
                             }
                             return std::pair{std::move(lines), width};
                         }};
-    // Beside the pointer, never under it: starting a column clear of it, as the arrow drawn in pixels reaches into the
-    // column after its tip, or, with no room there, ending in the column before it; too wide for either side, broken
+    // Beside the pointer, never under it: starting after the columns the pointer covers, which in pixels depends on
+    // the system's pointer, or, with no room there, ending in the column before it; too wide for either side, broken
     // to fit the wider.
     const auto at{m_tooltip->at};
-    const auto after{size.width - at.x - 2};
+    const auto after{size.width - at.x - m_tooltip->pointer_columns};
     const auto before{at.x};
     auto [lines, width] = lines_in(size.width);
     if(width > after && width > before)
     {
         std::tie(lines, width) = lines_in(std::max(after, before));
     }
-    const auto x{width <= after ? at.x + 2 : std::max(0, at.x - width)};
+    const auto x{width <= after ? at.x + m_tooltip->pointer_columns : std::max(0, at.x - width)};
     if(lines.size() > static_cast<std::size_t>(size.height))
     {
         lines.resize(static_cast<std::size_t>(size.height));

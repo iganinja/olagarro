@@ -128,6 +128,17 @@ int PixelBackend::zoom_levels()
     return static_cast<int>(std::size(zoom_table));
 }
 
+int PixelBackend::columns_covered(int cell_offset, int cell_width, int pointer_size)
+{
+    const auto reach{(pointer_size * 3 + 4) / 5};
+    return std::max(1, (std::max(0, cell_offset) + reach - 1) / std::max(1, cell_width) + 1);
+}
+
+int PixelBackend::pointer_columns(int cell_offset) const
+{
+    return columns_covered(cell_offset, cell_size().width, pointer_size());
+}
+
 int PixelBackend::default_zoom()
 {
     return 1;

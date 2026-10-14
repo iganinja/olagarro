@@ -66,6 +66,14 @@ class Backend
     virtual bool zoom_reset() { return false; }
     // Shows the pointer as `pointer`, in a window or on a screen of pixels; a terminal keeps its own.
     virtual void set_pointer(Pointer pointer) { static_cast<void>(pointer); }
+    // How many columns the pointer covers, from the one its tip is in, `cell_offset` into it as MouseEvent says, that
+    // one included: a tooltip beside it starts after them. Two unless the backend knows better, as a window does from
+    // the size of the system's pointer.
+    [[nodiscard]] virtual int pointer_columns(int cell_offset) const
+    {
+        static_cast<void>(cell_offset);
+        return 2;
+    }
 };
 
 } // namespace olagarro::oui

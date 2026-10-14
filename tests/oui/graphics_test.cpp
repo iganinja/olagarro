@@ -544,6 +544,16 @@ TEST(OuiGraphicsTests, ATooltipInPixelsHasAnEdgeAndLetsWhatIsUnderShowThrough)
     EXPECT_TRUE(same(on_red.pixel_at(12 + 8 * 12 + 2, 40), red));
 }
 
+TEST(OuiGraphicsTests, APointerCoversTheColumnsItsArrowReaches)
+{
+    // An arrow reaches about three fifths of its size to the right of its tip.
+    EXPECT_EQ(oui::PixelBackend::columns_covered(0, 10, 24), 2) << "15 pixels from the left of a cell of 10";
+    EXPECT_EQ(oui::PixelBackend::columns_covered(8, 10, 24), 3) << "from near its right, into a third";
+    EXPECT_EQ(oui::PixelBackend::columns_covered(0, 10, 48), 3) << "29 pixels";
+    EXPECT_EQ(oui::PixelBackend::columns_covered(9, 10, 48), 4);
+    EXPECT_EQ(oui::PixelBackend::columns_covered(0, 10, 16), 1) << "10 pixels, its own cell only";
+}
+
 TEST(OuiGraphicsTests, ATooltipInPixelsIsAsWideAsItsTextShows)
 {
     // Its text in a proportional font takes fewer pixels than its characters take cells: the box fits the text, not
