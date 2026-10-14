@@ -92,6 +92,35 @@ bool LineEdit::is_focusable() const
 {
     return true;
 }
+
+bool LineEdit::claims_key(const Event& event) const
+{
+    if(const auto* const text{std::get_if<TextEvent>(&event)})
+    {
+        return !text->control && !text->alt;
+    }
+    const auto* const key{std::get_if<KeyEvent>(&event)};
+    if(key == nullptr || key->alt)
+    {
+        return false;
+    }
+    switch(key->key)
+    {
+    // With Ctrl too: a word at a time, or the start and end of the text.
+    case Key::backspace:
+    case Key::delete_:
+    case Key::left:
+    case Key::right:
+    case Key::home:
+    case Key::end:
+        return true;
+    case Key::space:
+        return !key->control;
+    default:
+        return false;
+    }
+}
+
 bool LineEdit::handle_event(const Event& event)
 {
     if(const auto* const mouse{std::get_if<MouseEvent>(&event)})
@@ -183,9 +212,10 @@ bool LineEdit::handle_event(const Event& event)
         {
             return true;
         }
+        // Nothing before it, still the field's: it is no shortcut's.
         if(m_cursor == 0)
         {
-            return false;
+            return true;
         }
         m_anchor = previous_codepoint(m_cursor);
         return erase_selection();
@@ -198,7 +228,7 @@ bool LineEdit::handle_event(const Event& event)
         }
         if(m_cursor == m_text.size())
         {
-            return false;
+            return true;
         }
         m_anchor = m_cursor;
         static_cast<void>(decode_utf8(m_text, m_anchor));

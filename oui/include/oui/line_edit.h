@@ -44,6 +44,9 @@ class LineEdit final : public Widget
     }
     [[nodiscard]] bool is_focusable() const override;
     bool handle_event(const Event& event) override;
+    // What is typed, and the keys that edit it and move along it, are the field's before any shortcut of the
+    // application: Backspace in a field deletes, whatever the application binds Backspace to.
+    [[nodiscard]] bool claims_key(const Event& event) const override;
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     void paint(Painter& painter, const Theme& theme) const override;
 

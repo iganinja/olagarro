@@ -795,7 +795,9 @@ TEST(OuiWidgetTests, LineEditSupportsHomeEndAndDelete)
 
     EXPECT_EQ(edit.text(), "az");
     static_cast<void>(edit.handle_event(oui::KeyEvent{oui::Key::end}));
-    EXPECT_FALSE(edit.handle_event(oui::KeyEvent{oui::Key::delete_}));
+    // Nothing after the cursor: Delete changes nothing, and is still the field's, no shortcut's.
+    EXPECT_TRUE(edit.handle_event(oui::KeyEvent{oui::Key::delete_}));
+    EXPECT_EQ(edit.text(), "az");
 }
 
 TEST(OuiWidgetTests, LineEditJumpsWordsWithControlArrows)
@@ -4612,6 +4614,70 @@ TEST(OuiTextEditTests, ClaimingTypingKeepsSingleKeyShortcutsFromTakingWhatIsType
     EXPECT_EQ(erases, 1);
     EXPECT_EQ(editor.text(), "xb") << "x typed, then the a after it deleted";
     EXPECT_EQ(saves, 1) << "Ctrl+S edits nothing, so it is still the application's";
+}
+
+TEST(OuiLineEditTests, AFieldWithTheFocusTakesWhatIsTypedAndItsEditingKeysBeforeTheShortcuts)
+{
+    auto backend{std::make_unique<MemoryBackend>()};
+    auto* const backend_ref{backend.get()};
+    oui::Application application{std::move(backend)};
+    auto column{oui::column()};
+    auto& field{oui::line_edit(*column)};
+    auto& number{oui::number_field(*column)};
+    number.set_range(0, 1000);
+    auto& button{oui::button("Go", *column, [] {})};
+    application.set_content(std::move(column));
+    int swaps{};
+    int erases{};
+    int fills{};
+    int saves{};
+    application.commands().register_command("swap", "Swap", [&swaps] { ++ swaps; });
+    application.commands().bind("swap", {U'x'});
+    application.commands().register_command("erase", "Erase", [&erases] { ++ erases; });
+    application.commands().bind("erase", oui::KeyShortcut{oui::Key::delete_});
+    application.commands().register_command("fill", "Fill", [&fills] { ++ fills; });
+    application.commands().bind("fill", oui::KeyShortcut{oui::Key::backspace});
+    application.commands().register_command("save", "Save", [&saves] { ++ saves; });
+    application.commands().bind("save", {U's', true});
+    application.render();
+
+    application.focus(field);
+    field.set_text("abc");
+    field.select_range(1, 1);
+    backend_ref->push_event(oui::TextEvent{U'x'});
+    backend_ref->push_event(oui::KeyEvent{oui::Key::delete_});
+    backend_ref->push_event(oui::KeyEvent{oui::Key::backspace});
+    backend_ref->push_event(oui::TextEvent{U's', true});
+    application.run_frame();
+    EXPECT_EQ(field.text(), "ac") << "x typed after the a, the b after it deleted, then the x before the cursor";
+    EXPECT_EQ(swaps, 0);
+    EXPECT_EQ(erases, 0);
+    EXPECT_EQ(fills, 0);
+    EXPECT_EQ(saves, 1) << "Ctrl+S edits nothing, so it is still the application's";
+
+    // A number field's own field, as a size in a tool bar.
+    application.focus(number.text_field());
+    number.set_value(32);
+    backend_ref->push_event(oui::KeyEvent{oui::Key::end});
+    backend_ref->push_event(oui::KeyEvent{oui::Key::backspace});
+    application.run_frame();
+    EXPECT_EQ(number.text_field().text(), "3");
+    EXPECT_EQ(fills, 0);
+
+    // With nothing to delete there, Delete at its end and Backspace at its start are still the field's.
+    backend_ref->push_event(oui::KeyEvent{oui::Key::delete_});
+    backend_ref->push_event(oui::KeyEvent{oui::Key::home});
+    backend_ref->push_event(oui::KeyEvent{oui::Key::backspace});
+    application.run_frame();
+    EXPECT_EQ(number.text_field().text(), "3");
+    EXPECT_EQ(erases, 0);
+    EXPECT_EQ(fills, 0);
+
+    // A button has the focus: the keys are the application's.
+    application.focus(button);
+    backend_ref->push_event(oui::KeyEvent{oui::Key::backspace});
+    application.run_frame();
+    EXPECT_EQ(fills, 1);
 }
 
 TEST(OuiLineEditTests, EnterInAFieldNothingHearsPressesTheDefaultButton)
