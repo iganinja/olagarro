@@ -104,7 +104,7 @@ them, for its widgets' signals, such as `Button::clicked`.
 | `modules/` | The C++20 module adapters. |
 | `doc/` | This documentation. |
 | `licenses/` | The licences of what programs built on OUI carry that the source does not keep beside its code: stb_truetype's, SDL3's, and those of the C runtimes of static builds. |
-| `.github/workflows/` | `release.yml`, which tests a version's tag and makes its release. |
+| `.github/workflows/` | `tests.yml`, which tests every push to master on Linux and macOS. |
 
 Build output stays out of the repository's history: `build/` and `build-*/` are build trees, and `bin/` holds the
 programs.
