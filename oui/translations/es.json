@@ -23,6 +23,77 @@
       "Command Palette": "Paleta de comandos",
       "Filter commands": "Filtrar comandos"
     },
+    "Description": {
+      "Expected a widget type, as Label or Button.": "Se esperaba un tipo de widget, como Label o Button.",
+      "Expected a space here.": "Se esperaba un espacio aquí.",
+      "The text goes right after the type.": "El texto va justo después del tipo.",
+      "Expected a property, as name=value or a name alone.": "Se esperaba una propiedad, como nombre=valor o un nombre solo.",
+      "The property {0} is given twice.": "La propiedad {0} aparece dos veces.",
+      "A quote is not closed.": "Unas comillas no se cierran.",
+      "Tabs are not allowed for indentation.": "No se puede sangrar con tabuladores.",
+      "A document can only have one root widget.": "Un documento solo puede tener un widget raíz.",
+      "Expected a root widget.": "Se esperaba un widget raíz.",
+      "A gap is none, tight, normal or loose, not {0}.": "gap es none, tight, normal o loose, no {0}.",
+      "The {0} is a whole number, not {1}.": "{0} es un número entero, no {1}.",
+      "The {0} is a share between 0 and 1, as 0.4, not {1}.": "{0} es una proporción entre 0 y 1, como 0.4, no {1}.",
+      "A column is content, fill, flex or a number of cells, not {0}.": "Una columna es content, fill, flex o un número de celdas, no {0}.",
+      "A row is content, fill, flex or a number of cells, not {0}.": "Una fila es content, fill, flex o un número de celdas, no {0}.",
+      "There is no colour {0} in the theme.": "No hay ningún color {0} en el tema.",
+      "A Tab goes in a Tabs.": "Un Tab va dentro de un Tabs.",
+      "No widget has the id {0}.": "Ningún widget tiene el id {0}.",
+      "There is no widget called {0}.": "No hay ningún widget llamado {0}.",
+      "Only the root names a context.": "Solo la raíz nombra un context.",
+      "A {0} has no property {1}.": "Un {0} no tiene la propiedad {1}.",
+      "A {0} has no text of its own.": "Un {0} no tiene texto propio.",
+      "A Tab cannot be hidden.": "Un Tab no se puede ocultar.",
+      "The id {0} is given twice.": "El id {0} aparece dos veces.",
+      "A Split holds two widgets.": "Un Split contiene dos widgets.",
+      "A Dock is filled by the code, which says where each widget goes.": "Un Dock lo llena el código, que dice dónde va cada widget.",
+      "A Slot goes inside another widget.": "Un Slot va dentro de otro widget.",
+      "A {0} holds no other widgets.": "Un {0} no contiene otros widgets.",
+      "A Slot needs an id, for the code to fill it.": "Un Slot necesita un id, para que el código lo llene.",
+      "A border is none, single or double, not {0}.": "border es none, single o double, no {0}.",
+      "A Tabs holds Tab, not {0}.": "Un Tabs contiene Tab, no {0}.",
+      "A Tab holds one widget.": "Un Tab contiene un widget.",
+      "Texts to translate need context=, the place they belong to.": "Los textos que se traducen necesitan context=, el sitio al que pertenecen."
+    },
+    "DescriptionProperty": {
+      "how the code finds it": "cómo lo encuentra el código",
+      "not shown until the code shows it": "no se ve hasta que el código lo muestra",
+      "what a pointer resting on it is told": "lo que se dice al dejar el puntero encima",
+      "its text shows as written": "su texto se muestra tal como está escrito",
+      "what its texts are translated under": "bajo qué se traducen sus textos",
+      "cells wide": "celdas de ancho",
+      "cells wide at most": "celdas de ancho como mucho",
+      "cells wide at least": "celdas de ancho como mínimo",
+      "rows high at least": "filas de alto como mínimo",
+      "rows high": "filas de alto",
+      "of the screen's height, as 0.9": "de la altura de la pantalla, como 0.9",
+      "the mouse resizes it": "el ratón le cambia el tamaño",
+      "none, single or double": "none, single o double",
+      "where it was is remembered under": "bajo qué se recuerda dónde estaba",
+      "Escape does not close it": "Esc no lo cierra",
+      "none, tight, normal or loose": "none, tight, normal o loose",
+      "its widgets in the middle": "sus widgets en el centro",
+      "content, fill, flex or cells, each": "content, fill, flex o celdas, cada una",
+      "one over the other": "uno encima del otro",
+      "the first's share, as 0.4": "la parte del primero, como 0.4",
+      "how much is done, from 0 to 1, as 0.25": "cuánto está hecho, de 0 a 1, como 0.25",
+      "its tabs cannot be closed": "sus pestañas no se pueden cerrar",
+      "the field its letter goes to": "el campo al que lleva su letra",
+      "in bold": "en negrita",
+      "a heading over a part": "un encabezado sobre una parte",
+      "its text wraps": "su texto se ajusta a varias líneas",
+      "a colour of the theme": "un color del tema",
+      "what it starts with": "con lo que empieza",
+      "what it says while empty": "lo que dice mientras está vacío",
+      "it only shows": "solo muestra",
+      "a dot shows for each character typed": "se ve un punto por cada carácter escrito",
+      "ticked": "marcado",
+      "Enter presses it": "Intro lo pulsa",
+      "one row": "una fila",
+      "without its shadow": "sin su sombra"
+    },
     "Dialogs": {
       "Cancel": "Cancelar",
       "OK": "Aceptar"
@@ -92,6 +163,7 @@
     "FileError": {
       "it is a folder, not a file": "es una carpeta, no un archivo",
       "the file does not exist": "el archivo no existe",
+      "the file was written but cannot be read back": "el archivo se escribió pero no se puede volver a leer",
       "the text has characters that {0} cannot store": "el texto tiene caracteres que {0} no puede guardar"
     },
     "FolderView": {
@@ -104,12 +176,32 @@
       "Night": "Noche",
       "Ocean": "Océano"
     },
+    "Highlighter": {
+      "{0}: unknown kind \"{1}\"": "{0}: kind desconocido \"{1}\"",
+      "{0} must be an object such as {match: /if/, kind: \"keyword\"}": "{0} tiene que ser un objeto como {match: /if/, kind: \"keyword\"}",
+      "{0} needs match, a regular expression": "{0} necesita match, una expresión regular",
+      "{0}: states must be an object, one list of rules per state": "{0}: states tiene que ser un objeto, una lista de reglas por estado",
+      "{0}: state {1}": "{0}: estado {1}",
+      "{0} needs a list of rules": "{0} necesita una lista de reglas",
+      "{0}, rule {1}": "{0}, regla {1}",
+      "a highlighter needs at least one state": "un resaltador necesita al menos un estado",
+      "state '{0}' enters '{1}', which does not exist": "el estado '{0}' entra en '{1}', que no existe"
+    },
     "QuickPick": {
       "Type to filter": "Escribe para filtrar"
     },
+    "Regex": {
+      "unknown regular expression flag '{0}'": "opción de expresión regular desconocida '{0}'"
+    },
     "Script": {
+      "File": "Archivo",
+      "Folder": "Carpeta",
       "No": "No",
-      "Yes": "Sí"
+      "oui.{0} does nothing while the script runs live; run it on its own": "oui.{0} no hace nada mientras el script se ejecuta en vivo; ejecútalo por separado",
+      "Yes": "Sí",
+      "[y/N]": "[s/N]",
+      "oui.choose takes a title and a list of options": "oui.choose recibe un título y una lista de opciones",
+      "a Float32Array is wanted": "se esperaba un Float32Array"
     },
     "Shortcut": {
       "Alt+": "Alt+",
@@ -146,6 +238,10 @@
       "Night": "Noche",
       "Phosphor": "Fósforo",
       "Turbo C++": "Turbo C++"
+    },
+    "TerminalView": {
+      "ended": "terminado",
+      "ended with {0}": "terminado con {0}"
     },
     "Window": {
       "Move: ←↑→↓ · Keep: Enter · Put back: Esc": "Mover: ←↑→↓ · Dejar: Intro · Devolver: Esc",

@@ -347,7 +347,7 @@ Value SystemApi::ask_yes_no(const std::string& question)
 {
     if(!m_hooks.has_screen())
     {
-        write_to(stdout, question + " [y/N] ");
+        write_to(stdout, question + " " + translate("Script", "[y/N]") + " ");
         const auto answer{read_line()};
         const auto yes{answer && !answer->empty() &&
                        (std::tolower(static_cast<unsigned char>(answer->front())) == 'y' ||
@@ -428,8 +428,8 @@ Value SystemApi::ask_path(int mode, const Value& options)
     if(!m_hooks.has_screen())
     {
         const auto asked{!dialog.title.empty()                        ? dialog.title
-                         : dialog.mode == FileDialogMode::open_folder ? std::string{"Folder"}
-                                                                      : std::string{"File"}};
+                         : dialog.mode == FileDialogMode::open_folder ? translate("Script", "Folder")
+                                                                      : translate("Script", "File")};
         write_to(stdout, asked + ": ");
         const auto answer{read_line()};
         return settled(answer && !answer->empty() ? m_engine.string(*answer) : m_engine.null());
@@ -446,7 +446,7 @@ Value SystemApi::ask_choice(const std::string& title, const Value& options)
 {
     if(!options.is_array())
     {
-        throw ScriptError{"oui.choose takes a title and a list of options"};
+        throw ScriptError{translate("Script", "oui.choose takes a title and a list of options")};
     }
     std::vector<QuickPickItem> items;
     for(std::size_t index{}; index < options.length(); ++ index)
@@ -505,7 +505,9 @@ void SystemApi::define_everything()
                     {
                         return allowed(a);
                     }
-                    throw ScriptError{"oui." + what + " does nothing while the script runs live; run it on its own"};
+                    throw ScriptError{format_text(
+                        translate("Script", "oui.{0} does nothing while the script runs live; run it on its own"),
+                        {what})};
                 };
             }
             m_engine.define("__ouiSystemNative." + std::string{name}, std::move(function));
@@ -530,7 +532,8 @@ void SystemApi::define_everything()
            });
     define("message", [this](const Arguments& a) { return tell(text_of(argument(a, 0)), text_of(argument(a, 1))); });
     define("confirm", [this](const Arguments& a) { return ask_yes_no(text_of(argument(a, 0))); });
-    define("prompt", [this](const Arguments& a)
+    define("prompt",
+           [this](const Arguments& a)
            {
                return ask_text(text_of(argument(a, 0)), text_of(argument(a, 1)), text_of(argument(a, 2)),
                                argument(a, 3).to_bool());

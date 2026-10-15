@@ -195,50 +195,63 @@ struct Property
 {
     std::string_view name;
     Value value;
-    std::string_view detail;
+    // What it is for, in the interface's language: for a suggestion.
+    std::string (*detail)();
     std::vector<std::string_view> choices{};
 };
 
 [[nodiscard]] const std::vector<Property>& properties()
 {
     static const std::vector<Property> all{
-        {"id", Value::word, "how the code finds it"},
-        {"hidden", Value::flag, "not shown until the code shows it"},
-        {"tooltip", Value::text, "what a pointer resting on it is told"},
-        {"untranslated", Value::flag, "its text shows as written"},
-        {"context", Value::word, "what its texts are translated under"},
-        {"width", Value::number, "cells wide"},
-        {"max_width", Value::number, "cells wide at most"},
-        {"min_width", Value::number, "cells wide at least"},
-        {"min_height", Value::number, "rows high at least"},
-        {"height", Value::number, "rows high"},
-        {"height_share", Value::number, "of the screen's height, as 0.9"},
-        {"resizable", Value::flag, "the mouse resizes it"},
-        {"border", Value::choice, "none, single or double", {"none", "single", "double"}},
-        {"placement", Value::word, "where it was is remembered under"},
-        {"keep_on_escape", Value::flag, "Escape does not close it"},
-        {"gap", Value::choice, "none, tight, normal or loose", {"none", "tight", "normal", "loose"}},
-        {"centered", Value::flag, "its widgets in the middle"},
-        {"columns", Value::lengths, "content, fill, flex or cells, each"},
-        {"rows", Value::lengths, "content, fill, flex or cells, each"},
-        {"vertical", Value::flag, "one over the other"},
-        {"ratio", Value::number, "the first's share, as 0.4"},
-        {"value", Value::number, "how much is done, from 0 to 1, as 0.25"},
-        {"fixed", Value::flag, "its tabs cannot be closed"},
-        {"buddy", Value::id, "the field its letter goes to"},
-        {"bold", Value::flag, "in bold"},
-        {"heading", Value::flag, "a heading over a part"},
-        {"wrap", Value::flag, "its text wraps"},
-        {"background", Value::colour, "a colour of the theme"},
-        {"foreground", Value::colour, "a colour of the theme"},
-        {"text", Value::text, "what it starts with"},
-        {"placeholder", Value::text, "what it says while empty"},
-        {"read_only", Value::flag, "it only shows"},
-        {"password", Value::flag, "a dot shows for each character typed"},
-        {"checked", Value::flag, "ticked"},
-        {"default", Value::flag, "Enter presses it"},
-        {"compact", Value::flag, "one row"},
-        {"flat", Value::flag, "without its shadow"},
+        {"id", Value::word, [] { return translate("DescriptionProperty", "how the code finds it"); }},
+        {"hidden", Value::flag, [] { return translate("DescriptionProperty", "not shown until the code shows it"); }},
+        {"tooltip", Value::text,
+         [] { return translate("DescriptionProperty", "what a pointer resting on it is told"); }},
+        {"untranslated", Value::flag, [] { return translate("DescriptionProperty", "its text shows as written"); }},
+        {"context", Value::word,
+         [] { return translate("DescriptionProperty", "what its texts are translated under"); }},
+        {"width", Value::number, [] { return translate("DescriptionProperty", "cells wide"); }},
+        {"max_width", Value::number, [] { return translate("DescriptionProperty", "cells wide at most"); }},
+        {"min_width", Value::number, [] { return translate("DescriptionProperty", "cells wide at least"); }},
+        {"min_height", Value::number, [] { return translate("DescriptionProperty", "rows high at least"); }},
+        {"height", Value::number, [] { return translate("DescriptionProperty", "rows high"); }},
+        {"height_share", Value::number,
+         [] { return translate("DescriptionProperty", "of the screen's height, as 0.9"); }},
+        {"resizable", Value::flag, [] { return translate("DescriptionProperty", "the mouse resizes it"); }},
+        {"border",
+         Value::choice,
+         [] { return translate("DescriptionProperty", "none, single or double"); },
+         {"none", "single", "double"}},
+        {"placement", Value::word, [] { return translate("DescriptionProperty", "where it was is remembered under"); }},
+        {"keep_on_escape", Value::flag, [] { return translate("DescriptionProperty", "Escape does not close it"); }},
+        {"gap",
+         Value::choice,
+         [] { return translate("DescriptionProperty", "none, tight, normal or loose"); },
+         {"none", "tight", "normal", "loose"}},
+        {"centered", Value::flag, [] { return translate("DescriptionProperty", "its widgets in the middle"); }},
+        {"columns", Value::lengths,
+         [] { return translate("DescriptionProperty", "content, fill, flex or cells, each"); }},
+        {"rows", Value::lengths, [] { return translate("DescriptionProperty", "content, fill, flex or cells, each"); }},
+        {"vertical", Value::flag, [] { return translate("DescriptionProperty", "one over the other"); }},
+        {"ratio", Value::number, [] { return translate("DescriptionProperty", "the first's share, as 0.4"); }},
+        {"value", Value::number,
+         [] { return translate("DescriptionProperty", "how much is done, from 0 to 1, as 0.25"); }},
+        {"fixed", Value::flag, [] { return translate("DescriptionProperty", "its tabs cannot be closed"); }},
+        {"buddy", Value::id, [] { return translate("DescriptionProperty", "the field its letter goes to"); }},
+        {"bold", Value::flag, [] { return translate("DescriptionProperty", "in bold"); }},
+        {"heading", Value::flag, [] { return translate("DescriptionProperty", "a heading over a part"); }},
+        {"wrap", Value::flag, [] { return translate("DescriptionProperty", "its text wraps"); }},
+        {"background", Value::colour, [] { return translate("DescriptionProperty", "a colour of the theme"); }},
+        {"foreground", Value::colour, [] { return translate("DescriptionProperty", "a colour of the theme"); }},
+        {"text", Value::text, [] { return translate("DescriptionProperty", "what it starts with"); }},
+        {"placeholder", Value::text, [] { return translate("DescriptionProperty", "what it says while empty"); }},
+        {"read_only", Value::flag, [] { return translate("DescriptionProperty", "it only shows"); }},
+        {"password", Value::flag,
+         [] { return translate("DescriptionProperty", "a dot shows for each character typed"); }},
+        {"checked", Value::flag, [] { return translate("DescriptionProperty", "ticked"); }},
+        {"default", Value::flag, [] { return translate("DescriptionProperty", "Enter presses it"); }},
+        {"compact", Value::flag, [] { return translate("DescriptionProperty", "one row"); }},
+        {"flat", Value::flag, [] { return translate("DescriptionProperty", "without its shadow"); }},
     };
     return all;
 }
@@ -324,7 +337,8 @@ struct Property
     {
         return Spacing::loose;
     }
-    fail(node, "A gap is none, tight, normal or loose, not " + std::string{gap} + ".", property_column(node, "gap"));
+    fail(node, format_text(translate("Description", "A gap is none, tight, normal or loose, not {0}."), {gap}),
+         property_column(node, "gap"));
 }
 
 [[nodiscard]] int number_of(const DeclarativeNode& node, std::string_view property, int otherwise)
@@ -338,7 +352,7 @@ struct Property
     const auto [end, error]{std::from_chars(text->data(), text->data() + text->size(), value)};
     if(error != std::errc{} || end != text->data() + text->size() || value < 0)
     {
-        fail(node, "The " + std::string{property} + " is a whole number, not " + std::string{*text} + ".",
+        fail(node, format_text(translate("Description", "The {0} is a whole number, not {1}."), {property, *text}),
              property_column(node, property));
     }
     return value;
@@ -367,7 +381,8 @@ struct Property
     if(!valid || value > 1.0)
     {
         fail(node,
-             "The " + std::string{property} + " is a share between 0 and 1, as 0.4, not " + std::string{*text} + ".",
+             format_text(translate("Description", "The {0} is a share between 0 and 1, as 0.4, not {1}."),
+                         {property, *text}),
              property_column(node, property));
     }
     return value;
@@ -404,8 +419,13 @@ struct Property
         }
         else
         {
-            fail(node, "A " + std::string{each} + " is content, fill, flex or a number of cells, not " +
-                           std::string{part} + ".");
+            fail(node, each == "column"
+                           ? format_text(translate("Description",
+                                                   "A column is content, fill, flex or a number of cells, not {0}."),
+                                         {part})
+                           : format_text(translate("Description",
+                                                   "A row is content, fill, flex or a number of cells, not {0}."),
+                                         {part}));
         }
         start = end + 1;
     }
@@ -422,7 +442,8 @@ struct Property
     const auto color{theme_color(*name)};
     if(!color)
     {
-        fail(node, "There is no colour " + std::string{*name} + " in the theme.", property_column(node, property));
+        fail(node, format_text(translate("Description", "There is no colour {0} in the theme."), {*name}),
+             property_column(node, property));
     }
     return ColorRef{*color};
 }
@@ -448,7 +469,7 @@ class Builder
         check(node);
         if(node.type == "Tab")
         {
-            fail(node, "A Tab goes in a Tabs.");
+            fail(node, translate("Description", "A Tab goes in a Tabs."));
         }
         auto widget{make(node)};
         if(node.has("hidden"))
@@ -473,7 +494,7 @@ class Builder
                 std::find_if(m_named.begin(), m_named.end(), [id](const auto& named) { return named.first == id; })};
             if(found == m_named.end())
             {
-                fail(*node, "No widget has the id " + std::string{id} + ".");
+                fail(*node, format_text(translate("Description", "No widget has the id {0}."), {id}));
             }
             label->set_buddy(*found->second);
         }
@@ -489,29 +510,30 @@ class Builder
             std::find_if(kinds().begin(), kinds().end(), [&node](const Kind& each) { return each.type == node.type; })};
         if(kind == kinds().end())
         {
-            fail(node, "There is no widget called " + node.type + ".");
+            fail(node, format_text(translate("Description", "There is no widget called {0}."), {node.type}));
         }
         for(const auto& [property, value] : node.properties)
         {
             if(property == "context" && &node != &m_root)
             {
-                fail(node, "Only the root names a context.", property_column(node, property));
+                fail(node, translate("Description", "Only the root names a context."), property_column(node, property));
             }
             if(property != "id" && property != "hidden" && property != "tooltip" && property != "context" &&
                !(property == "untranslated" && kind->has_text) &&
                std::find(kind->properties.begin(), kind->properties.end(), property) == kind->properties.end())
             {
-                fail(node, "A " + node.type + " has no property " + property + ".", property_column(node, property));
+                fail(node, format_text(translate("Description", "A {0} has no property {1}."), {node.type, property}),
+                     property_column(node, property));
             }
         }
         if(node.text && !kind->has_text)
         {
-            fail(node, "A " + node.type + " has no text of its own.");
+            fail(node, format_text(translate("Description", "A {0} has no text of its own."), {node.type}));
         }
         // A tab's title is always there, to choose it by.
         if(node.type == "Tab" && node.has("hidden"))
         {
-            fail(node, "A Tab cannot be hidden.");
+            fail(node, translate("Description", "A Tab cannot be hidden."));
         }
     }
 
@@ -521,7 +543,7 @@ class Builder
         {
             if(std::any_of(m_named.begin(), m_named.end(), [&id](const auto& named) { return named.first == *id; }))
             {
-                fail(node, "The id " + std::string{*id} + " is given twice.");
+                fail(node, format_text(translate("Description", "The id {0} is given twice."), {*id}));
             }
             m_named.emplace_back(std::string{*id}, &widget);
         }
@@ -589,7 +611,7 @@ class Builder
                                                       : SplitView::Orientation::horizontal)};
             if(node.children.size() > 2)
             {
-                fail(node.children[2], "A Split holds two widgets.");
+                fail(node.children[2], translate("Description", "A Split holds two widgets."));
             }
             add_children(*made, node);
             if(const auto ratio{share_of(node, "ratio")})
@@ -602,7 +624,8 @@ class Builder
         {
             if(!node.children.empty())
             {
-                fail(node.children.front(), "A Dock is filled by the code, which says where each widget goes.");
+                fail(node.children.front(),
+                     translate("Description", "A Dock is filled by the code, which says where each widget goes."));
             }
             return dock_layout();
         }
@@ -612,11 +635,12 @@ class Builder
         }
         if(node.type == "Slot" && &node == &m_root)
         {
-            fail(node, "A Slot goes inside another widget.");
+            fail(node, translate("Description", "A Slot goes inside another widget."));
         }
         if(!node.children.empty())
         {
-            fail(node.children.front(), "A " + node.type + " holds no other widgets.");
+            fail(node.children.front(),
+                 format_text(translate("Description", "A {0} holds no other widgets."), {node.type}));
         }
         if(type == "Label")
         {
@@ -725,7 +749,7 @@ class Builder
         }
         if(!node.has("id"))
         {
-            fail(node, "A Slot needs an id, for the code to fill it.");
+            fail(node, translate("Description", "A Slot needs an id, for the code to fill it."));
         }
         return std::make_unique<Slot>();
     }
@@ -766,7 +790,8 @@ class Builder
             }
             else
             {
-                fail(node, "A border is none, single or double, not " + std::string{*border} + ".",
+                fail(node,
+                     format_text(translate("Description", "A border is none, single or double, not {0}."), {*border}),
                      property_column(node, "border"));
             }
         }
@@ -799,12 +824,12 @@ class Builder
         {
             if(tab.type != "Tab")
             {
-                fail(tab, "A Tabs holds Tab, not " + tab.type + ".");
+                fail(tab, format_text(translate("Description", "A Tabs holds Tab, not {0}."), {tab.type}));
             }
             check(tab);
             if(tab.children.size() > 1)
             {
-                fail(tab.children[1], "A Tab holds one widget.");
+                fail(tab.children[1], translate("Description", "A Tab holds one widget."));
             }
             // A tab with nothing of its own only chooses, as one over a list the code fills.
             auto& content{tab.children.empty() ? made->add_tab(own_text(tab), vspacer(0))
@@ -1059,7 +1084,7 @@ UiSuggestions ui_suggestions(std::string_view description, std::size_t cursor)
         {
             if(starts_as(each, value))
             {
-                found.items.push_back({each, std::string{property->detail}, each});
+                found.items.push_back({each, property->detail(), each});
             }
         }
         return found;
@@ -1088,7 +1113,7 @@ UiSuggestions ui_suggestions(std::string_view description, std::size_t cursor)
             continue;
         }
         const std::string name{property.name};
-        found.items.push_back({name, std::string{property.detail},
+        found.items.push_back({name, property.detail(),
                                property.value == Value::flag   ? name
                                : property.value == Value::text ? name + "=\"$0\""
                                                                : name + "=$0"});
@@ -1108,7 +1133,7 @@ Ui build_ui(std::string_view description, UiTexts texts)
     const auto context{root.property("context")};
     if(texts == UiTexts::translated && !context && !ui_texts(root).empty())
     {
-        fail(root, "Texts to translate need context=, the place they belong to.");
+        fail(root, translate("Description", "Texts to translate need context=, the place they belong to."));
     }
     Builder builder{std::string{context.value_or("")}, root, texts};
     auto widget{builder.build(root)};

@@ -1,4 +1,5 @@
 #include <oui/regex.h>
+#include <oui/translation.h>
 
 #include <oui/utf8.h>
 
@@ -73,7 +74,8 @@ class RegexRuntime
         case 'd':
             break;
         default:
-            throw std::invalid_argument{"unknown regular expression flag '" + std::string(1, flag) + "'"};
+            throw std::invalid_argument{
+                format_text(translate("Regex", "unknown regular expression flag '{0}'"), {std::string(1, flag)})};
         }
     }
     return result;

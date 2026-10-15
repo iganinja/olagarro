@@ -1,6 +1,7 @@
 #include <oui/script/script_engine.h>
 
 #include <oui/file_system.h>
+#include <oui/translation.h>
 
 #include <quickjs.h>
 
@@ -358,7 +359,7 @@ std::vector<float> Value::to_floats() const
 {
     if(!is_float_array())
     {
-        throw ScriptError{"a Float32Array is wanted"};
+        throw ScriptError{translate("Script", "a Float32Array is wanted")};
     }
     auto* const context{m_handle->runtime->context};
     std::size_t offset{};

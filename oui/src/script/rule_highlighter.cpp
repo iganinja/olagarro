@@ -1,4 +1,5 @@
 #include <oui/script/rule_highlighter.h>
+#include <oui/translation.h>
 
 #include <stdexcept>
 
@@ -19,7 +20,7 @@ RuleHighlighter::RuleHighlighter(std::vector<HighlightState> states)
 {
     if(states.empty())
     {
-        throw std::invalid_argument{"a highlighter needs at least one state"};
+        throw std::invalid_argument{translate("Highlighter", "a highlighter needs at least one state")};
     }
     std::map<std::string, std::size_t> indices;
     for(std::size_t index{}; index < states.size(); ++ index)
@@ -37,8 +38,9 @@ RuleHighlighter::RuleHighlighter(std::vector<HighlightState> states)
                 const auto found{indices.find(rule.push)};
                 if(found == indices.end())
                 {
-                    throw std::invalid_argument{"state '" + state.name + "' enters '" + rule.push +
-                                                "', which does not exist"};
+                    throw std::invalid_argument{
+                        format_text(translate("Highlighter", "state '{0}' enters '{1}', which does not exist"),
+                                    {state.name, rule.push})};
                 }
                 push = found->second;
             }

@@ -130,6 +130,22 @@ TEST_F(OuiTranslationTests, InstallsALanguageFromOuiAndTheApplication)
     EXPECT_EQ(translate("Dialogs", "Cancel"), "Cancel");
 }
 
+TEST_F(OuiTranslationTests, SaysWhatIsWrongWithADescriptionInTheInterfaceLanguage)
+{
+    install_language("es", {});
+    EXPECT_EQ(parse_oui("label").diagnostics.front().message, "Se esperaba un tipo de widget, como Label o Button.");
+    try
+    {
+        static_cast<void>(build_ui("Window\n  Slider\n", UiTexts::as_written));
+        ADD_FAILURE() << "a Slider is no widget";
+    }
+    catch(const UiError& error)
+    {
+        EXPECT_NE(std::string{error.what()}.find("No hay ningún widget llamado Slider."), std::string::npos)
+            << error.what();
+    }
+}
+
 TEST_F(OuiTranslationTests, FormatsPlaceholdersInAnyOrder)
 {
     EXPECT_EQ(format_text("Could not open {0}: {1}", {"a.txt", "no access"}), "Could not open a.txt: no access");
@@ -288,10 +304,8 @@ std::vector<SourceText> source_texts(const std::vector<std::filesystem::path>& f
                 }
                 continue;
             }
-            // translation.cpp defines translate(); ui.cpp translates the texts of descriptions, which are read
-            // from the .oui files themselves, above.
-            if(entry.path().stem() == "translation" || entry.path().filename() == "ui.cpp" ||
-               (extension != ".h" && extension != ".cpp"))
+            // translation.cpp defines translate().
+            if(entry.path().stem() == "translation" || (extension != ".h" && extension != ".cpp"))
             {
                 continue;
             }
@@ -307,7 +321,12 @@ std::vector<SourceText> source_texts(const std::vector<std::filesystem::path>& f
                 const std::string rest{source.substr(offset, 2000)};
                 if(!std::regex_search(rest, match, literal_call))
                 {
-                    problems.push_back(where + ": translate() without string literals");
+                    // ui.cpp translates the texts of descriptions, which are read from the .oui files themselves,
+                    // above.
+                    if(entry.path().filename() != "ui.cpp")
+                    {
+                        problems.push_back(where + ": translate() without string literals");
+                    }
                     continue;
                 }
                 texts.push_back(

@@ -1,4 +1,5 @@
 #include <oui/declarative.h>
+#include <oui/translation.h>
 
 #include <algorithm>
 #include <cctype>
@@ -37,7 +38,7 @@ class LineReader
         node.column = m_column;
         if(m_text.empty() || !is_type_start(m_text.front()))
         {
-            return fail(diagnostics, 0, "Expected a widget type, as Label or Button.");
+            return fail(diagnostics, 0, translate("Description", "Expected a widget type, as Label or Button."));
         }
         while(m_index < m_text.size() && std::isalnum(static_cast<unsigned char>(m_text[m_index])) != 0)
         {
@@ -54,14 +55,14 @@ class LineReader
             }
             if(!had_space)
             {
-                return fail(diagnostics, m_index, "Expected a space here.");
+                return fail(diagnostics, m_index, translate("Description", "Expected a space here."));
             }
             const auto start{m_index};
             if(m_text[m_index] == '"')
             {
                 if(!first)
                 {
-                    return fail(diagnostics, start, "The text goes right after the type.");
+                    return fail(diagnostics, start, translate("Description", "The text goes right after the type."));
                 }
                 auto text{quoted(diagnostics)};
                 if(!text)
@@ -74,7 +75,8 @@ class LineReader
             {
                 if(!is_name_character(m_text[m_index], true))
                 {
-                    return fail(diagnostics, start, "Expected a property, as name=value or a name alone.");
+                    return fail(diagnostics, start,
+                                translate("Description", "Expected a property, as name=value or a name alone."));
                 }
                 while(m_index < m_text.size() && is_name_character(m_text[m_index], false))
                 {
@@ -106,7 +108,8 @@ class LineReader
                 }
                 if(node.has(name))
                 {
-                    return fail(diagnostics, start, "The property " + name + " is given twice.");
+                    return fail(diagnostics, start,
+                                format_text(translate("Description", "The property {0} is given twice."), {name}));
                 }
                 node.properties.emplace_back(std::move(name), std::move(value));
                 node.property_columns.push_back(m_column + start);
@@ -148,7 +151,7 @@ class LineReader
             }
             text += character;
         }
-        fail(diagnostics, start, "A quote is not closed.");
+        fail(diagnostics, start, translate("Description", "A quote is not closed."));
         return std::nullopt;
     }
 
@@ -215,7 +218,8 @@ ParseResult parse_oui(std::string_view source)
         }
         if(line[indent] == '\t')
         {
-            result.diagnostics.push_back({number, indent + 1, "Tabs are not allowed for indentation."});
+            result.diagnostics.push_back(
+                {number, indent + 1, translate("Description", "Tabs are not allowed for indentation.")});
             continue;
         }
         auto node{LineReader{line.substr(indent), number, indent + 1}.read(result.diagnostics)};
@@ -231,7 +235,8 @@ ParseResult parse_oui(std::string_view source)
         {
             if(result.root)
             {
-                result.diagnostics.push_back({number, indent + 1, "A document can only have one root widget."});
+                result.diagnostics.push_back(
+                    {number, indent + 1, translate("Description", "A document can only have one root widget.")});
                 continue;
             }
             result.root = std::move(*node);
@@ -246,7 +251,7 @@ ParseResult parse_oui(std::string_view source)
     }
     if(!result.root && result.diagnostics.empty())
     {
-        result.diagnostics.push_back({1, 1, "Expected a root widget."});
+        result.diagnostics.push_back({1, 1, translate("Description", "Expected a root widget.")});
     }
     return result;
 }

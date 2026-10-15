@@ -3,6 +3,7 @@
 #include <oui/application.h>
 #include <oui/painter.h>
 #include <oui/theme.h>
+#include <oui/translation.h>
 #include <oui/utf8.h>
 
 #include <algorithm>
@@ -199,9 +200,10 @@ TerminalView::TerminalView(Application& application, PtyOptions options) : m_app
                       {[this](std::string_view text) { take_output(text); },
                        [this](int exit_code)
                        {
-                           m_screen.feed(
-                               "\r\n[" +
-                               std::string{exit_code == 0 ? "ended" : "ended with " + std::to_string(exit_code)} + "]");
+                           const auto ended{exit_code == 0 ? translate("TerminalView", "ended")
+                                                           : format_text(translate("TerminalView", "ended with {0}"),
+                                                                         {std::to_string(exit_code)})};
+                           m_screen.feed("\r\n[" + ended + "]");
                            m_finished.fire(exit_code);
                        }});
     m_title_timer = application.start_timer(std::chrono::milliseconds{500}, [this] { refresh_title(); });

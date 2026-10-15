@@ -1,5 +1,6 @@
 #include <oui/script/rule_highlighter.h>
 #include <oui/script/script_highlighter.h>
+#include <oui/translation.h>
 
 #include <algorithm>
 #include <stdexcept>
@@ -16,7 +17,7 @@ namespace
     const auto kind{syntax_kind_named(name)};
     if(!kind)
     {
-        throw ScriptError{where + ": unknown kind \"" + name + "\""};
+        throw ScriptError{format_text(translate("Highlighter", "{0}: unknown kind \"{1}\""), {where, name})};
     }
     return *kind;
 }
@@ -26,7 +27,8 @@ namespace
 {
     if(!value.is_object())
     {
-        throw ScriptError{where + " must be an object such as {match: /if/, kind: \"keyword\"}"};
+        throw ScriptError{format_text(
+            translate("Highlighter", "{0} must be an object such as {match: /if/, kind: \"keyword\"}"), {where})};
     }
     HighlightRule rule;
     const auto match{value.get("match")};
@@ -48,7 +50,7 @@ namespace
     }
     else
     {
-        throw ScriptError{where + " needs match, a regular expression"};
+        throw ScriptError{format_text(translate("Highlighter", "{0} needs match, a regular expression"), {where})};
     }
     if(const auto kind{value.get("kind")}; !kind.is_undefined())
     {
@@ -70,7 +72,8 @@ std::shared_ptr<const SyntaxHighlighter> highlighter_of(const Value& states, con
     // {kind: "comment", rules: [...]} for one whose unmatched text is of a kind.
     if(!states.is_object() || states.is_array())
     {
-        throw ScriptError{where + ": states must be an object, one list of rules per state"};
+        throw ScriptError{format_text(
+            translate("Highlighter", "{0}: states must be an object, one list of rules per state"), {where})};
     }
     std::vector<HighlightState> compiled;
     auto names{states.keys()};
@@ -82,7 +85,7 @@ std::shared_ptr<const SyntaxHighlighter> highlighter_of(const Value& states, con
     for(const auto& name : names)
     {
         const auto state{states.get(name)};
-        const auto state_where{where + ": state " + name};
+        const auto state_where{format_text(translate("Highlighter", "{0}: state {1}"), {where, name})};
         HighlightState highlight_state{name, SyntaxKind::plain, {}};
         auto rules{state};
         if(!state.is_array())
@@ -95,12 +98,13 @@ std::shared_ptr<const SyntaxHighlighter> highlighter_of(const Value& states, con
         }
         if(!rules.is_array())
         {
-            throw ScriptError{state_where + " needs a list of rules"};
+            throw ScriptError{format_text(translate("Highlighter", "{0} needs a list of rules"), {state_where})};
         }
         for(std::size_t index{}; index < rules.length(); ++ index)
         {
             highlight_state.rules.push_back(
-                rule_of(rules.at(index), state_where + ", rule " + std::to_string(index + 1)));
+                rule_of(rules.at(index), format_text(translate("Highlighter", "{0}, rule {1}"),
+                                                     {state_where, std::to_string(index + 1)})));
         }
         compiled.push_back(std::move(highlight_state));
     }

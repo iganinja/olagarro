@@ -323,7 +323,7 @@ std::optional<FileStamp> save_text_file(const std::filesystem::path& path, std::
     const auto stamp{file_stamp(path)};
     if(!stamp)
     {
-        error = {FileError::Kind::system, "the file was written but cannot be read back", {}};
+        error = {FileError::Kind::system, translate("FileError", "the file was written but cannot be read back"), {}};
     }
     return stamp;
 }
