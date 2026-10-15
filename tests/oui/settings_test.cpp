@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <string>
 #include <system_error>
 
 using namespace olagarro;
@@ -12,10 +13,15 @@ using namespace olagarro;
 namespace
 {
 
+// The settings of the test running, in a file of its own: CTest runs tests side by side, and one that shared the file
+// with another found it removed, or written by the other, between saving it and loading it back.
 class ScopedSettingsFile final
 {
   public:
-    ScopedSettingsFile() : m_settings{oui::SettingsLocation::next_to_executable, "oui_settings_tests"}
+    ScopedSettingsFile()
+        : m_name{std::string{"oui_settings_tests_"} +
+                 ::testing::UnitTest::GetInstance()->current_test_info()->name()},
+          m_settings{oui::SettingsLocation::next_to_executable, m_name}
     {
         remove_file();
     }
@@ -26,6 +32,7 @@ class ScopedSettingsFile final
     ScopedSettingsFile& operator=(const ScopedSettingsFile&) = delete;
 
     [[nodiscard]] oui::Settings& get() { return m_settings; }
+    [[nodiscard]] const std::string& name() const { return m_name; }
 
   private:
     void remove_file()
@@ -34,6 +41,7 @@ class ScopedSettingsFile final
         std::filesystem::remove(m_settings.file_path(), ec);
     }
 
+    std::string m_name;
     oui::Settings m_settings;
 };
 
@@ -89,7 +97,7 @@ TEST(OuiSettingsTests, PersistsIntegersAcrossSaveAndLoad)
     scope.get().set_int_value("tab_space_count", 6);
     ASSERT_TRUE(scope.get().save());
 
-    oui::Settings reloaded{oui::SettingsLocation::next_to_executable, "oui_settings_tests"};
+    oui::Settings reloaded{oui::SettingsLocation::next_to_executable, scope.name()};
     ASSERT_TRUE(reloaded.load());
     EXPECT_EQ(reloaded.int_value("tab_space_count", 4), 6);
 }
@@ -261,7 +269,7 @@ TEST(OuiSettingsTests, AValueKeepsWhatEndsItThroughSaveAndLoad)
     scope.get().set_list_value("tabs", {"one\t", "two\t"});
     ASSERT_TRUE(scope.get().save());
 
-    oui::Settings reloaded{oui::SettingsLocation::next_to_executable, "oui_settings_tests"};
+    oui::Settings reloaded{oui::SettingsLocation::next_to_executable, scope.name()};
     ASSERT_TRUE(reloaded.load());
     EXPECT_EQ(reloaded.list_value("tabs"), (std::vector<std::string>{"one\t", "two\t"}));
 }
