@@ -199,6 +199,8 @@ class Application
     // it lets through, to tell the next one by.
     [[nodiscard]] bool is_wanted(const Event& event);
     void deliver_event(const Event& event);
+    // Files from the system to the widget under them, and their leaving to the one that heard them before.
+    void deliver_drop(const DropEvent& drop);
     void show_pointer(const Widget* target);
     void hide_tooltip();
     bool edit_focused_field(const Event& event);
@@ -232,6 +234,8 @@ class Application
     Widget* m_focused{};
     std::weak_ptr<void> m_focused_lifetime;
     Widget* m_mouse_capture{};
+    // The widget that took files carried from the system as they moved over it, to tell when they leave it.
+    WidgetRef<Widget> m_drop_target;
     std::unique_ptr<Widget> m_popup;
     std::function<void()> m_popup_closed;
     // Popups closed while an event was being handled, perhaps their own, kept until the next frame.

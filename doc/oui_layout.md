@@ -279,6 +279,7 @@ An `Event` ([event.h](../oui/include/oui/event.h)) is a `std::variant` of:
 | `ModifiersEvent` | The modifiers held changed, where the backend can tell; a terminal cannot |
 | `CloseRequestEvent` | Asked to close from outside, as by a window's close button |
 | `ShutdownEvent` | The terminal went away, or the system asked the program to stop |
+| `DropEvent` | Files carried over the window from the system: `moving` with the cell (and the pixel) they are over, `dropped` with every one's absolute path, `left` when they go away; a window can tell, a terminal cannot |
 
 Letters arrive as text, in lowercase with `shift` set when Shift was held. Terminals send some Ctrl and letter
 combinations as the bytes of other keys, so Ctrl+M is Enter, Ctrl+I Tab and Ctrl+[ Escape: shortcuts bound to those
@@ -295,7 +296,10 @@ same key, so here it is, as the code does it:
 
 1. The event observer sees it. Ctrl and the wheel zoom, where the backend can; a mouse event moves the pointer, and
    any key hides the tooltip.
-2. `ShutdownEvent`, `ModifiersEvent` and `CloseRequestEvent` are the application's, and go no further.
+2. `ShutdownEvent`, `ModifiersEvent` and `CloseRequestEvent` are the application's, and go no further. A
+   `DropEvent` goes to the widget under it and up through its parents until one takes it, whatever is focused or
+   shown as a popup; the one that took the files while they moved hears `left` when another takes them, they are
+   dropped elsewhere or they leave the window.
 3. A key mode, while one runs (see [Focus](#focus)), takes every key; in a dialog, Ctrl+L starts placing it from the
    keyboard.
 4. The popup, if one is shown, sees keys and the mouse over it first; a press elsewhere closes it and goes on.

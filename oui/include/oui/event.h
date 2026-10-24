@@ -3,7 +3,9 @@
 #include <oui/geometry.h>
 
 #include <optional>
+#include <string>
 #include <variant>
+#include <vector>
 
 namespace olagarro::oui
 {
@@ -142,7 +144,29 @@ struct ModifiersEvent
     bool shift{false};
 };
 
+// Files carried over the window from the system, as from a file manager. While they move over it the widget under
+// them hears where they are, so it can show where they would land; let go, it hears every one's path. The widget
+// that heard them last hears them leave when they go on to another, are dropped on another or are carried out of the
+// window. A widget that does not take them leaves them to what holds it. Where they are is in cells, as a
+// MouseEvent's x and y, and in pixels where the backend draws in pixels.
+struct DropEvent
+{
+    enum class Phase
+    {
+        moving,
+        dropped,
+        // Gone without being dropped here. From a backend, out of the window: its x and y say nothing.
+        left
+    };
+    Phase phase;
+    int x{};
+    int y{};
+    // When dropped, the files' and folders' absolute paths, in UTF-8; otherwise empty.
+    std::vector<std::string> paths{};
+    std::optional<Point> pixel{};
+};
+
 using Event = std::variant<KeyEvent, ResizeEvent, TextEvent, MouseEvent, FocusEvent, ShutdownEvent, CloseRequestEvent,
-                           ModifiersEvent>;
+                           ModifiersEvent, DropEvent>;
 
 } // namespace olagarro::oui

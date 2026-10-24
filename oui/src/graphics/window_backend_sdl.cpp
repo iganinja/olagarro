@@ -10,6 +10,9 @@
 #include <cmath>
 #include <deque>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace olagarro::oui
 {
@@ -854,6 +857,48 @@ class WindowBackend final : public DesktopWindow
             m_pending.push_back(mouse);
             break;
         }
+        case SDL_EVENT_DROP_BEGIN:
+            m_dropped_paths.clear();
+            break;
+        case SDL_EVENT_DROP_POSITION:
+            if(const auto cell{cell_at(event.drop.x, event.drop.y)})
+            {
+                m_pending.push_back(DropEvent{
+                    DropEvent::Phase::moving, cell->x, cell->y, {}, content_pixel(event.drop.x, event.drop.y)});
+                m_drop_over_content = true;
+            }
+            else if(m_drop_over_content)
+            {
+                // Over the frame or the title bar, where nothing hears them.
+                m_pending.push_back(DropEvent{DropEvent::Phase::left});
+                m_drop_over_content = false;
+            }
+            break;
+        case SDL_EVENT_DROP_FILE:
+            if(event.drop.data != nullptr)
+            {
+                m_dropped_paths.emplace_back(event.drop.data);
+            }
+            m_drop_at = {event.drop.x, event.drop.y};
+            break;
+        case SDL_EVENT_DROP_COMPLETE:
+        {
+            // SDL ends the set this way both when files are let go and when they are carried out of the window.
+            const auto where{m_dropped_paths.empty() ? std::pair{event.drop.x, event.drop.y} : m_drop_at};
+            const auto cell{cell_at(where.first, where.second)};
+            if(!m_dropped_paths.empty() && cell)
+            {
+                m_pending.push_back(DropEvent{DropEvent::Phase::dropped, cell->x, cell->y, std::move(m_dropped_paths),
+                                              content_pixel(where.first, where.second)});
+            }
+            else if(m_drop_over_content || !m_dropped_paths.empty())
+            {
+                m_pending.push_back(DropEvent{DropEvent::Phase::left});
+            }
+            m_dropped_paths.clear();
+            m_drop_over_content = false;
+            break;
+        }
         case SDL_EVENT_MOUSE_WHEEL:
         {
             float x{};
@@ -892,6 +937,11 @@ class WindowBackend final : public DesktopWindow
     Uint32 m_wake_event{};
     std::deque<Event> m_pending;
     std::optional<Point> m_last_pixel;
+    // Files carried from the system: the paths of the set being dropped, where the last one was let go, and whether
+    // the application was last told they are over what it shows.
+    std::vector<std::string> m_dropped_paths;
+    std::pair<float, float> m_drop_at{};
+    bool m_drop_over_content{false};
     float m_wheel{};
     bool m_focused{true};
     WindowGeometry m_normal;

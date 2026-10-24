@@ -614,6 +614,28 @@ void Application::dispatch_event(const Event& event)
     }
 }
 
+void Application::deliver_drop(const DropEvent& drop)
+{
+    Widget* taker{};
+    if(drop.phase != DropEvent::Phase::left && m_content != nullptr)
+    {
+        for(auto* widget{m_content->hit_test(drop.x, drop.y)}; widget != nullptr; widget = widget->parent())
+        {
+            if(widget->handle_event(drop))
+            {
+                taker = widget;
+                break;
+            }
+        }
+    }
+    // The one they were over before hears that they went, after the one they came to heard them come.
+    if(auto* const before{m_drop_target.get()}; before != nullptr && before != taker)
+    {
+        before->handle_event(DropEvent{DropEvent::Phase::left, drop.x, drop.y, {}, drop.pixel});
+    }
+    m_drop_target = drop.phase == DropEvent::Phase::moving ? taker : nullptr;
+}
+
 bool Application::is_wanted(const Event& event)
 {
     const auto* const mouse{std::get_if<MouseEvent>(&event)};
@@ -689,6 +711,11 @@ void Application::deliver_event(const Event& event)
         {
             quit();
         }
+        return;
+    }
+    if(const auto* const drop{std::get_if<DropEvent>(&event)})
+    {
+        deliver_drop(*drop);
         return;
     }
     ensure_focus_is_valid();

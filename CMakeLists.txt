@@ -652,6 +652,7 @@ if(OLAGARRO_BUILD_TESTS)
        add_executable(olagarro_oui_tests
              tests/oui/layout_test.cpp
              tests/oui/raw_pointer_test.cpp
+             tests/oui/drop_test.cpp
              tests/oui/slider_test.cpp
              tests/oui/number_field_test.cpp
              tests/oui/clipboard_data_test.cpp
