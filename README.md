@@ -109,8 +109,12 @@ on Linux and Windows. It is event driven and uses no CPU while idle.
 - A desktop window (`olagarro::OUIWindow`, with `OLAGARRO_OUI_WINDOW=ON`):
   SDL3 opens it and brings the keyboard and the mouse; OUI draws everything
   inside it, its frame and title bar too, and the desktop still moves and
-  resizes it as any other. SDL3 is linked statically, from an installed copy or fetched and
-  built with only what a window needs.
+  resizes it as any other. Files dropped on it from the system reach the widget
+  under them. It plays sound too (`system_audio_output`), stereo blocks whose
+  frames played are a clock to show pictures by; `SilentAudioOutput`, in OUI
+  itself, plays nothing and moves only when told, for tests. SDL3 is linked
+  statically, from an installed copy or fetched and built with only what a
+  window and sound need.
 - The whole screen, with no desktop under it (`drm_backend`, Linux, with
   `OLAGARRO_OUI_DRM=ON`): straight through the kernel's mode setting and input
   devices, with nothing but Linux's headers, for a console or a system of its own.

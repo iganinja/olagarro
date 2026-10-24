@@ -225,6 +225,7 @@ add_library(olagarro_oui
     oui/src/tree_view.cpp
     oui/src/widget.cpp
     oui/src/window.cpp
+    oui/src/audio_output.cpp
     ${olagarro_oui_platform_sources})
 add_library(olagarro::OUI ALIAS olagarro_oui)
 # OUI's own desktop and the programs on it, as far as cells go: shared memory and local sockets, Linux's.
@@ -281,9 +282,9 @@ olagarro_embed_files(olagarro_oui_graphics NAMESPACE olagarro::oui FUNCTION embe
     FILES oui/fonts/spleen_12x24.psfu oui/fonts/jersey10_regular.ttf oui/fonts/spleen_8x16.psfu
         oui/fonts/spleen_16x32.psfu)
 
-# The desktop window: SDL3 opens it and brings its input, OUI draws everything in it. SDL3 is linked statically, so
-# the program needs nothing installed beside it; an installed SDL3 is used when CMake finds one, and otherwise its
-# source is fetched and built with only what a window needs.
+# The desktop window: SDL3 opens it and brings its input, OUI draws everything in it, and plays sound. SDL3 is linked
+# statically, so the program needs nothing installed beside it; an installed SDL3 is used when CMake finds one, and
+# otherwise its source is fetched and built with only what a window and sound need.
 if(OLAGARRO_OUI_WINDOW)
     find_package(SDL3 CONFIG COMPONENTS SDL3-static QUIET)
     if(NOT TARGET SDL3::SDL3-static)
@@ -294,9 +295,11 @@ if(OLAGARRO_OUI_WINDOW)
         set(SDL_TESTS OFF CACHE BOOL "" FORCE)
         set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
         set(SDL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
-        foreach(subsystem AUDIO CAMERA JOYSTICK HAPTIC SENSOR HIDAPI GPU POWER VULKAN X11_XSCRNSAVER X11_XTEST)
+        foreach(subsystem CAMERA JOYSTICK HAPTIC SENSOR HIDAPI GPU POWER VULKAN X11_XSCRNSAVER X11_XTEST)
             set(SDL_${subsystem} OFF CACHE BOOL "" FORCE)
         endforeach()
+        # On even in a build made before sound was, which had it off.
+        set(SDL_AUDIO ON CACHE BOOL "" FORCE)
         FetchContent_Declare(SDL3
             URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-3.4.16.tar.gz
             URL_HASH SHA256=7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68)
@@ -306,7 +309,8 @@ if(OLAGARRO_OUI_WINDOW)
         FetchContent_MakeAvailable(SDL3)
         set_directory_properties(PROPERTIES COMPILE_OPTIONS "${olagarro_compile_options}")
     endif()
-    add_library(olagarro_oui_window oui/src/graphics/window_backend_sdl.cpp oui/src/graphics/system_pointer.cpp)
+    add_library(olagarro_oui_window oui/src/graphics/window_backend_sdl.cpp oui/src/graphics/system_pointer.cpp
+        oui/src/graphics/system_audio_output_sdl.cpp)
     add_library(olagarro::OUIWindow ALIAS olagarro_oui_window)
     set_target_properties(olagarro_oui_window PROPERTIES EXPORT_NAME OUIWindow)
     olagarro_configure_target(olagarro_oui_window)
@@ -653,6 +657,7 @@ if(OLAGARRO_BUILD_TESTS)
              tests/oui/layout_test.cpp
              tests/oui/raw_pointer_test.cpp
              tests/oui/drop_test.cpp
+             tests/oui/audio_output_test.cpp
              tests/oui/slider_test.cpp
              tests/oui/number_field_test.cpp
              tests/oui/clipboard_data_test.cpp
@@ -712,6 +717,12 @@ if(OLAGARRO_BUILD_TESTS)
         # The catalog checks read the sources and the catalogs in the repository.
         target_compile_definitions(olagarro_oui_tests PRIVATE OLAGARRO_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
         gtest_discover_tests(olagarro_oui_tests)
+        # What needs SDL3, in a program of its own, as only a build with the window has it.
+        if(OLAGARRO_OUI_WINDOW)
+            add_executable(olagarro_oui_window_tests tests/oui/system_audio_output_test.cpp)
+            target_link_libraries(olagarro_oui_window_tests PRIVATE olagarro::OUIWindow GTest::gtest_main)
+            gtest_discover_tests(olagarro_oui_window_tests)
+        endif()
        # A text and a font, compressed as every embedded file is, to see them come back whole.
        olagarro_embed_files(olagarro_oui_tests FUNCTION embedded_inflate_test_files
            FILES doc/oui_layout.md oui/fonts/spleen_16x32.psfu)

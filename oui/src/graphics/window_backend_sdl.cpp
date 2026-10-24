@@ -105,6 +105,16 @@ namespace
     return {(modifiers & SDL_KMOD_CTRL) != 0, (modifiers & SDL_KMOD_LALT) != 0, (modifiers & SDL_KMOD_SHIFT) != 0};
 }
 
+// SDL's video goes, and SDL itself once nothing else of it is open, as sound may still be playing.
+void quit_video()
+{
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    if(SDL_WasInit(0) == 0)
+    {
+        SDL_Quit();
+    }
+}
+
 class WindowBackend final : public DesktopWindow
 {
   public:
@@ -121,7 +131,7 @@ class WindowBackend final : public DesktopWindow
                                         &m_renderer))
         {
             const std::string error{SDL_GetError()};
-            SDL_Quit();
+            quit_video();
             throw std::runtime_error{"Cannot open a window: " + error};
         }
         SDL_SetRenderVSync(m_renderer, 1);
@@ -176,7 +186,7 @@ class WindowBackend final : public DesktopWindow
         }
         SDL_DestroyRenderer(m_renderer);
         SDL_DestroyWindow(m_window);
-        SDL_Quit();
+        quit_video();
     }
 
     WindowBackend(const WindowBackend&) = delete;

@@ -25,7 +25,7 @@ installed package, where `find_package(Olagarro)` gives it to a consumer by its 
 | `olagarro::Concurrency` | Header-only `concurrent_for`, which spreads a range over the machine's cores and returns a future. [Concurrency](concurrency.md) |
 | `olagarro::OUI` | The UI toolkit: widgets, layout, commands, dialogs, text editing, processes, pseudo-terminals, translations, settings, and the terminal backend. |
 | `olagarro::OUIGraphics` | OUI in pixels: a canvas, the fonts built into the program, the graphical painter, the full-screen DRM backend and the pixel side of OUI's desktop. |
-| `olagarro::OUIWindow` | A desktop window through SDL3, linked statically. Only with `OLAGARRO_OUI_WINDOW=ON`, and not installed: SDL3 is fetched and built into it, and is no package of its own to depend on. |
+| `olagarro::OUIWindow` | A desktop window and the system's sound through SDL3, linked statically. Only with `OLAGARRO_OUI_WINDOW=ON`, and not installed: SDL3 is fetched and built into it, and is no package of its own to depend on. |
 | `olagarro::OUIScript` | OUIScript: JavaScript run by QuickJS-ng, the API scripts see of the system, and the highlighter that colours text by rules a script defines. [OUIScript](ouiscript.md) |
 | `olagarro::QuickJS` | QuickJS-ng, vendored in `third_party/quickjs-ng` and built as C11 without Olagarro's warnings. |
 
