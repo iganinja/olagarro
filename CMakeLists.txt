@@ -711,7 +711,7 @@ if(OLAGARRO_BUILD_TESTS)
         endif()
         if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             target_sources(olagarro_oui_tests PRIVATE tests/oui/keyboard_layout_test.cpp tests/oui/pty_test.cpp
-                tests/oui/terminal_view_pty_test.cpp
+                tests/oui/terminal_view_pty_test.cpp tests/oui/trash_test.cpp
                 tests/oui/desktop_test.cpp)
         endif()
         target_link_libraries(olagarro_oui_tests PRIVATE olagarro::OUI olagarro::OUIScript olagarro::OUIGraphics

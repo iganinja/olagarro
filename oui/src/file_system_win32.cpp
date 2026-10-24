@@ -231,6 +231,33 @@ void remove_entry(const std::filesystem::path& path, std::error_code& error)
     }
 }
 
+void move_to_trash(const std::filesystem::path& path, std::error_code& error)
+{
+    error.clear();
+    const auto whole{whole_path(path)};
+    if(GetFileAttributesW(whole.c_str()) == INVALID_FILE_ATTRIBUTES)
+    {
+        error = std::make_error_code(std::errc::no_such_file_or_directory);
+        return;
+    }
+    // The shell takes a list of paths, each ended by a nul and the list by another.
+    std::wstring from{whole.native()};
+    from.push_back(L'\0');
+    SHFILEOPSTRUCTW operation{};
+    operation.wFunc = FO_DELETE;
+    operation.pFrom = from.c_str();
+    operation.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
+    const auto result{SHFileOperationW(&operation)};
+    if(result != 0)
+    {
+        error = std::error_code{result, std::system_category()};
+    }
+    else if(operation.fAnyOperationsAborted)
+    {
+        error = std::make_error_code(std::errc::operation_canceled);
+    }
+}
+
 std::vector<std::string> program_arguments(int, const char* const*)
 {
     std::vector<std::string> texts;

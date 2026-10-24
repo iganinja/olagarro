@@ -4,6 +4,8 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -297,6 +299,276 @@ void copy_entry(const std::filesystem::path& from, const std::filesystem::path& 
 void remove_entry(const std::filesystem::path& path, std::error_code& error)
 {
     std::filesystem::remove_all(path, error);
+}
+
+namespace
+{
+
+[[nodiscard]] std::error_code errno_error()
+{
+    return std::error_code{errno, std::generic_category()};
+}
+
+// `name` for the `count`th thing of that name in a trash: "notes.txt", then "notes.2.txt".
+[[nodiscard]] std::string numbered(const std::filesystem::path& name, int count)
+{
+    if(count == 1)
+    {
+        return name.native();
+    }
+    return name.stem().native() + "." + std::to_string(count) + name.extension().native();
+}
+
+// A folder of the person's own, made if missing: not a link, as someone else could have put one there.
+[[nodiscard]] bool own_folder(const std::filesystem::path& folder)
+{
+    if(mkdir(folder.c_str(), 0700) != 0 && errno != EEXIST)
+    {
+        return false;
+    }
+    struct stat status
+    {
+    };
+    return lstat(folder.c_str(), &status) == 0 && S_ISDIR(status.st_mode) && status.st_uid == getuid();
+}
+
+#ifndef __APPLE__
+
+// The freedesktop.org trash specification's: a trash folder, and where the paths written in it start from, the top
+// of its drive, or nothing for the home's, whose paths are whole.
+struct Trash
+{
+    std::filesystem::path folder;
+    std::filesystem::path top;
+};
+
+[[nodiscard]] std::optional<Trash> home_trash()
+{
+    auto data{env_var("XDG_DATA_HOME")};
+    if(data.empty())
+    {
+        const auto home{env_var("HOME")};
+        if(home.empty())
+        {
+            return std::nullopt;
+        }
+        data = home / ".local" / "share";
+    }
+    std::error_code error;
+    std::filesystem::create_directories(data, error);
+    Trash trash{data / "Trash", {}};
+    if(!own_folder(trash.folder) || !own_folder(trash.folder / "files") || !own_folder(trash.folder / "info"))
+    {
+        return std::nullopt;
+    }
+    return trash;
+}
+
+// The top of the drive `path` is on: the last folder up from it on the same device.
+[[nodiscard]] std::filesystem::path top_of_drive(const std::filesystem::path& path)
+{
+    struct stat status
+    {
+    };
+    if(lstat(path.c_str(), &status) != 0)
+    {
+        return {};
+    }
+    auto top{path.parent_path()};
+    for(struct stat parent{};
+        top.has_relative_path() && stat(top.parent_path().c_str(), &parent) == 0 && parent.st_dev == status.st_dev;)
+    {
+        top = top.parent_path();
+    }
+    return top;
+}
+
+// The trash of the drive at `top`: its shared .Trash, sticky and no link, with a folder of the person's own in it, or
+// else a .Trash-uid of their own.
+[[nodiscard]] std::optional<Trash> drive_trash(const std::filesystem::path& top)
+{
+    const auto user{std::to_string(getuid())};
+    struct stat shared
+    {
+    };
+    std::optional<std::filesystem::path> folder;
+    if(lstat((top / ".Trash").c_str(), &shared) == 0 && S_ISDIR(shared.st_mode) && (shared.st_mode & S_ISVTX) != 0 &&
+       own_folder(top / ".Trash" / user))
+    {
+        folder = top / ".Trash" / user;
+    }
+    else if(own_folder(top / (".Trash-" + user)))
+    {
+        folder = top / (".Trash-" + user);
+    }
+    if(!folder || !own_folder(*folder / "files") || !own_folder(*folder / "info"))
+    {
+        return std::nullopt;
+    }
+    return Trash{*folder, top};
+}
+
+// A path as a .trashinfo has it: each byte but letters, figures, "-._~" and '/' as %XX.
+[[nodiscard]] std::string escaped(const std::string& path)
+{
+    constexpr char figures[]{"0123456789ABCDEF"};
+    std::string text;
+    for(const auto character : path)
+    {
+        const auto byte{static_cast<unsigned char>(character)};
+        if((byte >= 'a' && byte <= 'z') || (byte >= 'A' && byte <= 'Z') || (byte >= '0' && byte <= '9') ||
+           byte == '-' || byte == '.' || byte == '_' || byte == '~' || byte == '/')
+        {
+            text += character;
+        }
+        else
+        {
+            text += '%';
+            text += figures[byte >> 4];
+            text += figures[byte & 15];
+        }
+    }
+    return text;
+}
+
+[[nodiscard]] std::string deletion_date()
+{
+    const auto now{std::time(nullptr)};
+    std::tm local{};
+    localtime_r(&now, &local);
+    char text[32];
+    std::strftime(text, sizeof text, "%Y-%m-%dT%H:%M:%S", &local);
+    return text;
+}
+
+// Puts `path` in `trash` under a name not taken there, its .trashinfo made first so no other program takes the name.
+// With `copy`, it goes by copying and removing, from another drive; otherwise by renaming, and EXDEV says it cannot.
+void put_in(const Trash& trash, const std::filesystem::path& path, bool copy, std::error_code& error)
+{
+    const auto original{trash.top.empty() ? utf8_of(path) : utf8_of(relative_to(path, trash.top))};
+    const auto info_text{"[Trash Info]\nPath=" + escaped(original) + "\nDeletionDate=" + deletion_date() + "\n"};
+    for(int count{1};; ++ count)
+    {
+        const auto name{numbered(path.filename(), count)};
+        const auto info{trash.folder / "info" / (name + ".trashinfo")};
+        const auto descriptor{open(info.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600)};
+        if(descriptor < 0)
+        {
+            if(errno == EEXIST)
+            {
+                continue;
+            }
+            error = errno_error();
+            return;
+        }
+        const auto written{write_all(descriptor, info_text)};
+        close(descriptor);
+        const auto target{trash.folder / "files" / name};
+        // A file left there without its .trashinfo keeps its name.
+        struct stat there
+        {
+        };
+        if(lstat(target.c_str(), &there) == 0)
+        {
+            unlink(info.c_str());
+            continue;
+        }
+        if(!written)
+        {
+            error = errno_error();
+            unlink(info.c_str());
+            return;
+        }
+        if(copy)
+        {
+            copy_entry(path, target, error);
+            if(!error)
+            {
+                std::filesystem::remove_all(path, error);
+            }
+            if(error)
+            {
+                std::error_code ignored;
+                std::filesystem::remove_all(target, ignored);
+                unlink(info.c_str());
+            }
+            return;
+        }
+        if(rename(path.c_str(), target.c_str()) != 0)
+        {
+            error = errno_error();
+            unlink(info.c_str());
+            return;
+        }
+        error.clear();
+        return;
+    }
+}
+
+#endif
+
+} // namespace
+
+void move_to_trash(const std::filesystem::path& path, std::error_code& error)
+{
+    error.clear();
+    const auto whole{whole_path(path)};
+    struct stat status
+    {
+    };
+    if(lstat(whole.c_str(), &status) != 0)
+    {
+        error = errno_error();
+        return;
+    }
+#ifdef __APPLE__
+    // The Finder's Trash, where it can be put back by hand; the system's own call, which knows where it came from,
+    // is Objective-C's.
+    const auto home{env_var("HOME")};
+    if(home.empty() || !own_folder(home / ".Trash"))
+    {
+        error = std::make_error_code(std::errc::no_such_file_or_directory);
+        return;
+    }
+    for(int count{1};; ++ count)
+    {
+        const auto target{home / ".Trash" / numbered(whole.filename(), count)};
+        struct stat there
+        {
+        };
+        if(lstat(target.c_str(), &there) == 0)
+        {
+            continue;
+        }
+        if(rename(whole.c_str(), target.c_str()) != 0)
+        {
+            error = errno_error();
+        }
+        return;
+    }
+#else
+    const auto home{home_trash()};
+    if(home)
+    {
+        put_in(*home, whole, false, error);
+        if(error != std::errc::cross_device_link)
+        {
+            return;
+        }
+    }
+    // On another drive: that drive's trash, or the home's by copying when the drive has none.
+    if(const auto drive{drive_trash(top_of_drive(whole))})
+    {
+        put_in(*drive, whole, false, error);
+        return;
+    }
+    if(home)
+    {
+        put_in(*home, whole, true, error);
+        return;
+    }
+    error = std::make_error_code(std::errc::no_such_file_or_directory);
+#endif
 }
 
 std::vector<std::string> program_arguments(const int count, const char* const* const arguments)

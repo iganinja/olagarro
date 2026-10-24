@@ -33,6 +33,11 @@ struct DirectoryEntry
 void copy_entry(const std::filesystem::path& from, const std::filesystem::path& to, std::error_code& error);
 // Removes a file, or a folder with everything in it; a link goes, not what it leads to. Nothing there is no error.
 void remove_entry(const std::filesystem::path& path, std::error_code& error);
+// Moves a file, or a folder with everything in it, to the system's trash, where the person can put it back from: on
+// Linux and the like the freedesktop.org trash, the home's, or that of the drive the file is on when it is another
+// (or the home's by copying, when that drive has none to make); the recycle bin on Windows; the Trash on macOS. A
+// link goes, not what it leads to. Nothing there is an error.
+void move_to_trash(const std::filesystem::path& path, std::error_code& error);
 [[nodiscard]] std::filesystem::path known_folder(const std::string& folder);
 
 // The program's arguments as UTF-8, without the program's own name. On Windows they are read again from the
