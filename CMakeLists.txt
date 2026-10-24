@@ -226,6 +226,7 @@ add_library(olagarro_oui
     oui/src/widget.cpp
     oui/src/window.cpp
     oui/src/audio_output.cpp
+    oui/src/folder_watcher.cpp
     ${olagarro_oui_platform_sources})
 add_library(olagarro::OUI ALIAS olagarro_oui)
 # OUI's own desktop and the programs on it, as far as cells go: shared memory and local sockets, Linux's.
@@ -658,6 +659,7 @@ if(OLAGARRO_BUILD_TESTS)
              tests/oui/raw_pointer_test.cpp
              tests/oui/drop_test.cpp
              tests/oui/audio_output_test.cpp
+             tests/oui/folder_watcher_test.cpp
              tests/oui/slider_test.cpp
              tests/oui/number_field_test.cpp
              tests/oui/clipboard_data_test.cpp

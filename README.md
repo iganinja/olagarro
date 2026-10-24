@@ -90,6 +90,10 @@ on Linux and Windows. It is event driven and uses no CPU while idle.
   several cursors, bracket matching, search with regular expressions.
 - Split views that nest, timers that cost nothing while they wait, and child
   processes whose output arrives on the UI thread as it comes.
+- A folder watcher (`FolderWatcher`): what was added, removed, written to or
+  renamed under a folder and every folder in it, asked when the program likes;
+  the system tells it on Linux, and elsewhere, or when the system cannot, it
+  compares what the folder holds.
 - A terminal in a widget (`TerminalView`): a shell, or any program, runs in a
   pseudo-terminal of its own, and the widget shows its screen as xterm would,
   colours, the full-screen programs' alternate screen and the history included.
