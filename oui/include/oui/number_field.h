@@ -38,6 +38,10 @@ class NumberField final : public Container
     // steps) and ten while Ctrl is. A click without moving types in it, as it does when not draggable; a double click
     // selects the whole number to type another. Off unless set: a drag then selects the text.
     void set_draggable(bool draggable);
+    // Whether it stands for several numbers that differ, as one field for several things selected: it shows "—"
+    // instead of its value until it is given one, set, typed, stepped or dragged from the one it holds.
+    void set_mixed(bool mixed);
+    [[nodiscard]] bool is_mixed() const;
 
     // Called with the new value when it changes.
     template <typename Callback> olagarro::signal_slot::Connection on_changed(Callback&& callback)
@@ -87,6 +91,7 @@ class NumberField final : public Container
 
     LineEdit* m_field{};
     bool m_draggable{false};
+    bool m_mixed{false};
     std::optional<Drag> m_drag;
     // While the value is being shown in the field.
     mutable bool m_showing{false};

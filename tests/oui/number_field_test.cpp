@@ -110,11 +110,10 @@ struct DraggedField
     }
 };
 
-[[nodiscard]] oui::MouseEvent press(int x, int clicks = 1)
+// The application counts the clicks: two presses on one cell are a double click.
+[[nodiscard]] oui::MouseEvent press(int x)
 {
-    oui::MouseEvent event{x, 0, true};
-    event.clicks = clicks;
-    return event;
+    return oui::MouseEvent{x, 0, true};
 }
 
 [[nodiscard]] oui::MouseEvent drag(int x, bool shift = false, bool control = false)
@@ -179,6 +178,28 @@ TEST(OuiNumberFieldTests, NotDraggableADragSelectsItsText)
     dragged.play({press(0), drag(2), release(2), oui::TextEvent{U'9'}});
     EXPECT_EQ(dragged.field->value(), 9) << "the 50 selected and typed over";
     EXPECT_EQ(dragged.started, 0);
+}
+
+TEST(OuiNumberFieldTests, MixedItShowsADashUntilItIsGivenAValue)
+{
+    DraggedField dragged;
+    dragged.field->set_mixed(true);
+    dragged.application->render();
+    EXPECT_EQ(dragged.field->text_field().text(), "—");
+    EXPECT_TRUE(dragged.field->is_mixed());
+    dragged.play({press(1), drag(3), release(3)});
+    EXPECT_EQ(dragged.field->value(), 52) << "dragged from the value it holds";
+    EXPECT_FALSE(dragged.field->is_mixed());
+    EXPECT_EQ(dragged.field->text_field().text(), "52");
+
+    dragged.field->set_mixed(true);
+    dragged.field->set_value(52);
+    EXPECT_FALSE(dragged.field->is_mixed()) << "a value set, even the one it held, is no longer mixed";
+    EXPECT_EQ(dragged.field->text_field().text(), "52");
+    dragged.field->set_mixed(true);
+    dragged.play({press(0), release(0), press(0), release(0), oui::TextEvent{U'7'}});
+    EXPECT_EQ(dragged.field->value(), 7) << "the dash typed over";
+    EXPECT_FALSE(dragged.field->is_mixed());
 }
 
 TEST(OuiNumberFieldTests, ANumberTypedIsTheValueAtOnceAndShowsKeptWhenCommitted)

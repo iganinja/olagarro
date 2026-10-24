@@ -36,6 +36,7 @@ NumberField::NumberField()
             }
             if(const auto number{parse(typed)})
             {
+                m_mixed = false;
                 take(*number);
             }
         });
@@ -88,6 +89,17 @@ void NumberField::set_draggable(bool draggable)
     m_drag.reset();
 }
 
+void NumberField::set_mixed(bool mixed)
+{
+    m_mixed = mixed;
+    show_value();
+}
+
+bool NumberField::is_mixed() const
+{
+    return m_mixed;
+}
+
 bool NumberField::drag_with(const MouseEvent& mouse)
 {
     if(!m_draggable || !is_enabled() || mouse.right || mouse.wheel_delta != 0)
@@ -137,6 +149,7 @@ bool NumberField::drag_with(const MouseEvent& mouse)
     if(!m_drag->moved)
     {
         m_drag->moved = true;
+        m_mixed = false;
         m_drag_started.fire();
     }
     const auto step{m_step > 0.0 ? m_step : 1.0};
@@ -171,6 +184,7 @@ double NumberField::fitted(double value, double step) const
 
 void NumberField::set_value(double value)
 {
+    m_mixed = false;
     take(value);
     show_value();
 }
@@ -216,6 +230,7 @@ void NumberField::step_by(double steps)
 {
     commit();
     const auto step{m_step > 0.0 ? m_step : 1.0};
+    // set_value takes it out of being mixed.
     set_value(m_value + step * steps);
 }
 
@@ -231,7 +246,11 @@ void NumberField::commit()
 void NumberField::show_value() const
 {
     char text[64];
-    std::snprintf(text, sizeof text, "%.*f", m_decimals, m_value);
+    std::snprintf(text, sizeof text, "%s", "—");
+    if(!m_mixed)
+    {
+        std::snprintf(text, sizeof text, "%.*f", m_decimals, m_value);
+    }
     if(m_field->text() != text)
     {
         m_showing = true;
