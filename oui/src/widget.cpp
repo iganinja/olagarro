@@ -76,6 +76,15 @@ bool Widget::key_handler_keeps(const Event& event) const
     return m_key_handler && (std::holds_alternative<KeyEvent>(event) || std::holds_alternative<TextEvent>(event)) &&
            m_key_handler(event);
 }
+void Widget::set_pointer_handler(std::function<bool(const MouseEvent&)> handler)
+{
+    m_pointer_handler = std::move(handler);
+}
+bool Widget::pointer_handler_keeps(const Event& event) const
+{
+    const auto* const mouse{std::get_if<MouseEvent>(&event)};
+    return m_pointer_handler && mouse != nullptr && m_pointer_handler(*mouse);
+}
 void Widget::set_id(std::string id)
 {
     m_id = std::move(id);

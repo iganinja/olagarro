@@ -810,7 +810,7 @@ void Application::deliver_event(const Event& event)
         }
         for(auto* widget{target}; widget != nullptr; widget = widget->parent())
         {
-            if(widget->handle_event(counted_event))
+            if(widget->pointer_handler_keeps(counted_event) || widget->handle_event(counted_event))
             {
                 if(mouse->released)
                 {

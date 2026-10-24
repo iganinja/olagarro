@@ -1,9 +1,13 @@
+#include <oui/application.h>
 #include <oui/event.h>
+#include <oui/layout.h>
 #include <oui/line_edit.h>
 #include <oui/number_field.h>
+#include <oui/scripted_backend.h>
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <vector>
 
 using namespace olagarro;
@@ -64,6 +68,117 @@ TEST(OuiNumberFieldTests, UpAndDownTheWheelAndTheArrowsStepIt)
     EXPECT_TRUE(field.handle_event(oui::MouseEvent{6, 0, true}));
     EXPECT_EQ(field.value(), 4);
     EXPECT_EQ(field.text_field().text(), "4");
+}
+
+namespace
+{
+
+// A draggable number field from 0 to 100 at 50, alone in a window of the scripted backend, and what it told.
+struct DraggedField
+{
+    oui::ScriptedBackend* backend{};
+    std::unique_ptr<oui::Application> application;
+    oui::NumberField* field{};
+    std::vector<double> changes;
+    int started{};
+    int finished{};
+
+    DraggedField()
+    {
+        auto made{oui::scripted_backend({}, {20, 3})};
+        backend = made.get();
+        application = std::make_unique<oui::Application>(std::move(made));
+        auto column{oui::column()};
+        field = &oui::number_field(*column);
+        field->set_range(0, 100);
+        field->set_value(50);
+        field->set_draggable(true);
+        static_cast<void>(field->on_changed([this](double value) { changes.push_back(value); }));
+        static_cast<void>(field->on_drag_started([this] { ++ started; }));
+        static_cast<void>(field->on_drag_finished([this] { ++ finished; }));
+        application->set_content(std::move(column));
+        application->run_frame();
+    }
+
+    void play(std::vector<oui::Event> events)
+    {
+        for(const auto& event : events)
+        {
+            backend->push(event);
+        }
+        application->run_frame();
+    }
+};
+
+[[nodiscard]] oui::MouseEvent press(int x, int clicks = 1)
+{
+    oui::MouseEvent event{x, 0, true};
+    event.clicks = clicks;
+    return event;
+}
+
+[[nodiscard]] oui::MouseEvent drag(int x, bool shift = false, bool control = false)
+{
+    oui::MouseEvent event{x, 0, false, 0, true};
+    event.shift = shift;
+    event.control = control;
+    return event;
+}
+
+[[nodiscard]] oui::MouseEvent release(int x)
+{
+    return oui::MouseEvent{x, 0, false, 0, false, true};
+}
+
+} // namespace
+
+TEST(OuiNumberFieldTests, DraggedAlongItTakesAStepACellATenthWithShiftAndTenWithCtrl)
+{
+    DraggedField dragged;
+    dragged.play({press(2), drag(5)});
+    EXPECT_EQ(dragged.field->value(), 53);
+    EXPECT_EQ(dragged.field->text_field().text(), "53") << "shown while it is dragged, focused as it is";
+    EXPECT_EQ(dragged.started, 1);
+    EXPECT_EQ(dragged.finished, 0);
+    dragged.play({drag(7, true)});
+    EXPECT_NEAR(dragged.field->value(), 53.2, 1e-9) << "Shift goes between the steps";
+    dragged.play({drag(6, false, true)});
+    EXPECT_NEAR(dragged.field->value(), 43.2, 1e-9);
+    dragged.play({drag(0, false, true), drag(1)});
+    EXPECT_NEAR(dragged.field->value(), 1, 1e-9) << "held at the minimum, and from there at once on the way back";
+    dragged.play({release(1)});
+    EXPECT_EQ(dragged.started, 1);
+    EXPECT_EQ(dragged.finished, 1);
+    EXPECT_EQ(dragged.changes.size(), 5u);
+}
+
+TEST(OuiNumberFieldTests, AClickWithoutMovingTypesInItAndADoubleClickSelectsWhatItShows)
+{
+    DraggedField dragged;
+    dragged.play({press(1), release(1)});
+    EXPECT_EQ(dragged.field->value(), 50);
+    EXPECT_EQ(dragged.started, 0) << "no drag without a move";
+    EXPECT_EQ(dragged.finished, 0);
+    EXPECT_TRUE(dragged.field->text_field().is_focused());
+    dragged.play({oui::TextEvent{U'7'}});
+    EXPECT_EQ(dragged.field->text_field().text(), "570") << "the cursor where it was clicked, after the 5";
+
+    dragged.field->set_value(50);
+    dragged.field->commit();
+    // On another cell, so as not to count with the click before.
+    dragged.play({press(0), release(0), press(0), release(0), oui::TextEvent{U'8'}});
+    EXPECT_EQ(dragged.field->text_field().text(), "8") << "typed over the whole number";
+    EXPECT_EQ(dragged.field->value(), 8);
+    EXPECT_EQ(dragged.started, 0);
+}
+
+TEST(OuiNumberFieldTests, NotDraggableADragSelectsItsText)
+{
+    DraggedField dragged;
+    dragged.field->set_draggable(false);
+    dragged.play({press(0), drag(2), release(2), oui::TextEvent{U'9'}});
+    EXPECT_EQ(dragged.field->value(), 9) << "the 50 selected and typed over";
+    EXPECT_EQ(dragged.started, 0);
 }
 
 TEST(OuiNumberFieldTests, ANumberTypedIsTheValueAtOnceAndShowsKeptWhenCommitted)

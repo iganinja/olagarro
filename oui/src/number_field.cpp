@@ -29,6 +29,11 @@ NumberField::NumberField()
     m_typed = m_field->on_changed(
         [this](std::string_view typed)
         {
+            // The value shown is not taken back: shown with fewer decimals than it has, it would lose them.
+            if(m_showing)
+            {
+                return;
+            }
             if(const auto number{parse(typed)})
             {
                 take(*number);
@@ -60,6 +65,7 @@ NumberField::NumberField()
                 return false;
             }
         });
+    m_field->set_pointer_handler([this](const MouseEvent& mouse) { return drag_with(mouse); });
     show_value();
 }
 
@@ -76,22 +82,89 @@ void NumberField::set_step(double step)
     set_value(m_value);
 }
 
+void NumberField::set_draggable(bool draggable)
+{
+    m_draggable = draggable;
+    m_drag.reset();
+}
+
+bool NumberField::drag_with(const MouseEvent& mouse)
+{
+    if(!m_draggable || !is_enabled() || mouse.right || mouse.wheel_delta != 0)
+    {
+        return false;
+    }
+    if(mouse.pressed)
+    {
+        m_drag.reset();
+        if(mouse.clicks == 2)
+        {
+            m_field->select_all();
+            return true;
+        }
+        if(mouse.clicks != 1)
+        {
+            return false;
+        }
+        commit();
+        m_drag = Drag{mouse, mouse.x, m_value};
+        return true;
+    }
+    if(!m_drag)
+    {
+        return false;
+    }
+    if(mouse.released)
+    {
+        const auto drag{*m_drag};
+        m_drag.reset();
+        if(drag.moved)
+        {
+            m_drag_finished.fire();
+        }
+        else
+        {
+            // A click: the field puts its cursor where it fell.
+            m_field->handle_event(drag.press);
+            m_field->handle_event(mouse);
+        }
+        return true;
+    }
+    if(!mouse.dragging || mouse.x == m_drag->last_x)
+    {
+        return true;
+    }
+    if(!m_drag->moved)
+    {
+        m_drag->moved = true;
+        m_drag_started.fire();
+    }
+    const auto step{m_step > 0.0 ? m_step : 1.0};
+    const auto factor{mouse.control ? 10.0 : mouse.shift ? 0.1 : 1.0};
+    m_drag->value = std::clamp(m_drag->value + (mouse.x - m_drag->last_x) * step * factor, m_minimum, m_maximum);
+    m_drag->last_x = mouse.x;
+    m_drag->fine = m_drag->fine || mouse.shift;
+    keep(fitted(m_drag->value, m_drag->fine ? m_step / 10.0 : m_step));
+    show_value();
+    return true;
+}
+
 void NumberField::set_decimals(int decimals)
 {
     m_decimals = std::clamp(decimals, 0, 9);
     show_value();
 }
 
-double NumberField::fitted(double value) const
+double NumberField::fitted(double value, double step) const
 {
     if(std::isnan(value))
     {
         return m_minimum;
     }
     auto result{std::clamp(value, m_minimum, m_maximum)};
-    if(m_step > 0.0)
+    if(step > 0.0)
     {
-        result = std::min(m_maximum, m_minimum + std::round((result - m_minimum) / m_step) * m_step);
+        result = std::min(m_maximum, m_minimum + std::round((result - m_minimum) / step) * step);
     }
     return result;
 }
@@ -104,12 +177,16 @@ void NumberField::set_value(double value)
 
 void NumberField::take(double value)
 {
-    const auto fitted_value{fitted(value)};
-    if(fitted_value == m_value)
+    keep(fitted(value, m_step));
+}
+
+void NumberField::keep(double value)
+{
+    if(value == m_value)
     {
         return;
     }
-    m_value = fitted_value;
+    m_value = value;
     m_changed.fire(m_value);
 }
 
@@ -157,7 +234,9 @@ void NumberField::show_value() const
     std::snprintf(text, sizeof text, "%.*f", m_decimals, m_value);
     if(m_field->text() != text)
     {
+        m_showing = true;
         m_field->set_text(text);
+        m_showing = false;
     }
 }
 

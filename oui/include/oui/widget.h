@@ -69,6 +69,12 @@ class Widget
     void set_key_handler(std::function<bool(const Event&)> handler);
     // Whether its key handler kept `event`.
     [[nodiscard]] bool key_handler_keeps(const Event& event) const;
+    // What hears the mouse before the widget does, when the widget is under the pointer or holds it from a press:
+    // true keeps the event from going further. A program gives a widget a drag of its own so, as a number field gives
+    // its text field.
+    void set_pointer_handler(std::function<bool(const MouseEvent&)> handler);
+    // Whether its pointer handler kept `event`.
+    [[nodiscard]] bool pointer_handler_keeps(const Event& event) const;
 
     void set_id(std::string id);
 
@@ -153,6 +159,7 @@ class Widget
     bool m_is_visible{true};
     bool m_is_enabled{true};
     std::function<bool(const Event&)> m_key_handler;
+    std::function<bool(const MouseEvent&)> m_pointer_handler;
     std::string m_id;
     std::string m_tooltip;
     std::shared_ptr<void> m_lifetime{std::make_shared<int>(0)};
