@@ -42,4 +42,5 @@ Code's architecture](https://github.com/iganinja/oui_code/blob/master/doc/oui_co
 - [ByteStream](bytestream.md): binary serialisation and files.
 - [Tasks](tasks_library.md): tasks composed in sequence, in parallel, by priority, waiting and interpolating, for
   games and animations.
-- [Concurrency](concurrency.md): `concurrent_for`, and CTTasks, tasks composed at compile time.
+- [Concurrency](concurrency.md): the task pool, cancelling, `concurrent_for`, and CTTasks, tasks composed at
+  compile time.

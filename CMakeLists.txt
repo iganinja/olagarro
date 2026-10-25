@@ -434,6 +434,7 @@ install(DIRECTORY
     FILES_MATCHING PATTERN "*.h")
 install(FILES
     concurrency/concurrency.h
+    concurrency/pool.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/olagarro/concurrency)
 install(DIRECTORY cttasks/include/ tasks/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/olagarro
@@ -648,7 +649,8 @@ if(OLAGARRO_BUILD_TESTS)
         endif()
 
 
-        add_executable(olagarro_concurrency_unit_tests tests/concurrency/concurrency_test.cpp)
+        add_executable(olagarro_concurrency_unit_tests tests/concurrency/concurrency_test.cpp
+            tests/concurrency/pool_test.cpp)
         target_link_libraries(olagarro_concurrency_unit_tests PRIVATE
             olagarro::Concurrency
             GTest::gtest_main)

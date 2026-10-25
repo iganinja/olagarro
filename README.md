@@ -15,7 +15,7 @@ OUI Code, a text editor made with OUI, the same program in a terminal and in a w
 - `SignalSlot`: variadic signals and slots with safe disconnection.
 - `Tasks`: dynamic task composition.
 - `CTTasks`: static task composition for small binaries.
-- `Concurrency`: standard-library-based `concurrent_for`.
+- `Concurrency`: standard-library-based task pool, cancelling and `concurrent_for`.
 - `OUI`: a small UI toolkit for terminals, desktop windows and the whole screen.
 - `OUIScript`: JavaScript for OUI programs, run by QuickJS.
 
@@ -192,8 +192,17 @@ const auto longest{olagarro::concurrency::concurrent_for(words.begin(), words.en
 
 The functions run on several threads at once, so they must not touch shared state unguarded. The combine of
 a `reductor` must give the same result however the values are grouped, as a sum or a maximum does; its initial
-value counts once. `concurrent_for` requires random-access iterators. Use `std::async` for a single
-asynchronous operation.
+value counts once. `concurrent_for` requires random-access iterators. It runs on a `TaskPool`, the program's
+(`TaskPool::shared()`) or one given first, and the thread waiting for the future does its part of the work.
+
+A single operation goes to the pool with `submit`, which gives back a handle to cancel it; the work gets a
+`CancelToken` to check. `LatestWins` runs requests where only the newest matters, cancelling the ones before:
+
+```cpp
+auto thumbnail{olagarro::concurrency::TaskPool::shared().submit(
+    [&](const olagarro::concurrency::CancelToken&) { return make_thumbnail(path); })};
+thumbnail.cancel(); // never runs if it has not started; if it has, it sees the token
+```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the project conventions.
 

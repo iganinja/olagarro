@@ -1,19 +1,24 @@
 # Concurrency and CTTasks
 
-Two small libraries with nothing in common but their size. `concurrency/` spreads the elements of a range over the
-machine's cores and hands back a `std::future`. `cttasks/` is a variant of the [tasks library](tasks_library.md) whose
-task trees are composed at compile time: no heap allocations and no virtual calls, for small binaries.
+Two small libraries with nothing in common but their size. `concurrency/` keeps a pool of threads that runs work
+which can be cancelled, and spreads the elements of a range over them, handing back a `std::future`. `cttasks/` is a
+variant of the [tasks library](tasks_library.md) whose task trees are composed at compile time: no heap allocations
+and no virtual calls, for small binaries.
 
 - [concurrent_for](#concurrent_for)
 - [Reducing to one value](#reducing-to-one-value)
 - [How the work is divided](#how-the-work-is-divided)
+- [The task pool](#the-task-pool)
+- [Cancelling](#cancelling)
+- [Latest wins](#latest-wins)
 - [CTTasks](#cttasks)
 - [CTTasks helpers](#cttasks-helpers)
 - [CTTasks compared with Tasks](#cttasks-compared-with-tasks)
 
 ## concurrent_for
 
-`concurrency/concurrency.h` (namespace `olagarro::concurrency`) is header-only. Its CMake target is
+`concurrency/concurrency.h` (namespace `olagarro::concurrency`) and `concurrency/pool.h`, which it includes, are
+header-only. Their CMake target is
 `olagarro::Concurrency`, in the build tree and from an installed package alike; it links the
 platform's threads. With the module adapters, `import olagarro.concurrency;`.
 
@@ -32,7 +37,9 @@ returns a `std::future<void>` that is ready when every call has returned. `index
 `begin`, as a `std::size_t`; `element` is `*iterator`, so with a mutable range it is a reference the function can change
 in place, and with a `const_iterator` a const one.
 
-The calls run on several threads at once:
+The calls run on several threads at once: the workers of a [task pool](#the-task-pool), and the thread that waits
+for the future, which takes its part of the work while it waits. `concurrent_for(pool, begin, end, function)` runs on
+the pool given; without one, on `TaskPool::shared()`, the program's.
 
 - **The function object is shared.** All workers call the same copy of it, so its call must be safe to make from
   several threads together. A lambda that writes to something it captured, or a `mutable` lambda with state of its
@@ -52,12 +59,14 @@ concurrency::concurrent_for(request.files.begin(), request.files.end(), search_f
 - **Exceptions stop the rest.** The first exception a call throws is kept; every worker stops before its next
   element, so some elements are never visited, and `get()` rethrows that first exception. Later ones are dropped.
 
-The iterators must be random-access (`end - begin`, `begin + n`). An empty range calls nothing, and its future is
-ready as soon as the background thread starts.
+The iterators must be random-access (`end - begin`, `begin + n`). An empty range calls nothing.
 
-The future comes from `std::async` with `std::launch::async`, and such a future waits in its destructor for the work
-to finish. Both overloads are `[[nodiscard]]`; dropping the result would make the call wait where it stands. For a
-single operation in the background, use `std::async` itself.
+The work starts on the pool's workers when `concurrent_for` returns. The future is a deferred one
+(`std::launch::deferred`): `get()` or `wait()` runs, on the calling thread, the shares no worker has taken yet, then
+waits for the ones being run, so a call waited for inside a pool task, or while every worker is busy, still finishes.
+Being deferred, `wait_for` and `wait_until` say `std::future_status::deferred` and do no work, and dropping the future
+does not wait: the workers go on with their shares, so what the function refers to must outlive them. Both
+overloads are `[[nodiscard]]`. For a single operation in the background, submit it to a pool.
 
 ## Reducing to one value
 
@@ -87,11 +96,77 @@ folded into `initial_value` one after another, in the order of the shares. So:
 
 ## How the work is divided
 
-`Detail::run_concurrent_for` starts as many threads as the smaller of the range's size and
-`std::thread::hardware_concurrency()` (at least one), every call: there is no pool. The range is cut into that many
-contiguous shares of nearly equal size, and each thread goes through its share in order. The work suits elements that
-cost about the same; a range where a few elements cost far more than the rest leaves cores idle while one thread
-finishes its share. Besides the workers, `std::async` runs one more thread that starts them and waits for them.
+The range is cut into contiguous shares of nearly equal size: four for each thread that can take them (the pool's
+workers and the caller), and no more than there are elements. `concurrent_for` submits one task to the pool for each
+worker (fewer if there are fewer shares); each task, and the caller once it waits, takes the next share nobody has
+taken and goes through it in order, until none is left. A share that costs more than the others leaves the rest to
+the other threads. No thread is started: the pool's are, once.
+
+## The task pool
+
+`TaskPool` (`concurrency/pool.h`) starts its workers once, as many as asked or, by default, as many as
+`std::thread::hardware_concurrency()` (at least one), and runs the work submitted to it first in, first out:
+
+```cpp
+#include <concurrency/pool.h>
+
+olagarro::concurrency::TaskPool pool;
+auto thumbnail{pool.submit([&](const olagarro::concurrency::CancelToken&) { return make_thumbnail(path); })};
+// ... other work ...
+const Image image{thumbnail.get()};   // waits, and rethrows what the work threw
+```
+
+`submit(work)` calls `work(token)` on a worker and gives back a `TaskHandle<Result>`, `Result` being what `work`
+returns (`void` too). The handle has `cancel()`, `is_finished()`, `wait()`, `get()` (once), `future()`, the
+`std::future<Result>` itself, and `token()`. The work is moved into the pool; it need not be copyable.
+
+`TaskPool::shared()` is the program's pool, started when first asked for and destroyed when the program ends; what
+should share the cores shares it, as `concurrent_for` does when given no pool. A pool of its own suits work that must
+not wait behind the rest, or a test that needs a known number of workers.
+
+Destroying a pool waits for the work running; what has not started is dropped, and its handle's `get()` throws
+`TaskCancelled`. Work submitted while the pool is being destroyed is dropped the same way.
+
+## Cancelling
+
+A `CancelToken` is a shared flag: copies share it, and `cancel()` on any of them cancels all. Each task has one; the
+work receives it and checks `cancelled()` where stopping is cheap, between rows of an image or blocks of sound:
+
+```cpp
+auto render{pool.submit([](const CancelToken& token) {
+    Image image{width, height};
+    for(int y{}; y < height && !token.cancelled(); ++ y)
+    {
+        render_row(image, y);
+    }
+    return image;
+})};
+render.cancel();
+```
+
+`TaskHandle::cancel()` cancels the task's token. A task cancelled before it starts never runs: its `get()` throws
+`TaskCancelled`. A task already running goes on until it checks, and what it returns then is its result; the pool
+does not stop it.
+
+## Latest wins
+
+`LatestWins<Request, Result>` runs requests on a pool when only the newest matters, as the frame a viewer shows while
+the playhead is dragged. Each request cancels the ones before it, and a result is handed on only if its request was
+still the latest when it finished:
+
+```cpp
+olagarro::concurrency::LatestWins<int, Image> preview{
+    olagarro::concurrency::TaskPool::shared(),
+    [&](const int& frame, const CancelToken& token) { return render_frame(project, frame, token); },
+    [&](Image image) { application.post([&, image{std::move(image)}] { viewer.show(image); }); }};
+preview.request(playhead);   // on every move
+```
+
+`on_result` is called on the worker's thread; a window hands the result to its own thread, as above. Of ten requests
+made in quick succession only the last is handed on: the others are dropped before they start or stop at their next
+check. `cancel()` cancels every request made so far, `wait()` waits until they have finished or been dropped, and
+destroying it does both, so neither function is called once it is gone. `request`, `cancel` and `wait` are called
+from one thread, and `wait` not from `work` or `on_result`.
 
 ## CTTasks
 

@@ -1,13 +1,13 @@
 #pragma once
 
+#include <concurrency/pool.h>
+
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
-#include <exception>
 #include <future>
-#include <mutex>
+#include <memory>
 #include <optional>
-#include <thread>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -33,175 +33,120 @@ template <typename Value, typename Combine> [[nodiscard]] auto reductor(Value&& 
 namespace Detail
 {
 
-// As many workers as the hardware runs at once, and no more than there are elements; counted in the range's own type,
-// as a range longer than an unsigned holds would make it none.
-template <typename Size> [[nodiscard]] unsigned worker_count_for(Size range_size)
+// A few shares for each thread that can take them, the pool's workers and the caller, so that a share costing more
+// than the rest leaves the others something to take; no more than there are elements. Counted in the range's own
+// type, as a range longer than an unsigned holds would make it none.
+template <typename Size> [[nodiscard]] std::size_t share_count_for(Size range_size, const TaskPool& pool)
 {
-    const auto hardware{std::max(1u, std::thread::hardware_concurrency())};
-    return range_size < static_cast<Size>(hardware) ? static_cast<unsigned>(range_size) : hardware;
+    constexpr std::size_t shares_per_thread{4};
+    const auto wanted{shares_per_thread * (std::size_t{pool.worker_count()} + 1u)};
+    return range_size < static_cast<Size>(wanted) ? static_cast<std::size_t>(range_size) : wanted;
 }
 
-inline void join(std::vector<std::thread>& workers)
+// Share `share` of `count` over a range of `range_size` elements, as the offsets of its first and its end.
+template <typename Size>
+[[nodiscard]] std::pair<Size, Size> share_bounds(Size range_size, std::size_t share, std::size_t count)
 {
-    for(std::thread& worker : workers)
-    {
-        if(worker.joinable())
-        {
-            worker.join();
-        }
-    }
-}
-
-template <typename Iterator, typename Function>
-void run_concurrent_for(Iterator begin, Iterator end, Function& function)
-{
-    const auto range_size{end - begin};
-    if(range_size <= 0)
-    {
-        return;
-    }
-
-    const auto worker_count{worker_count_for(range_size)};
-    std::atomic<bool> cancelled{false};
-    std::exception_ptr exception;
-    std::mutex exception_mutex;
-    std::vector<std::thread> workers;
-    workers.reserve(worker_count);
-
-    try
-    {
-        for(auto worker_index{0u}; worker_index < worker_count; ++ worker_index)
-        {
-            workers.emplace_back(
-                [&, worker_index]
-                {
-                    try
-                    {
-                        const auto worker_begin{begin + range_size * worker_index / worker_count};
-                        const auto worker_end{begin + range_size * (worker_index + 1u) / worker_count};
-                        for(auto iterator{worker_begin}; iterator != worker_end && !cancelled.load(); ++ iterator)
-                        {
-                            function(static_cast<std::size_t>(iterator - begin), *iterator);
-                        }
-                    }
-                    catch(...)
-                    {
-                        cancelled.store(true);
-                        const std::lock_guard<std::mutex> lock{exception_mutex};
-                        if(!exception)
-                        {
-                            exception = std::current_exception();
-                        }
-                    }
-                });
-        }
-    }
-    catch(...)
-    {
-        join(workers);
-        throw;
-    }
-
-    join(workers);
-    if(exception)
-    {
-        std::rethrow_exception(exception);
-    }
-}
-
-template <typename Iterator, typename Transform, typename Value, typename Combine>
-Value run_concurrent_for(Iterator begin, Iterator end, Transform& transform, Reductor<Value, Combine>& reduction)
-{
-    const auto range_size{end - begin};
-    if(range_size <= 0)
-    {
-        return std::move(reduction.initial_value);
-    }
-
-    const auto worker_count{worker_count_for(range_size)};
-    // Each worker folds its share from its first value, so the initial value counts only once, at the end.
-    std::vector<std::optional<Value>> partial_results(worker_count);
-    std::atomic<bool> cancelled{false};
-    std::exception_ptr exception;
-    std::mutex exception_mutex;
-    std::vector<std::thread> workers;
-    workers.reserve(worker_count);
-
-    try
-    {
-        for(auto worker_index{0u}; worker_index < worker_count; ++ worker_index)
-        {
-            workers.emplace_back(
-                [&, worker_index]
-                {
-                    try
-                    {
-                        const auto worker_begin{begin + range_size * worker_index / worker_count};
-                        const auto worker_end{begin + range_size * (worker_index + 1u) / worker_count};
-                        for(auto iterator{worker_begin}; iterator != worker_end && !cancelled.load(); ++ iterator)
-                        {
-                            auto& partial{partial_results[worker_index]};
-                            auto value{transform(static_cast<std::size_t>(iterator - begin), *iterator)};
-                            if(partial)
-                            {
-                                partial = reduction.combine(std::move(*partial), std::move(value));
-                            }
-                            else
-                            {
-                                partial.emplace(std::move(value));
-                            }
-                        }
-                    }
-                    catch(...)
-                    {
-                        cancelled.store(true);
-                        const std::lock_guard<std::mutex> lock{exception_mutex};
-                        if(!exception)
-                        {
-                            exception = std::current_exception();
-                        }
-                    }
-                });
-        }
-    }
-    catch(...)
-    {
-        join(workers);
-        throw;
-    }
-
-    join(workers);
-    if(exception)
-    {
-        std::rethrow_exception(exception);
-    }
-
-    for(auto& value : partial_results)
-    {
-        if(value)
-        {
-            reduction.initial_value = reduction.combine(std::move(reduction.initial_value), std::move(*value));
-        }
-    }
-    return std::move(reduction.initial_value);
+    const auto shares{static_cast<Size>(count)};
+    const auto index{static_cast<Size>(share)};
+    return {range_size * index / shares, range_size * (index + 1) / shares};
 }
 
 } // namespace Detail
 
+// Calls `function(index, element)` for every element of [begin, end) on `pool`'s workers, and on the thread waiting
+// for the future, which takes shares too.
+template <typename Iterator, typename Function>
+[[nodiscard]] std::future<void> concurrent_for(TaskPool& pool, Iterator begin, Iterator end, Function function)
+{
+    const auto range_size{end - begin};
+    if(range_size <= 0)
+    {
+        return std::async(std::launch::deferred, [] {});
+    }
+
+    const auto count{Detail::share_count_for(range_size, pool)};
+    auto shared_function{std::make_shared<Function>(std::move(function))};
+    auto shares{Detail::start_shares(
+        pool, count,
+        [begin, range_size, count, shared_function](std::size_t share, const std::atomic<bool>& stopped)
+        {
+            const auto [first, last]{Detail::share_bounds(range_size, share, count)};
+            for(auto offset{first}; offset != last && !stopped.load(); ++ offset)
+            {
+                (*shared_function)(static_cast<std::size_t>(offset), *(begin + offset));
+            }
+        })};
+    return std::async(std::launch::deferred, [shares] { shares->finish(); });
+}
+
+// Folds `transform(index, element)` of every element of [begin, end) with `reduction`, on `pool`'s workers and on
+// the thread waiting for the future.
+template <typename Iterator, typename Transform, typename Value, typename Combine>
+[[nodiscard]] std::future<Value> concurrent_for(TaskPool& pool, Iterator begin, Iterator end, Transform transform,
+                                                Reductor<Value, Combine> reduction)
+{
+    const auto range_size{end - begin};
+    if(range_size <= 0)
+    {
+        return std::async(std::launch::deferred,
+                          [reduction{std::move(reduction)}]() mutable { return std::move(reduction.initial_value); });
+    }
+
+    const auto count{Detail::share_count_for(range_size, pool)};
+    // Each share folds from its first value, so the initial value counts only once, at the end.
+    auto partial_results{std::make_shared<std::vector<std::optional<Value>>>(count)};
+    auto shared_transform{std::make_shared<Transform>(std::move(transform))};
+    auto shared_reduction{std::make_shared<Reductor<Value, Combine>>(std::move(reduction))};
+    auto shares{Detail::start_shares(
+        pool, count,
+        [begin, range_size, count, partial_results, shared_transform,
+         shared_reduction](std::size_t share, const std::atomic<bool>& stopped)
+        {
+            const auto [first, last]{Detail::share_bounds(range_size, share, count)};
+            auto& partial{(*partial_results)[share]};
+            for(auto offset{first}; offset != last && !stopped.load(); ++ offset)
+            {
+                auto value{(*shared_transform)(static_cast<std::size_t>(offset), *(begin + offset))};
+                if(partial)
+                {
+                    partial = shared_reduction->combine(std::move(*partial), std::move(value));
+                }
+                else
+                {
+                    partial.emplace(std::move(value));
+                }
+            }
+        })};
+    return std::async(std::launch::deferred,
+                      [shares, partial_results, shared_reduction]
+                      {
+                          shares->finish();
+                          auto& reduction{*shared_reduction};
+                          for(auto& value : *partial_results)
+                          {
+                              if(value)
+                              {
+                                  reduction.initial_value =
+                                      reduction.combine(std::move(reduction.initial_value), std::move(*value));
+                              }
+                          }
+                          return std::move(reduction.initial_value);
+                      });
+}
+
+// The same on the program's pool, TaskPool::shared().
 template <typename Iterator, typename Function>
 [[nodiscard]] std::future<void> concurrent_for(Iterator begin, Iterator end, Function function)
 {
-    return std::async(std::launch::async, [begin, end, function{std::move(function)}]() mutable
-                      { Detail::run_concurrent_for(begin, end, function); });
+    return concurrent_for(TaskPool::shared(), begin, end, std::move(function));
 }
 
 template <typename Iterator, typename Transform, typename Value, typename Combine>
 [[nodiscard]] std::future<Value> concurrent_for(Iterator begin, Iterator end, Transform transform,
                                                 Reductor<Value, Combine> reduction)
 {
-    return std::async(std::launch::async,
-                      [begin, end, transform{std::move(transform)}, reduction{std::move(reduction)}]() mutable
-                      { return Detail::run_concurrent_for(begin, end, transform, reduction); });
+    return concurrent_for(TaskPool::shared(), begin, end, std::move(transform), std::move(reduction));
 }
 
 } // namespace olagarro::concurrency

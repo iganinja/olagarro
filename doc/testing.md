@@ -44,7 +44,8 @@ The build treats warnings as errors, tests included.
 | `Olagarro.PackageConsumer` | `cmake/TestPackageConsumer.cmake` | the package installed in a folder of its own, and `tests/package_consumer` built and run against it; not when cross-compiling |
 | `SignalSlotTests.*` | `olagarro_signalslot_tests`, `tests/signalslot/main.cpp` | [signals](signalslot.md) |
 | `Olagarro.SignalSlotSanitized` | the same tests built with AddressSanitizer and UBSan | each callback destroyed once, never used after, never leaked |
-| `ConcurrencyTests.*` | `olagarro_concurrency_unit_tests` | [`concurrent_for`](concurrency.md) |
+| `ConcurrencyTests.*` | `olagarro_concurrency_unit_tests`, `tests/concurrency/concurrency_test.cpp` | [`concurrent_for`](concurrency.md), on the pool and with the caller helping |
+| `TaskPoolTests.*`, `CancelTokenTests.*`, `LatestWinsTests.*` | `olagarro_concurrency_unit_tests`, `tests/concurrency/pool_test.cpp` | [the task pool, cancelling and latest wins](concurrency.md#the-task-pool) |
 | `Oui...Tests.*` | `olagarro_oui_tests`, the files in `tests/oui` but `teardown_test.cpp` | OUI's widgets, layout, terminal, scripts, themes, suggestions... |
 | `Olagarro.OuiSanitized` | `tests/oui/teardown_test.cpp` with all of OUI's sources, sanitized | what goes wrong only as an application is taken down |
 | `Olagarro.OuiLifecycleStress` | `olagarro_oui_tests` with one filter | `OuiApplicationTests.StressesWidgetLifetimeAndModalIsolation`, with a 30 s limit |

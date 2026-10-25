@@ -22,7 +22,7 @@ installed package, where `find_package(Olagarro)` gives it to a consumer by its 
 | `olagarro::SignalSlot` | Header-only variadic signals and slots, with connections that can be dropped safely while a signal is being emitted. [Signals and slots](signalslot.md) |
 | `olagarro::Tasks` | Tasks composed at run time: serial, parallel, select, repeat, wait, trigger and others, driven by a `TaskExecutor` one update at a time. [Tasks](tasks_library.md) |
 | `olagarro::CTTasks` | The same idea composed at compile time, with templates: no virtual dispatch and no heap allocation, for small binaries. [Tasks](tasks_library.md) |
-| `olagarro::Concurrency` | Header-only `concurrent_for`, which spreads a range over the machine's cores and returns a future. [Concurrency](concurrency.md) |
+| `olagarro::Concurrency` | Header-only: a task pool whose work can be cancelled, "latest wins" requests, and `concurrent_for`, which spreads a range over the pool and returns a future. [Concurrency](concurrency.md) |
 | `olagarro::OUI` | The UI toolkit: widgets, layout, commands, dialogs, text editing, processes, pseudo-terminals, translations, settings, and the terminal backend. |
 | `olagarro::OUIGraphics` | OUI in pixels: a canvas, the fonts built into the program, the graphical painter, the full-screen DRM backend and the pixel side of OUI's desktop. |
 | `olagarro::OUIWindow` | A desktop window and the system's sound through SDL3, linked statically. Only with `OLAGARRO_OUI_WINDOW=ON`, and not installed: SDL3 is fetched and built into it, and is no package of its own to depend on. |
