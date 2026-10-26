@@ -37,6 +37,16 @@ bool Button::is_default() const
     return m_default;
 }
 
+void Button::set_icon(std::optional<Icon> icon)
+{
+    m_icon = icon;
+}
+
+std::optional<Icon> Button::icon() const
+{
+    return m_icon;
+}
+
 std::string_view Button::text() const
 {
     return m_text;
@@ -103,7 +113,8 @@ void Button::paint(Painter& painter, const Theme& theme) const
     const auto shown{strip_mnemonic(m_text)};
     painter.draw_button(bounds(),
                         {shown, m_pressed, is_focused(), m_shadow_visible, m_compact, m_default,
-                         mnemonic_offset(m_text), resolve(m_background, theme, theme.dialog_background), is_enabled()},
+                         mnemonic_offset(m_text), resolve(m_background, theme, theme.dialog_background), is_enabled(),
+                         m_icon},
                         theme);
 }
 

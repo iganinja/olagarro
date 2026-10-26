@@ -52,11 +52,20 @@ struct FontSet
 // cells of `cell` pixels with the baseline at `ascent`.
 [[nodiscard]] std::unique_ptr<Font> symbol_font(int cell_width, int cell_height, int ascent);
 
+// The fonts built into OUI for interface text, both under the SIL Open Font License.
+enum class InterfaceFont
+{
+    // Jersey 10, square as pixels, which the classic style writes with.
+    jersey,
+    // Noto Sans, smooth, which the dark style writes with.
+    noto_sans
+};
+
 // The fonts built into OUI: Spleen for the cells (BSD 2-clause), 8x16, 12x24 and 16x32, and the two larger doubled
-// (8x16 doubled would be the size of 16x32), and Jersey 10 for interface text (SIL Open Font License); their licences
-// are in oui/fonts. The defaults are 12x24 and 24 pixels.
+// (8x16 doubled would be the size of 16x32), and Jersey 10 or Noto Sans for interface text; their licences are in
+// oui/fonts. The defaults are 12x24 and Jersey 10 at 24 pixels.
 [[nodiscard]] std::unique_ptr<Font> built_in_cell_font(int cell_height);
-[[nodiscard]] std::unique_ptr<Font> built_in_interface_font(float pixels);
+[[nodiscard]] std::unique_ptr<Font> built_in_interface_font(float pixels, InterfaceFont font = InterfaceFont::jersey);
 [[nodiscard]] std::unique_ptr<Font> default_cell_font();
 [[nodiscard]] std::unique_ptr<Font> default_interface_font();
 

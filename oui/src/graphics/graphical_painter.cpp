@@ -68,12 +68,149 @@ std::vector<GraphicalTheme> graphical_themes()
 
     return {{"classic", translate("GraphicalTheme", "Classic"), classic_style()},
             {"ocean", translate("GraphicalTheme", "Ocean"), ocean},
-            {"night", translate("GraphicalTheme", "Night"), night}};
+            {"night", translate("GraphicalTheme", "Night"), night},
+            {"dark", translate("GraphicalTheme", "Dark"), dark_style()}};
+}
+
+GraphicalStyle dark_style()
+{
+    // The accent: the title, the focus, the selection, and in a program what it marks as chosen.
+    const Color accent{58, 124, 222};
+    GraphicalStyle style;
+    style.face = {45, 45, 48};
+    style.light = {68, 68, 74};
+    style.shadow = {24, 24, 26};
+    style.title = accent;
+    style.title_text = {255, 255, 255};
+    style.well = {30, 30, 32};
+    style.well_text = {220, 220, 224};
+    style.focus = accent;
+    style.text = {224, 224, 228};
+    style.muted_text = {150, 150, 156};
+    style.selection = accent;
+    style.selection_text = {255, 255, 255};
+    style.folder = {214, 178, 96};
+    style.page = {208, 208, 212};
+    style.desktop = style.face;
+    style.flat = true;
+    style.interface_font = InterfaceFont::noto_sans;
+    return style;
 }
 
 Theme classic_theme()
 {
     return theme_for(classic_style());
+}
+
+Theme dark_theme()
+{
+    return theme_for(dark_style());
+}
+
+void draw_icon(Canvas& canvas, Icon icon, const PixelRect& area, Color color)
+{
+    // On a grid of 16 by 16 in the middle of the area.
+    const auto size{static_cast<float>(std::min(area.width, area.height))};
+    const auto left{static_cast<float>(area.x) + (static_cast<float>(area.width) - size) / 2};
+    const auto top{static_cast<float>(area.y) + (static_cast<float>(area.height) - size) / 2};
+    const auto point{[&](float x, float y) { return PixelPoint{left + x * size / 16, top + y * size / 16}; }};
+    const auto box{[&](float x0, float y0, float x1, float y1)
+                   { canvas.fill_polygon({point(x0, y0), point(x1, y0), point(x1, y1), point(x0, y1)}, color); }};
+    const auto stroke{size / 16 * 1.5f};
+    // An arc about (x, y), from `from` to `to` radians, counted anticlockwise from the right as on paper.
+    const auto arc{[&](float x, float y, float radius, float from, float to)
+                   {
+                       constexpr int steps{12};
+                       for(int step{}; step < steps; ++ step)
+                       {
+                           const auto a{from + (to - from) * static_cast<float>(step) / steps};
+                           const auto b{from + (to - from) * static_cast<float>(step + 1) / steps};
+                           canvas.draw_line(point(x + radius * std::cos(a), y - radius * std::sin(a)),
+                                            point(x + radius * std::cos(b), y - radius * std::sin(b)), stroke, color);
+                       }
+                   }};
+    const auto disc{[&](float x, float y, float radius)
+                    {
+                        std::vector<PixelPoint> points;
+                        constexpr int steps{16};
+                        for(int step{}; step < steps; ++ step)
+                        {
+                            const auto a{6.2831853f * static_cast<float>(step) / steps};
+                            points.push_back(point(x + radius * std::cos(a), y + radius * std::sin(a)));
+                        }
+                        canvas.fill_polygon(points, color);
+                    }};
+    constexpr float half_turn{3.14159265f};
+    switch(icon)
+    {
+    case Icon::submenu:
+        canvas.fill_polygon({point(5, 3), point(11, 8), point(5, 13)}, color);
+        break;
+    case Icon::drop_down:
+    case Icon::sorted_down:
+        canvas.fill_polygon({point(3, 5), point(13, 5), point(8, 11)}, color);
+        break;
+    case Icon::sorted_up:
+        canvas.fill_polygon({point(3, 11), point(13, 11), point(8, 5)}, color);
+        break;
+    case Icon::folder:
+    case Icon::parent_folder:
+        canvas.fill_polygon({point(0, 2), point(6, 2), point(8, 4), point(16, 4), point(16, 15), point(0, 15)}, color);
+        break;
+    case Icon::file:
+        canvas.fill_polygon({point(2, 0), point(10, 0), point(14, 4), point(14, 16), point(2, 16)}, color);
+        break;
+    case Icon::task_open:
+        box(2, 2, 14, 3.5f);
+        box(2, 12.5f, 14, 14);
+        box(2, 2, 3.5f, 14);
+        box(12.5f, 2, 14, 14);
+        break;
+    case Icon::task_done:
+        box(2, 2, 14, 14);
+        break;
+    case Icon::play:
+        canvas.fill_polygon({point(4, 2), point(14, 8), point(4, 14)}, color);
+        break;
+    case Icon::pause:
+        box(3.5f, 2.5f, 6.5f, 13.5f);
+        box(9.5f, 2.5f, 12.5f, 13.5f);
+        break;
+    case Icon::step_back:
+        box(2.5f, 3, 4.5f, 13);
+        canvas.fill_polygon({point(13.5f, 3), point(5.5f, 8), point(13.5f, 13)}, color);
+        break;
+    case Icon::step_forwards:
+        box(11.5f, 3, 13.5f, 13);
+        canvas.fill_polygon({point(2.5f, 3), point(10.5f, 8), point(2.5f, 13)}, color);
+        break;
+    case Icon::speaker:
+        // A box and its cone, and two waves coming out.
+        box(1.5f, 6, 4.5f, 10);
+        canvas.fill_polygon({point(4, 6), point(8.5f, 2.5f), point(8.5f, 13.5f), point(4, 10)}, color);
+        arc(8.5f, 8, 3, -0.8f, 0.8f);
+        arc(8.5f, 8, 5.8f, -0.8f, 0.8f);
+        break;
+    case Icon::headphones:
+        // A band over the head and a cup at either ear.
+        arc(8, 9, 5.8f, 0, half_turn);
+        box(1.5f, 9, 4.5f, 14.5f);
+        box(11.5f, 9, 14.5f, 14.5f);
+        break;
+    case Icon::eye:
+        // The lids, then the pupil.
+        arc(8, 12.125f, 8.125f, 0.533f, half_turn - 0.533f);
+        arc(8, 3.875f, 8.125f, -0.533f, 0.533f - half_turn);
+        disc(8, 8, 2.6f);
+        break;
+    case Icon::lock:
+        // The shackle over the body.
+        arc(8, 7, 3.6f, 0, half_turn);
+        box(3.65f, 7, 5.15f, 8);
+        box(10.85f, 7, 12.35f, 8);
+        box(2.5f, 8, 13.5f, 15);
+        break;
+    }
 }
 
 Theme theme_for(const GraphicalStyle& style)
@@ -305,6 +442,11 @@ void GraphicalPainter::edges(const PixelRect& rect, Color top_left, Color bottom
 void GraphicalPainter::bevel(const PixelRect& rect, bool sunken, Color face)
 {
     m_canvas.fill(rect, face);
+    if(m_style.flat)
+    {
+        edges(rect, m_style.shadow, m_style.shadow);
+        return;
+    }
     edges(rect, sunken ? m_style.shadow : m_style.light, sunken ? m_style.light : m_style.shadow);
 }
 
@@ -537,10 +679,20 @@ void GraphicalPainter::draw_button(const Rect& bounds, const ButtonLook& look, c
         shape.y += (2 * m_cell.height - height) / 2;
         shape.height = height;
     }
-    bevel(shape, look.pressed, theme.button_background);
-    const auto shift{look.pressed ? 1 : 0};
-    label({shape.x + shift, shape.y + shift, shape.width, shape.height}, look.text,
-          look.enabled ? theme.button_foreground : theme.disabled_foreground, Align::center);
+    bevel(shape, look.pressed, look.pressed && m_style.flat ? m_style.light : theme.button_background);
+    const auto shift{look.pressed && !m_style.flat ? 1 : 0};
+    const auto ink{look.enabled ? theme.button_foreground : theme.disabled_foreground};
+    if(look.icon)
+    {
+        const auto size{shape.height * 3 / 5};
+        oui::draw_icon(
+            m_canvas, *look.icon,
+            {shape.x + shift + (shape.width - size) / 2, shape.y + shift + (shape.height - size) / 2, size, size}, ink);
+    }
+    else
+    {
+        label({shape.x + shift, shape.y + shift, shape.width, shape.height}, look.text, ink, Align::center);
+    }
     if(look.focused)
     {
         focus_ring({shape.x + 3, shape.y + 3, shape.width - 6, shape.height - 6});
@@ -674,8 +826,8 @@ void GraphicalPainter::draw_header(const Rect& cell, const HeaderLook& look, con
     // Raised as a button is, and sunken while held down; the column sorted by has its name in bold and an arrow at
     // its right.
     const auto area{pixels(cell)};
-    bevel(area, look.pressed, theme.button_background);
-    const auto shift{look.pressed ? 1 : 0};
+    bevel(area, look.pressed, look.pressed && m_style.flat ? m_style.light : theme.button_background);
+    const auto shift{look.pressed && !m_style.flat ? 1 : 0};
     const auto u{unit()};
     // A little more room than plain text keeps, inside the raised edge.
     const auto margin{m_style.text_margin + static_cast<int>(4 * u)};
@@ -731,6 +883,14 @@ void GraphicalPainter::draw_icon(Point position, Icon icon, const TextStyle& sty
     case Icon::parent_folder:
         draw_file_icon(icon, {static_cast<float>(cell.x) - 2 * u, cy - 7 * u}, 14 * u);
         break;
+    default:
+    {
+        // As tall as a letter, wider than its cell.
+        const auto size{static_cast<int>(16 * u)};
+        oui::draw_icon(m_canvas, icon, {static_cast<int>(cx) - size / 2, static_cast<int>(cy) - size / 2, size, size},
+                       style.foreground);
+        break;
+    }
     }
 }
 

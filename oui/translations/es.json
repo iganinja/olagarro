@@ -173,6 +173,7 @@
     },
     "GraphicalTheme": {
       "Classic": "Clásico",
+      "Dark": "Oscuro",
       "Night": "Noche",
       "Ocean": "Océano"
     },

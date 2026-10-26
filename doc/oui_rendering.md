@@ -93,7 +93,7 @@ theme. The look says what the element shows, never how.
 | `draw_label_runs` | `LabelRun`s, line background | Runs of interface text in their own styles on one line, as prose with bold words, code or links |
 | `draw_mnemonic_label` | text, byte of the mnemonic, its colour | Interface text with the letter Alt opens underlined |
 | `draw_window` | `WindowLook`: title, double or single frame, resizable, placing, closable, minimizable, maximizable, background | A window's background, frame, title, buttons and shadow; its content paints over it |
-| `draw_button` | `ButtonLook`: text, pressed, focused, shadow, compact, default, mnemonic, the colour around it, enabled | A push button |
+| `draw_button` | `ButtonLook`: text, pressed, focused, shadow, compact, default, mnemonic, the colour around it, enabled, icon | A push button; a graphical style draws its icon, when it has one, in place of the text (`Button::set_icon`) |
 | `draw_check_box` | `CheckBoxLook`: text, checked, focused, background, mnemonic, enabled | A check box with its text |
 | `draw_tab` | `TabLook`: title, selected, closable, highlighted | One tab of a tab bar |
 | `draw_header` | `HeaderLook`: text, sort arrow, pressed | A table column's header |
@@ -101,7 +101,7 @@ theme. The look says what the element shows, never how.
 | `draw_scrollbar` | `ScrollbarLook`: thumb start and length, track and thumb colours | A scrollbar along a column or a row |
 | `draw_bar` | `BarKind::menu` or `status` | The background of a menu bar or status bar |
 | `draw_popup`, `draw_popup_edge`, `draw_popup_separator` | | A drop-down menu's background and frame, its edge drawn after the entries, and a line between groups |
-| `draw_icon` | `Icon` | Small marks: submenu and drop-down arrows, sort arrows, folder, file, parent folder, open and done tasks |
+| `draw_icon` | `Icon` | Small marks: submenu and drop-down arrows, sort arrows, folder, file, parent folder, open and done tasks; a player's play, pause, step back and step forwards; a track's speaker, headphones, eye and lock. A program drawing its own pixels draws them with the free `draw_icon(canvas, icon, area, colour)` of [graphical_painter.h](../oui/include/oui/graphics/graphical_painter.h) |
 | `draw_marker` | `Marker`: text, columns, optional icon | A mark before a text in a column of its own, as a folder's; a terminal writes the text, a style may draw the icon |
 | `draw_check_mark` | checked | The four cells before a checkable menu entry, `[■] ` or `[ ] ` in a terminal |
 | `draw_text_field` | `TextFieldLook`: text, selection, cursor, styles | The text of a field with its selection and cursor |
@@ -264,7 +264,7 @@ A graphical style writes with three fonts ([font.h](../oui/include/oui/graphics/
 | Font | Built in | For |
 |------|----------|-----|
 | Cell font | Spleen, a PC Screen Font (`.psfu`) bitmap font: 8x16, 12x24 and 16x32, and the last two doubled; `psf_font` | Cells: code, tables, terminals, everything on the grid |
-| Interface font | Jersey 10, TrueType, rendered by stb_truetype; `truetype_font` | Interface text: labels, titles, menus, buttons |
+| Interface font | Jersey 10 or Noto Sans, as the style's `interface_font` says, TrueType, rendered by stb_truetype; `truetype_font` | Interface text: labels, titles, menus, buttons |
 | Symbol font | Drawn as shapes, `symbol_font(cell_width, cell_height, ascent)` | Arrows, triangles and squares the other two lack |
 
 The interface font falls back to the cell font for a character it lacks, as a box line, and to the symbols for an

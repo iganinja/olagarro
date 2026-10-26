@@ -33,6 +33,33 @@ enum class Align
     end
 };
 
+// Small marks that a terminal writes as a character and a graphical style draws as a shape.
+enum class Icon
+{
+    submenu,
+    drop_down,
+    // The column a table is sorted by, up or down.
+    sorted_up,
+    sorted_down,
+    // What an entry of a file list is.
+    folder,
+    file,
+    parent_folder,
+    // A task in a list of things to do, open or done.
+    task_open,
+    task_done,
+    // A player's buttons: play, pause, and a step back or forwards.
+    play,
+    pause,
+    step_back,
+    step_forwards,
+    // What a track of sound or pictures can be: heard, heard alone, seen, kept from changes.
+    speaker,
+    headphones,
+    eye,
+    lock
+};
+
 // What a widget asks the painter to draw: the painter decides how it looks. Each says what the element shows and
 // in which state, never how; a terminal draws it with characters, a graphical style with its own shapes.
 struct WindowLook
@@ -71,6 +98,8 @@ struct ButtonLook
     Color around;
     // A disabled button shows so, quieter.
     bool enabled{true};
+    // Drawn in place of the text by a graphical style; a terminal writes the text.
+    std::optional<Icon> icon{};
 };
 
 struct CheckBoxLook
@@ -122,23 +151,6 @@ enum class BarKind
 {
     menu,
     status
-};
-
-// Small marks that a terminal writes as a character and a graphical style draws as a shape.
-enum class Icon
-{
-    submenu,
-    drop_down,
-    // The column a table is sorted by, up or down.
-    sorted_up,
-    sorted_down,
-    // What an entry of a file list is.
-    folder,
-    file,
-    parent_folder,
-    // A task in a list of things to do, open or done.
-    task_open,
-    task_done
 };
 
 // A column's header in a table: its name, the arrow when the table is sorted by it, and whether it is held down.

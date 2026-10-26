@@ -25,7 +25,9 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -612,4 +614,157 @@ TEST(OuiGraphicsTests, AWindowInPixelsKeepsTheLeastRoomCellsAllowRoundWhatItHold
     // Above, below, and at the side: a terminal's frame and a cell beside it; in pixels as little as cells allow.
     EXPECT_EQ(gaps(scripted_backend({}, {40, 12})), (std::tuple{1, 1, 2})) << "in a terminal, the frame's lines";
     EXPECT_EQ(gaps(image_backend({480, 288})), (std::tuple{2, 1, 1})) << "in pixels, the title bar and a row";
+}
+
+// WCAG's contrast between two colours, from 1 to 21.
+[[nodiscard]] double contrast(Color first, Color second)
+{
+    const auto luminance{
+        [](Color color)
+        {
+            const auto linear{[](std::uint8_t channel)
+                              {
+                                  const auto value{channel / 255.0};
+                                  return value <= 0.04045 ? value / 12.92 : std::pow((value + 0.055) / 1.055, 2.4);
+                              }};
+            return 0.2126 * linear(color.red) + 0.7152 * linear(color.green) + 0.0722 * linear(color.blue);
+        }};
+    const auto a{luminance(first)};
+    const auto b{luminance(second)};
+    return (std::max(a, b) + 0.05) / (std::min(a, b) + 0.05);
+}
+
+TEST(OuiGraphicsTests, TheDarkLookIsFlatInNotoSansWithOneAccentAndItsTextReads)
+{
+    const auto style{dark_style()};
+    EXPECT_TRUE(style.flat);
+    EXPECT_EQ(style.interface_font, InterfaceFont::noto_sans);
+    EXPECT_FALSE(classic_style().flat);
+    EXPECT_EQ(classic_style().interface_font, InterfaceFont::jersey);
+    // One accent: the title, the focus and what is selected.
+    EXPECT_EQ(style.focus, style.title);
+    EXPECT_EQ(style.selection, style.title);
+    // Dark: its surfaces darker than its text.
+    EXPECT_LT(contrast(style.face, {0, 0, 0}), 2.0);
+    EXPECT_LT(contrast(style.well, {0, 0, 0}), 2.0);
+    EXPECT_GE(contrast(style.text, style.face), 7.0);
+    EXPECT_GE(contrast(style.well_text, style.well), 7.0);
+    EXPECT_GE(contrast(style.muted_text, style.face), 4.5);
+    EXPECT_GE(contrast(style.title_text, style.title), 4.0);
+    EXPECT_GE(contrast(style.selection_text, style.selection), 4.0);
+
+    const auto theme{dark_theme()};
+    EXPECT_EQ(theme.menu_selected_background, style.title);
+    EXPECT_EQ(theme.item_selected_background, style.selection);
+    EXPECT_EQ(theme.editor_background, style.well);
+
+    const auto themes{graphical_themes()};
+    EXPECT_EQ(themes.front().id, "classic");
+    const auto dark{std::find_if(themes.begin(), themes.end(), [](const auto& theme) { return theme.id == "dark"; })};
+    ASSERT_NE(dark, themes.end());
+    EXPECT_EQ(dark->name, "Dark");
+    EXPECT_TRUE(dark->style.flat);
+}
+
+TEST(OuiGraphicsTests, AFlatButtonHasAThinEdgeAllRoundAndHeldDownIsFilledLighter)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    const auto style{dark_style()};
+    const auto theme{theme_for(style)};
+    const auto drawn{[&](bool pressed)
+                     {
+                         Canvas canvas{120, 48};
+                         GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+                         ButtonLook look;
+                         look.pressed = pressed;
+                         look.around = {1, 2, 3};
+                         painter.draw_button({0, 0, 10, 2}, look, theme);
+                         return canvas;
+                     }};
+    const auto resting{drawn(false)};
+    // Ten cells of 12 by two rows of 24: the shape is 34 pixels high in the middle of the 48, from 7 to 40.
+    EXPECT_TRUE(same(resting.pixel_at(60, 7), style.shadow));
+    EXPECT_TRUE(same(resting.pixel_at(60, 40), style.shadow));
+    EXPECT_TRUE(same(resting.pixel_at(0, 24), style.shadow));
+    EXPECT_TRUE(same(resting.pixel_at(119, 24), style.shadow));
+    EXPECT_TRUE(same(resting.pixel_at(2, 10), theme.button_background));
+    EXPECT_TRUE(same(resting.pixel_at(60, 6), {1, 2, 3}));
+
+    const auto pressed{drawn(true)};
+    EXPECT_TRUE(same(pressed.pixel_at(60, 7), style.shadow));
+    EXPECT_TRUE(same(pressed.pixel_at(0, 24), style.shadow));
+    EXPECT_TRUE(same(pressed.pixel_at(2, 10), style.light));
+}
+
+TEST(OuiGraphicsTests, AButtonWithAnIconDrawsItInPlaceOfItsText)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    const auto style{dark_style()};
+    const auto theme{theme_for(style)};
+    const auto drawn{[&](std::string_view text, std::optional<Icon> icon)
+                     {
+                         Canvas canvas{120, 48};
+                         GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+                         ButtonLook look;
+                         look.text = text;
+                         look.icon = icon;
+                         painter.draw_button({0, 0, 10, 2}, look, theme);
+                         return canvas.pixels();
+                     }};
+    EXPECT_EQ(drawn("Play", Icon::play), drawn("Something else", Icon::play));
+    EXPECT_NE(drawn("Play", Icon::play), drawn("Play", std::nullopt));
+    EXPECT_NE(drawn("Play", Icon::play), drawn("Play", Icon::pause));
+
+    auto made{button("Play")};
+    EXPECT_EQ(made->icon(), std::nullopt);
+    made->set_icon(Icon::play);
+    EXPECT_EQ(made->icon(), Icon::play);
+    EXPECT_EQ(made->text(), "Play");
+}
+
+TEST(OuiGraphicsTests, EachIconOfAPlayerAndATrackIsDrawnInsideItsAreaAndUnlikeTheOthers)
+{
+    const Color ink{255, 255, 255};
+    const Icon icons[]{Icon::play,    Icon::pause,      Icon::step_back, Icon::step_forwards,
+                       Icon::speaker, Icon::headphones, Icon::eye,       Icon::lock};
+    std::vector<std::vector<std::uint32_t>> seen;
+    for(const auto icon : icons)
+    {
+        Canvas canvas{48, 48};
+        draw_icon(canvas, icon, {12, 12, 24, 24}, ink);
+        int inked{};
+        for(int y{}; y < 48; ++ y)
+        {
+            for(int x{}; x < 48; ++ x)
+            {
+                const auto inside{x >= 12 && x < 36 && y >= 12 && y < 36};
+                const auto lit{canvas.pixel_at(x, y).red > 0};
+                EXPECT_TRUE(inside || !lit) << static_cast<int>(icon) << " at " << x << ", " << y;
+                inked += lit ? 1 : 0;
+            }
+        }
+        // Each covers a good part of its square, and none is another's.
+        EXPECT_GT(inked, 24 * 24 / 8) << static_cast<int>(icon);
+        EXPECT_EQ(std::find(seen.begin(), seen.end(), canvas.pixels()), seen.end()) << static_cast<int>(icon);
+        seen.push_back(canvas.pixels());
+    }
+}
+
+TEST(OuiGraphicsTests, ABackendInTheDarkStyleWritesInterfaceTextInNotoSans)
+{
+    const std::string text{"Rename Files"};
+    const auto jersey{built_in_interface_font(24.0f)->measure(text)};
+    const auto noto{built_in_interface_font(24.0f, InterfaceFont::noto_sans)->measure(text)};
+    ASSERT_NE(jersey, noto);
+    auto backend{image_backend({480, 240})};
+    auto& image{*backend};
+    Application application{std::move(backend)};
+    EXPECT_EQ(text_metrics().width(text), jersey);
+    image.set_style(dark_style());
+    EXPECT_EQ(text_metrics().width(text), noto);
+    EXPECT_TRUE(built_in_interface_font(24.0f, InterfaceFont::noto_sans)->has_glyph(U'ñ'));
 }

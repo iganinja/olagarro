@@ -415,6 +415,29 @@ void Painter::draw_icon(Point position, Icon icon, const TextStyle& style)
     case Icon::task_done:
         draw_text(position, "[x]", style);
         break;
+    case Icon::play:
+    case Icon::step_forwards:
+        draw_text(position, "▶", style);
+        break;
+    case Icon::pause:
+        draw_text(position, "■", style);
+        break;
+    case Icon::step_back:
+        draw_text(position, "◀", style);
+        break;
+    // Marks of code page 437, which console fonts have, that look most like each.
+    case Icon::speaker:
+        draw_text(position, "♪", style);
+        break;
+    case Icon::headphones:
+        draw_text(position, "Ω", style);
+        break;
+    case Icon::eye:
+        draw_text(position, "○", style);
+        break;
+    case Icon::lock:
+        draw_text(position, "#", style);
+        break;
     }
 }
 

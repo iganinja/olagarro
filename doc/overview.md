@@ -94,7 +94,7 @@ them, for its widgets' signals, such as `Button::clicked`.
 | `tasks/`, `cttasks/` | Tasks and CTTasks: headers in `include/tasks` and `include/cttasks`, sources in `src/`. |
 | `oui/include/oui` | OUI's public headers, one for each widget or part; `oui/oui.h` includes the common ones. `graphics/` and `script/` hold the headers of oui_graphics, oui_window and oui_script. |
 | `oui/src` | One source for each widget or part, with `_posix` and `_win32` sources for what differs by system (terminal, processes, pseudo-terminals, files, clipboard, settings, crash reports, language); `graphics/` and `script/` as above. A big class takes several sources named after it, as `text_edit.cpp`, `text_edit_input.cpp`, `text_edit_view.cpp`. |
-| `oui/fonts` | The fonts built into oui_graphics: Spleen bitmap fonts for cells, Jersey 10 for interface text, with their licences. |
+| `oui/fonts` | The fonts built into oui_graphics: Spleen bitmap fonts for cells, Jersey 10 and Noto Sans for interface text, with their licences. |
 | `oui/translations`, `oui/help` | OUI's own Spanish catalog, and the calculator's help in English and Spanish, built into the library. |
 | `examples/` | The programs, a folder each, and the terminal demo in `examples/oui`. |
 | `tests/` | A folder for each library: GoogleTest suites in C++. `tests/package_consumer` is a small project that consumes the installed package. |

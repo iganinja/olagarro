@@ -216,5 +216,6 @@ Olagarro is under the zlib licence, in [LICENSE](LICENSE). What it carries of ot
 | stb_truetype, which reads the interface font | `third_party/stb` | MIT or public domain, at the end of the file |
 | Spleen, the cell font | `oui/fonts/spleen_*` | BSD 2-clause, in `oui/fonts/spleen_license.txt` |
 | Jersey 10, the interface font | `oui/fonts/jersey10_regular.ttf` | SIL Open Font License 1.1, in `oui/fonts/jersey10_ofl.txt` |
+| Noto Sans, the dark style's interface font | `oui/fonts/noto_sans_regular.ttf` | SIL Open Font License 1.1, in `oui/fonts/noto_sans_ofl.txt` |
 | NanoSVG, which draws SVG pictures | `third_party/nanosvg` | zlib, in its `LICENSE.txt` |
 | SDL3, fetched and linked in only with `OLAGARRO_OUI_WINDOW=ON` | not in the repository | zlib |

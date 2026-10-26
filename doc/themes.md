@@ -100,7 +100,8 @@ resolve(m_background, theme, theme.dialog_background)
 | `TurboCTheme::make()` | [turbo_c_theme.h](../oui/include/oui/turbo_c_theme.h) | Turbo C++ / Borland C++ / Turbo Pascal: Turbo Vision's `cpAppColor` palette and their editor's yellow on blue. The comments name the palette entry each colour comes from. |
 | `terminal_themes()` | [terminal_themes.cpp](../oui/src/terminal_themes.cpp) | The looks for characters: `turbo` (the one above), `night`, `light`, `monochrome`, `amber`, `phosphor`, `commander` |
 | `classic_theme()` | [graphical_painter.cpp](../oui/src/graphics/graphical_painter.cpp) | The graphical look, `theme_for(classic_style())`: grey bevelled surfaces, a green title, dark wells, inspired by Transport Tycoon |
-| `graphical_themes()` | the same | The graphical looks: `classic`, `ocean`, `night` |
+| `dark_theme()` | the same | `theme_for(dark_style())`: dark greys, flat shapes with thin edges, Noto Sans, one blue accent; for programs that show pictures, as ouivi |
+| `graphical_themes()` | the same | The graphical looks: `classic`, `ocean`, `night`, `dark` |
 
 `terminal_themes()` returns `TerminalTheme` values: an `id`, which is the same in every language and is what
 settings keep; a `name`, translated, for a menu; and the `Theme`. The default comes first.
@@ -373,6 +374,8 @@ struct GraphicalStyle
     Color folder, page;              // icons of a file list
     int text_margin{6};              // how far interface text keeps from its cells' edges
     int line{1};                     // the thickness of an edge, in pixels
+    bool flat{false};                // edges of `shadow` all round rather than bevels; held down, `light`
+    InterfaceFont interface_font{InterfaceFont::jersey};  // or noto_sans
 };
 ```
 
@@ -404,9 +407,14 @@ other way round. A window, a DRM screen and a desktop client take their first st
 
 `graphical_themes()` builds `ocean` and `night` by copying `classic_style()` and changing its shades, and sets
 `desktop` to `face` in each, which is what shows at the right and bottom edges of a window that is not a whole number
-of cells. Adding a graphical look is the same as a terminal one: a style in `graphical_themes()` with an id and
+of cells. `dark` is `dark_style()`, which also changes the shapes: `flat` draws every raised and sunken surface with a
+one-pixel edge of `shadow` all round, a button held down filled with `light` rather than sunk, and `interface_font`
+writes interface text in Noto Sans rather than Jersey 10. The backend loads the font a style names when `set_style`
+changes it. Its `title`, `focus` and `selection` are the same blue, the accent; a program drawing its own pixels in
+the same look, as ouivi's timeline, takes its accent from `dark_style().title`. Adding a graphical look is the same as a terminal one: a style in `graphical_themes()` with an id and
 `translate("GraphicalTheme", "...")`, its name in the `"GraphicalTheme"` context of OUI's catalogs, and it shows in
-OUI Code's **View > Theme** in a window. `oui.setTheme()` in scripts knows only `classic` among the graphical looks.
+OUI Code's **View > Theme** in a window, as `dark` does. `oui.setTheme()` in scripts knows only `classic` among the
+graphical looks.
 
 The graphical look need not be a dark-on-light Windows clone: the colours of a terminal theme also work in a window,
 since a `Theme` is only colours, but the frames and bevels then stay in the style's shades.

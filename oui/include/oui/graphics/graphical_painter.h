@@ -41,13 +41,26 @@ struct GraphicalStyle
     int text_margin{6};
     // The thickness of an edge, in pixels.
     int line{1};
+    // Raised and sunken shapes drawn flat, with an edge of `shadow` all round rather than bevelled; a button held down
+    // is filled with `light`.
+    bool flat{false};
+    // What interface text is written in.
+    InterfaceFont interface_font{InterfaceFont::jersey};
 };
 
 // OUI's default graphical look, inspired by Transport Tycoon: soft bevelled grey surfaces, a green title, dark wells.
 [[nodiscard]] GraphicalStyle classic_style();
+// A dark look for programs that show pictures, as an editor of images or video: dark greys, flat shapes with thin
+// edges, Noto Sans, and one blue accent for the title, the focus and what is selected.
+[[nodiscard]] GraphicalStyle dark_style();
 // The theme that goes with a style: the colours widgets paint their content with.
 [[nodiscard]] Theme theme_for(const GraphicalStyle& style);
 [[nodiscard]] Theme classic_theme();
+[[nodiscard]] Theme dark_theme();
+
+// Draws `icon` in one colour as big as fits in the middle of `area`, as a graphical style does: for what draws its own
+// pixels and wants OUI's icons, as a timeline's buttons. A folder, a file and a task are drawn as their outlines.
+void draw_icon(Canvas& canvas, Icon icon, const PixelRect& area, Color color);
 
 struct GraphicalTheme
 {

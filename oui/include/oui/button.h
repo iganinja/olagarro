@@ -30,6 +30,10 @@ class Button final : public Widget
     // shows apart, as Turbo Vision's default button.
     void set_default(bool is_default);
     [[nodiscard]] bool is_default() const;
+    // Shown in place of the text where the painter draws icons, as a graphical style does; a terminal still writes the
+    // text, which also stays its name for tests and descriptions.
+    void set_icon(std::optional<Icon> icon);
+    [[nodiscard]] std::optional<Icon> icon() const;
 
     [[nodiscard]] std::string_view text() const;
     // The letter that presses it with Alt in a dialog, marked in its text with &, as a menu's: "&Open". && is an &.
@@ -54,6 +58,7 @@ class Button final : public Widget
     std::optional<ColorRef> m_background;
     bool m_compact{false};
     bool m_default{false};
+    std::optional<Icon> m_icon;
     olagarro::signal_slot::Signal<> m_clicked;
 };
 

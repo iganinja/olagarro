@@ -82,7 +82,7 @@ void PixelBackend::load_fonts()
         set_text_metrics(nullptr);
     }
     m_cell_font = built_in_cell_font(level.cell_height);
-    m_interface_font = built_in_interface_font(level.interface_pixels);
+    m_interface_font = built_in_interface_font(level.interface_pixels, m_style.interface_font);
     m_cell = GraphicalPainter::cell_size(*m_cell_font);
     m_symbols = symbol_font(m_cell.width, m_cell.height, m_cell_font->ascent());
     m_metrics = std::make_unique<PixelTextMetrics>(FontSet{*m_cell_font, *m_interface_font, *m_symbols}, m_cell);
@@ -221,7 +221,13 @@ void PixelBackend::present(const CellBuffer& buffer)
 
 void PixelBackend::set_style(GraphicalStyle style)
 {
+    const auto font_changed{style.interface_font != m_style.interface_font};
     m_style = style;
+    if(font_changed)
+    {
+        load_fonts();
+        fonts_changed();
+    }
 }
 
 const GraphicalStyle& PixelBackend::style() const

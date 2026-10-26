@@ -433,9 +433,9 @@ std::unique_ptr<Font> built_in_cell_font(int cell_height)
     }
 }
 
-std::unique_ptr<Font> built_in_interface_font(float pixels)
+std::unique_ptr<Font> built_in_interface_font(float pixels, InterfaceFont font)
 {
-    return truetype_font(embedded_oui_fonts().at(1), pixels);
+    return truetype_font(embedded_oui_fonts().at(font == InterfaceFont::noto_sans ? 4 : 1), pixels);
 }
 
 std::unique_ptr<Font> default_cell_font()

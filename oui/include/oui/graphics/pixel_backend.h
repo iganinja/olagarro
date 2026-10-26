@@ -29,6 +29,7 @@ class PixelBackend : public Backend
     // Shows a buffer of cells as it is, in the cell font.
     void present(const CellBuffer& buffer) override;
 
+    // A style that writes in another interface font loads it, and the application lays itself out again in it.
     void set_style(GraphicalStyle style);
     [[nodiscard]] const GraphicalStyle& style() const;
     // The size of a cell in pixels.

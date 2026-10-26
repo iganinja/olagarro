@@ -281,7 +281,7 @@ set_source_files_properties(oui/src/graphics/nanosvg_api.cpp PROPERTIES
     COMPILE_OPTIONS "$<IF:$<CXX_COMPILER_ID:MSVC>,/W0,-w>")
 olagarro_embed_files(olagarro_oui_graphics NAMESPACE olagarro::oui FUNCTION embedded_oui_fonts
     FILES oui/fonts/spleen_12x24.psfu oui/fonts/jersey10_regular.ttf oui/fonts/spleen_8x16.psfu
-        oui/fonts/spleen_16x32.psfu)
+        oui/fonts/spleen_16x32.psfu oui/fonts/noto_sans_regular.ttf)
 
 # The desktop window: SDL3 opens it and brings its input, OUI draws everything in it, and plays sound. SDL3 is linked
 # statically, so the program needs nothing installed beside it; an installed SDL3 is used when CMake finds one, and
