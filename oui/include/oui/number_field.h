@@ -77,7 +77,8 @@ class NumberField final : public Container
         bool fine{false};
     };
 
-    // `value` in range and on a whole number of `step` from the minimum, any value for a step of 0.
+    // `value` in range and on a whole number of `step` from the minimum, any value for a step of 0; for a step of a
+    // unit's fraction (0.1, 0.001) from a minimum on its grid, the nearest double to that decimal.
     [[nodiscard]] double fitted(double value, double step) const;
     // Makes `value`, kept in range and on a step, the value, telling of it when it changed; the text stays.
     void take(double value);

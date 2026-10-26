@@ -49,6 +49,30 @@ TEST(OuiNumberFieldTests, WhatIsTypedIsTakenOnEnterKeptInRange)
     EXPECT_EQ(changes, (std::vector<double>{100}));
 }
 
+TEST(OuiNumberFieldTests, AStepOfATenthOrAThousandthGivesTheDecimalTypedNotOneOffInItsLastBit)
+{
+    oui::NumberField field;
+    field.set_range(-10, 10);
+    field.set_step(0.001);
+    // From the minimum, -10 + 10300 steps of 0.001 is 0.30000000000000071.
+    field.set_value(0.3);
+    EXPECT_EQ(field.value(), 0.3);
+    field.set_value(0.012);
+    EXPECT_EQ(field.value(), 0.012);
+    field.set_step(0.1);
+    field.set_value(0.7);
+    EXPECT_EQ(field.value(), 0.7);
+    // Other steps, and minimums off the step's decimals, still count from the minimum.
+    field.set_range(1, 100);
+    field.set_step(2);
+    field.set_value(10);
+    EXPECT_EQ(field.value(), 11);
+    field.set_range(0.05, 1);
+    field.set_step(0.1);
+    field.set_value(0.5);
+    EXPECT_NEAR(field.value(), 0.55, 1e-12);
+}
+
 TEST(OuiNumberFieldTests, UpAndDownTheWheelAndTheArrowsStepIt)
 {
     oui::NumberField field;

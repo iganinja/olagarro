@@ -177,7 +177,16 @@ double NumberField::fitted(double value, double step) const
     auto result{std::clamp(value, m_minimum, m_maximum)};
     if(step > 0.0)
     {
-        result = std::min(m_maximum, m_minimum + std::round((result - m_minimum) / step) * step);
+        result = m_minimum + std::round((result - m_minimum) / step) * step;
+        // A step that is a unit's fraction, a tenth or a thousandth, from a minimum on its grid, gives the decimal it
+        // means: steps counted from the minimum land a bit off it, as -10 + 10300 * 0.001 is 0.30000000000000071.
+        const auto per_unit{std::round(1.0 / step)};
+        if(per_unit >= 1.0 && std::abs(per_unit * step - 1.0) < 1e-9 &&
+           std::abs(m_minimum * per_unit - std::round(m_minimum * per_unit)) < 1e-6)
+        {
+            result = std::round(result * per_unit) / per_unit;
+        }
+        result = std::clamp(result, m_minimum, m_maximum);
     }
     return result;
 }
