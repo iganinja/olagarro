@@ -187,6 +187,10 @@
       "a highlighter needs at least one state": "un resaltador necesita al menos un estado",
       "state '{0}' enters '{1}', which does not exist": "el estado '{0}' entra en '{1}', que no existe"
     },
+    "PopupList": {
+      "Type to filter": "Escribe para filtrar",
+      "Nothing matches": "Nada coincide"
+    },
     "QuickPick": {
       "Type to filter": "Escribe para filtrar"
     },

@@ -499,6 +499,11 @@ it, as `PopupList` ([popup_list.h](../oui/include/oui/popup_list.h)) does under 
 time: another popup or a dialog closes it, and `closed` is called however it goes. `close_popup()` is safe from
 inside the popup's own handling of an event: the widget is kept until the next frame.
 
+A `PopupList` can also open with its corner at its anchor (`PopupPlacement::at_anchor`), as a list at the pointer,
+list its items under section headings (`PopupItem::section`), and filter as one types (`set_filtering`): it then
+takes the text typed and Backspace itself, shows them on its first row and keeps the items whose label matches
+fuzzily, in their order, with the best match selected, as Blender's Shift+A list does.
+
 A widget's tooltip is the text `set_tooltip` gave it, or what `tooltip_at(point)` answers for widgets that say
 something about each part, as a tab view about each title. It shows once the pointer has rested 600 ms, beside the
 pointer and never under it, broken into lines when wider than the screen; the pointer moving, a press or a key hides
@@ -538,7 +543,7 @@ it has the focus hears nothing more.
 | `CalculatorView` | [calculator_view.h](../oui/include/oui/calculator_view.h) | oui_calc in a widget: an expression line, its result and a log |
 | `StatusBar` | [status_bar.h](../oui/include/oui/status_bar.h) | A row of text at both ends, and keys with what they do; a provider can say it before each paint |
 | `MenuBar`, `Menu` | [menu_bar.h](../oui/include/oui/menu_bar.h), [menu.h](../oui/include/oui/menu.h) | Menus of commands; context menus |
-| `PopupList` | [popup_list.h](../oui/include/oui/popup_list.h) | A list at a cell, for `show_popup`: suggestions as typed |
+| `PopupList` | [popup_list.h](../oui/include/oui/popup_list.h) | A list at a cell, for `show_popup`: suggestions as typed, or a list at the pointer filtered as one types |
 | `Suggester` | [suggester.h](../oui/include/oui/suggester.h) | Suggestions as one writes in a `TextEdit`, from its words, a language's and an API's declarations |
 | `SignatureTip` | [signature_tip.h](../oui/include/oui/signature_tip.h) | How the call the cursor is in is called, over its line |
 | `Row`, `Column` | [layout.h](../oui/include/oui/layout.h) | Children side by side, or one under the other |

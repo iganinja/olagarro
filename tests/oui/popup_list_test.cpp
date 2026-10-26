@@ -125,4 +125,67 @@ TEST(OuiPopupListTests, OpensOverItsCellWhenThereIsNoRoomBelow)
     EXPECT_NE(fixture.row(6).find("alpha"), std::string::npos) << fixture.row(6);
 }
 
+TEST(OuiPopupListTests, ItemsAreListedUnderTheirSectionsWhichAreNotChosen)
+{
+    Fixture fixture;
+    fixture.popup->set_items({{"red", "", "Colours"}, {"blue", "", "Colours"}, {"circle", "", "Shapes"}});
+    fixture.send(TextEvent{U'y'});
+    EXPECT_NE(fixture.row(4).find("Colours"), std::string::npos) << fixture.row(4);
+    EXPECT_NE(fixture.row(5).find("red"), std::string::npos) << fixture.row(5);
+    EXPECT_NE(fixture.row(7).find("Shapes"), std::string::npos) << fixture.row(7);
+    EXPECT_NE(fixture.row(8).find("circle"), std::string::npos) << fixture.row(8);
+    fixture.send(KeyEvent{Key::down});
+    fixture.send(KeyEvent{Key::down});
+    EXPECT_EQ(fixture.popup->selected(), 2u) << "the selection steps over the heading";
+    fixture.send(MouseEvent{4, 7, true});
+    EXPECT_FALSE(fixture.chosen) << "a heading is not chosen";
+    fixture.send(MouseEvent{4, 6, true});
+    EXPECT_EQ(fixture.chosen, 1u);
+}
+
+TEST(OuiPopupListTests, WhileFilteringTypingNarrowsTheListAndEnterChoosesTheBestMatch)
+{
+    Fixture fixture;
+    fixture.popup->set_filtering(true);
+    fixture.popup->set_items({{"fade", "", "Transitions"},
+                              {"wipe", "", "Transitions"},
+                              {"shake", "", "Behaviours"},
+                              {"fade_in", "", "Behaviours"}});
+    fixture.send(TextEvent{U'w'});
+    EXPECT_EQ(fixture.field->text(), "") << "what is typed goes to the list, not the field";
+    EXPECT_EQ(fixture.popup->filter(), "w");
+    EXPECT_NE(fixture.row(4).find("w"), std::string::npos) << "the filter shows on its first row: " << fixture.row(4);
+    EXPECT_NE(fixture.row(5).find("Transitions"), std::string::npos) << fixture.row(5);
+    EXPECT_NE(fixture.row(6).find("wipe"), std::string::npos) << fixture.row(6);
+    EXPECT_EQ(fixture.row(7).find("shake"), std::string::npos) << fixture.row(7);
+    EXPECT_EQ(fixture.popup->selected(), 1u) << "the selection is an index of every item";
+    fixture.send(KeyEvent{Key::backspace});
+    fixture.send(TextEvent{U'f'});
+    fixture.send(TextEvent{U'i'});
+    EXPECT_EQ(fixture.popup->filter(), "fi");
+    EXPECT_EQ(fixture.popup->selected(), 3u) << "the best match is selected, the sections staying in order";
+    EXPECT_NE(fixture.row(6).find("fade"), std::string::npos) << fixture.row(6);
+    fixture.send(KeyEvent{Key::enter});
+    EXPECT_EQ(fixture.chosen, 3u);
+    fixture.send(TextEvent{U'z'});
+    fixture.send(KeyEvent{Key::enter});
+    EXPECT_EQ(fixture.chosen, 3u) << "nothing matches: nothing is chosen";
+    EXPECT_NE(fixture.row(5).find("Nothing"), std::string::npos) << fixture.row(5);
+}
+
+TEST(OuiPopupListTests, PlacedAtItsAnchorItsCornerIsThereAndItStaysOnTheScreen)
+{
+    Fixture fixture;
+    fixture.popup->set_placement(oui::PopupPlacement::at_anchor);
+    fixture.popup->set_anchor({5, 3});
+    fixture.send(TextEvent{U'y'});
+    EXPECT_EQ(fixture.popup->bounds().x, 5);
+    EXPECT_EQ(fixture.popup->bounds().y, 3);
+    fixture.popup->set_anchor({38, 10});
+    fixture.send(TextEvent{U'y'});
+    const auto& area{fixture.popup->bounds()};
+    EXPECT_EQ(area.x + area.width, 40);
+    EXPECT_EQ(area.y + area.height, 12);
+}
+
 } // namespace
