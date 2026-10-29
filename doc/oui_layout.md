@@ -508,7 +508,8 @@ fuzzily, in their order, with the best match selected, as Blender's Shift+A list
 A widget's tooltip is the text `set_tooltip` gave it, or what `tooltip_at(point)` answers for widgets that say
 something about each part, as a tab view about each title. It shows once the pointer has rested 600 ms, beside the
 pointer and never under it, broken into lines when wider than the screen; the pointer moving, a press or a key hides
-it. Tooltips do not show while a dialog does.
+it. Tooltips do not show while a dialog does. `Application::tooltip()` is the text of the one showing, as a test
+looks for it.
 
 ## Enabled and visible
 

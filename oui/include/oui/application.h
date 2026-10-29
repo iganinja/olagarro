@@ -125,6 +125,8 @@ class Application
     // Closes the popup, if there is one; safe from inside its own handling of an event.
     void close_popup();
     [[nodiscard]] Widget* popup() const;
+    // The text of the tooltip showing, if one is.
+    [[nodiscard]] std::optional<std::string> tooltip() const;
     void set_theme(Theme theme);
     void reset_focus();
     void focus(Widget& widget);

@@ -344,6 +344,14 @@ Widget* Application::popup() const
 {
     return m_popup.get();
 }
+std::optional<std::string> Application::tooltip() const
+{
+    if(!m_tooltip)
+    {
+        return std::nullopt;
+    }
+    return m_tooltip->text;
+}
 // The popup's turn at an event: keys it handles, and the mouse over it; a press elsewhere closes it and goes on.
 bool Application::dispatch_to_popup(const Event& event)
 {

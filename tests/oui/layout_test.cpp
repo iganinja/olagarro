@@ -4760,13 +4760,16 @@ TEST(OuiTooltipTests, ShowWhenThePointerRestsAndGoWhenItMoves)
     backend_ref->push_event(oui::MouseEvent{1, 0, false, 0, false, false, true});
     application.run_frame();
     EXPECT_FALSE(shows_tip()) << "not before the pointer has rested";
+    EXPECT_FALSE(application.tooltip());
     rest_and_render();
     EXPECT_TRUE(shows_tip());
+    EXPECT_EQ(application.tooltip(), "a tip");
     EXPECT_NE(frame_row(*backend_ref->last_frame(), 1).find("a tip"), std::string::npos) << "the line under it";
 
     backend_ref->push_event(oui::MouseEvent{2, 0, false, 0, false, false, true});
     application.run_frame();
     EXPECT_FALSE(shows_tip()) << "a move hides it";
+    EXPECT_FALSE(application.tooltip());
     rest_and_render();
     ASSERT_TRUE(shows_tip());
     backend_ref->push_event(oui::KeyEvent{oui::Key::down});
