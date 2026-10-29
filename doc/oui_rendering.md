@@ -48,6 +48,16 @@ m_backend->render(
 The whole frame is painted each time, from the back to the front. A backend of cells keeps the previous frame and
 sends only what changed; see [writing to a terminal](#writing-to-a-terminal).
 
+### Tracing a frame
+
+A program measuring itself sets a `TraceSink` with `set_trace_sink` ([trace.h](../oui/include/oui/trace.h)) and hears
+OUI's stages as spans that nest on their thread, each a `begin(name)` and an `end()`: `oui.frame` (all but the
+sleep), and in it `oui.timers`, `oui.posted`, `oui.events` and `oui.render`; in that, `oui.layout` and, from a pixel
+backend, `oui.paint`, `oui.decorate` and `oui.present` (the window's own show, the SDL upload and present); in
+`oui.paint`, each widget's paint, named after its id or, without one, its type (`Button`), nested as the widgets are,
+and the graphical painter's `oui.draw_image`. A program's own spans go to its sink as it likes. With no sink, the
+default, a `TraceScope` costs one atomic read.
+
 ## The painter
 
 `Painter` ([painter.h](../oui/include/oui/painter.h)) is what `Widget::paint(Painter&, const Theme&)` draws on.

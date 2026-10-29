@@ -1,5 +1,6 @@
 #include <oui/graphics/graphical_painter.h>
 #include <oui/text_layout.h>
+#include <oui/trace.h>
 #include <oui/translation.h>
 #include <oui/utf8.h>
 
@@ -1010,6 +1011,7 @@ void GraphicalPainter::draw_text_field(const Rect& bounds, const TextFieldLook& 
 
 void GraphicalPainter::draw_image(const Rect& bounds, const PixelImage& image, const Theme&)
 {
+    const TraceScope span{"oui.draw_image"};
     const auto area{pixels(bounds)};
     const auto previous{m_canvas.clip()};
     m_canvas.set_clip(intersect(previous, area));

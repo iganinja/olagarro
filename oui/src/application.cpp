@@ -7,6 +7,7 @@
 #include <oui/text_metrics.h>
 #include <oui/terminal_backend.h>
 #include <oui/text_layout.h>
+#include <oui/trace.h>
 #include <oui/translation.h>
 
 #include <algorithm>
@@ -1016,32 +1017,46 @@ std::optional<std::chrono::steady_clock::time_point> Application::next_timer_due
 
 void Application::run_frame()
 {
-    m_closed_popups.clear();
-    const auto ran_timers{process_timers()};
-    const auto ran_posted{process_posted()};
+    auto ran_posted{false};
     auto handled_events{false};
-    constexpr std::size_t maximum_events_per_frame{1024};
-    for(std::size_t event_count{}; event_count < maximum_events_per_frame; ++ event_count)
     {
-        const auto event{m_backend->poll_event()};
-        if(!event.has_value())
+        const TraceScope frame_span{"oui.frame"};
+        m_closed_popups.clear();
+        auto ran_timers{false};
         {
-            break;
+            const TraceScope span{"oui.timers"};
+            ran_timers = process_timers();
         }
-        if(!is_wanted(*event))
         {
-            continue;
+            const TraceScope span{"oui.posted"};
+            ran_posted = process_posted();
         }
-        deliver_event(*event);
-        handled_events = true;
-    }
-    if(ran_timers || ran_posted || handled_events)
-    {
-        m_needs_render = true;
-    }
-    if(m_needs_render)
-    {
-        render();
+        {
+            const TraceScope span{"oui.events"};
+            constexpr std::size_t maximum_events_per_frame{1024};
+            for(std::size_t event_count{}; event_count < maximum_events_per_frame; ++ event_count)
+            {
+                const auto event{m_backend->poll_event()};
+                if(!event.has_value())
+                {
+                    break;
+                }
+                if(!is_wanted(*event))
+                {
+                    continue;
+                }
+                deliver_event(*event);
+                handled_events = true;
+            }
+        }
+        if(ran_timers || ran_posted || handled_events)
+        {
+            m_needs_render = true;
+        }
+        if(m_needs_render)
+        {
+            render();
+        }
     }
     // Everything is event driven: with no input handled and no work posted, sleep until the next event or
     // the next timer.
@@ -1097,14 +1112,22 @@ void Application::render()
     {
         return;
     }
+    const TraceScope render_span{"oui.render"};
     const auto size{m_backend->size()};
-    m_content->arrange({0, 0, size.width, size.height});
+    {
+        const TraceScope span{"oui.layout"};
+        m_content->arrange({0, 0, size.width, size.height});
+    }
     m_backend->render(
         [&](Painter& painter)
         {
-            m_content->paint(painter, m_theme);
+            {
+                const TraceScope span{*m_content};
+                m_content->paint(painter, m_theme);
+            }
             if(m_popup != nullptr)
             {
+                const TraceScope span{*m_popup};
                 m_popup->arrange({0, 0, size.width, size.height});
                 m_popup->paint(painter, m_theme);
             }

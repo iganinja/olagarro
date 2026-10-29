@@ -1,6 +1,7 @@
 #include <oui/graphics/pixel_backend.h>
 
 #include <oui/file_system.h>
+#include <oui/trace.h>
 #include <oui/utf8.h>
 
 #include <algorithm>
@@ -169,8 +170,9 @@ Size PixelBackend::size() const
 void PixelBackend::render(const std::function<void(Painter&)>& paint)
 {
     m_canvas.set_clip({0, 0, m_canvas.width(), m_canvas.height()});
-    m_canvas.fill({0, 0, m_canvas.width(), m_canvas.height()}, m_style.desktop);
     {
+        const TraceScope span{"oui.paint"};
+        m_canvas.fill({0, 0, m_canvas.width(), m_canvas.height()}, m_style.desktop);
         GraphicalPainter painter{m_canvas, m_style, *m_cell_font, *m_interface_font, *m_symbols, m_content};
         paint(painter);
     }
@@ -180,7 +182,11 @@ void PixelBackend::render(const std::function<void(Painter&)>& paint)
 void PixelBackend::redecorate()
 {
     m_canvas.set_clip({0, 0, m_canvas.width(), m_canvas.height()});
-    decorate(m_canvas, m_style, *m_interface_font);
+    {
+        const TraceScope span{"oui.decorate"};
+        decorate(m_canvas, m_style, *m_interface_font);
+    }
+    const TraceScope span{"oui.present"};
     show(m_canvas);
 }
 

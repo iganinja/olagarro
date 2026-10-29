@@ -220,6 +220,7 @@ add_library(olagarro_oui
     oui/src/text_file.cpp
     oui/src/fuzzy.cpp
     oui/src/quick_pick.cpp
+    oui/src/trace.cpp
     oui/src/translation.cpp
     oui/src/type_ahead.cpp
     oui/src/tree_view.cpp
@@ -692,6 +693,7 @@ if(OLAGARRO_BUILD_TESTS)
              tests/oui/text_search_test.cpp
              tests/oui/process_test.cpp
              tests/oui/script_test.cpp
+            tests/oui/trace_test.cpp
             tests/oui/translation_test.cpp
             tests/oui/turbo_c_theme_test.cpp
             tests/oui/terminal_themes_test.cpp

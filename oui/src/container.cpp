@@ -1,4 +1,5 @@
 #include <oui/container.h>
+#include <oui/trace.h>
 
 #include <stdexcept>
 
@@ -21,6 +22,7 @@ void paint_descendant_overlays(const Container& container, Painter& painter, con
         }
         if(child.is_overlay())
         {
+            const TraceScope span{child};
             child.paint(painter, theme);
             continue;
         }
@@ -109,7 +111,10 @@ void Container::paint(Painter& painter, const Theme& theme) const
         if(child->is_visible() && !child->is_overlay())
         {
             painter.push_clip(child->paint_bounds());
-            child->paint(painter, theme);
+            {
+                const TraceScope span{*child};
+                child->paint(painter, theme);
+            }
             painter.pop_clip();
         }
     }
