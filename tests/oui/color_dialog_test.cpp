@@ -144,6 +144,15 @@ TEST(OuiColorDialogTests, TheArrowsPickInTheSquareWhichStartsFocused)
     EXPECT_EQ(asked.heard.front(), (oui::Color{230, 0, 0}));
 }
 
+TEST(OuiColorDialogTests, AWholePercentOfValueIsTheByteItRoundsTo)
+{
+    // From black, a tenth of the value up: 25.5 of 255, which is 26, though 1 - 0.9 falls a hair short of 0.1.
+    std::vector<Step> steps;
+    add_key(steps, oui::Key::up, 1, true);
+    add_key(steps, oui::Key::enter);
+    EXPECT_EQ(ask({0, 0, 0}, std::move(steps)).answer, (oui::Color{26, 26, 26}));
+}
+
 TEST(OuiColorDialogTests, AClickInTheSquarePicksTheColourThere)
 {
     std::vector<Step> steps;

@@ -49,8 +49,9 @@ struct Hsv
 
 [[nodiscard]] Color to_color(const Rgb& rgb)
 {
+    // A hair added, so a half that arithmetic left a hair short of, as 1 - 0.9 is of 0.1, still rounds up.
     const auto byte{[](double value)
-                    { return static_cast<std::uint8_t>(std::lround(std::clamp(value, 0.0, 1.0) * 255.0)); }};
+                    { return static_cast<std::uint8_t>(std::lround(std::clamp(value, 0.0, 1.0) * 255.0 + 1e-9)); }};
     return {byte(rgb.red), byte(rgb.green), byte(rgb.blue)};
 }
 
