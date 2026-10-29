@@ -95,7 +95,14 @@
       "without its shadow": "sin su sombra"
     },
     "Dialogs": {
+      "&Blue:": "&Azul:",
+      "&Green:": "V&erde:",
+      "&Red:": "&Rojo:",
+      "&Saturation:": "&Saturación:",
+      "&Value:": "&Valor:",
       "Cancel": "Cancelar",
+      "H&ue:": "&Tono:",
+      "He&x:": "He&x:",
       "OK": "Aceptar"
     },
     "DiffView": {

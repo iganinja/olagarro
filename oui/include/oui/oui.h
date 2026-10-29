@@ -10,6 +10,7 @@
 #include <oui/check_list.h>
 #include <oui/clipboard.h>
 #include <oui/color.h>
+#include <oui/color_dialog.h>
 #include <oui/combo_box.h>
 #include <oui/command.h>
 #include <oui/command_line.h>

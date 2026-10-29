@@ -163,6 +163,7 @@ add_library(olagarro_oui
     oui/src/container.cpp
     oui/src/cell_buffer.cpp
     oui/src/file_dialog.cpp
+    oui/src/color_dialog.cpp
     oui/src/combo_box.cpp
     oui/src/dialogs.cpp
     oui/src/dock_layout.cpp
@@ -677,6 +678,7 @@ if(OLAGARRO_BUILD_TESTS)
              tests/oui/suggester_test.cpp
              tests/oui/text_file_test.cpp
              tests/oui/dialogs_test.cpp
+             tests/oui/color_dialog_test.cpp
              tests/oui/file_picker_integration_test.cpp
              tests/oui/list_header_test.cpp
              tests/oui/list_metadata_test.cpp

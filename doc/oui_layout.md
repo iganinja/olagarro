@@ -481,6 +481,7 @@ Ready-made dialogs, each a function that shows it modally and returns the answer
 |----------|--------|------|
 | `message_box(application, title, message, buttons)` | [dialogs.h](../oui/include/oui/dialogs.h) | A message and a row of buttons; the index pressed, or none on Escape |
 | `prompt(application, PromptOptions)` | [dialogs.h](../oui/include/oui/dialogs.h) | One line of text, with a check before accepting and room for more under the field |
+| `ask_color(application, title, start, changed)` | [color_dialog.h](../oui/include/oui/color_dialog.h) | A colour, from a square of saturation and value, a bar of hue, numbers or hexadecimal; `changed` hears it as it goes; none when cancelled |
 | `file_dialog(application, FileDialogOptions)` | [file_dialog.h](../oui/include/oui/file_dialog.h) | A file to open or save, or a folder, with filters |
 | `quick_pick(application, items, QuickPickOptions)` | [quick_pick.h](../oui/include/oui/quick_pick.h) | One of many items, filtered fuzzily or by a wildcard as typed |
 | `show_command_palette(application)` | [command_palette.h](../oui/include/oui/command_palette.h) | A command, which then runs |
