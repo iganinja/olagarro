@@ -3,6 +3,7 @@
 #include <tasks/taskexecutor.h>
 #include <bytestream/bytestream.h>
 #include <concurrency/concurrency.h>
+#include <effects/image.h>
 #include <oui/layout.h>
 #include <oui/script/script_engine.h>
 #include <signalslot/signalslot.h>
@@ -32,8 +33,14 @@ int main()
     std::vector<int> values{1, 2, 3};
     concurrency::concurrent_for(values.begin(), values.end(), [](std::size_t, int& each) { each *= 2; }).get();
 
+    const effects::Image image{2, 2, std::vector<float>(16, 1.0f)};
+    const auto blurred{effects::gaussian_blur(concurrency::TaskPool::shared(), image, 1.0)};
+
     oui::script::ScriptEngine engine;
     engine.run("const answer = 6 * 7;", "consumer.js");
 
-    return value == 2 && layout->child_count() == 0 && stream.read<int>() == 7 && fired == 3 && values[2] == 6 ? 0 : 1;
+    return value == 2 && layout->child_count() == 0 && stream.read<int>() == 7 && fired == 3 && values[2] == 6 &&
+                   blurred.width == 2
+               ? 0
+               : 1;
 }

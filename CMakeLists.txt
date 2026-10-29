@@ -129,6 +129,12 @@ target_compile_features(olagarro_concurrency INTERFACE cxx_std_17)
 target_include_directories(olagarro_concurrency INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/olagarro>)
 target_link_libraries(olagarro_concurrency INTERFACE Threads::Threads)
 
+add_library(olagarro_effects effects/image.cpp)
+add_library(olagarro::Effects ALIAS olagarro_effects)
+set_target_properties(olagarro_effects PROPERTIES EXPORT_NAME Effects)
+olagarro_configure_target(olagarro_effects)
+target_link_libraries(olagarro_effects PUBLIC olagarro::Concurrency)
+
 set(olagarro_oui_platform_sources
     oui/src/clipboard_win32.cpp
     oui/src/crash_reporter_win32.cpp
@@ -403,6 +409,7 @@ set(olagarro_targets
     olagarro_tasks
     olagarro_cttasks
     olagarro_concurrency
+    olagarro_effects
     olagarro_oui
     olagarro_quickjs
     olagarro_oui_script
@@ -431,6 +438,7 @@ if(OLAGARRO_BUILD_MODULES)
 endif()
 install(DIRECTORY
     bytestream
+    effects
     signalslot
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/olagarro
     FILES_MATCHING PATTERN "*.h")
@@ -657,6 +665,10 @@ if(OLAGARRO_BUILD_TESTS)
             olagarro::Concurrency
             GTest::gtest_main)
         gtest_discover_tests(olagarro_concurrency_unit_tests)
+
+        add_executable(olagarro_effects_unit_tests tests/effects/image_test.cpp)
+        target_link_libraries(olagarro_effects_unit_tests PRIVATE olagarro::Effects GTest::gtest_main)
+        gtest_discover_tests(olagarro_effects_unit_tests)
 
        add_executable(olagarro_oui_tests
              tests/oui/layout_test.cpp
