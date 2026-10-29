@@ -563,6 +563,12 @@ Clipboard& Application::clipboard()
 }
 void Application::set_title(std::string_view title)
 {
+    // A window's backend shows the whole window again for a title, so the same one again is not passed on.
+    if(m_title == title)
+    {
+        return;
+    }
+    m_title = title;
     m_backend->set_title(title);
 }
 CommandRegistry& Application::commands()

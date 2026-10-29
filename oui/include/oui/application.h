@@ -13,6 +13,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -226,6 +227,8 @@ class Application
     void focus_by_offset(int offset, bool wrap = true);
 
     std::unique_ptr<Backend> m_backend;
+    // The last title given to the backend; none before the first.
+    std::optional<std::string> m_title;
     Clipboard m_clipboard{m_backend.get()};
     // Before the content, so it outlives it: widgets such as a menu bar unregister their commands when they
     // are destroyed.
