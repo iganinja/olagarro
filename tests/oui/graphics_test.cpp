@@ -768,3 +768,30 @@ TEST(OuiGraphicsTests, ABackendInTheDarkStyleWritesInterfaceTextInNotoSans)
     EXPECT_EQ(text_metrics().width(text), noto);
     EXPECT_TRUE(built_in_interface_font(24.0f, InterfaceFont::noto_sans)->has_glyph(U'ñ'));
 }
+
+TEST(OuiGraphicsTests, ASpacedFontHasItsLeadingHalfAboveAndHalfBelowTheSameGlyphs)
+{
+    auto plain{built_in_cell_font(24)};
+    const auto ascent{plain->ascent()};
+    const auto height{plain->line_height()};
+    const auto width{plain->glyph(U'g').width};
+    const auto spaced{spaced_font(built_in_cell_font(24), 4)};
+    EXPECT_EQ(spaced->line_height(), height + 4);
+    EXPECT_EQ(spaced->ascent(), ascent + 2);
+    EXPECT_EQ(spaced->glyph(U'g').width, width);
+    EXPECT_TRUE(spaced->has_glyph(U'g'));
+}
+
+// Noto Sans fills its line with room for accents above and tails below, so at a row's height its text sat on the row's
+// lower edge; in the dark style the rows are taller than the interface text, which keeps its size.
+TEST(OuiGraphicsTests, InTheDarkStyleARowLeavesRoomAboveAndBelowInterfaceText)
+{
+    auto backend{image_backend({480, 240})};
+    auto& image{*backend};
+    Application application{std::move(backend)};
+    EXPECT_EQ(image.cell_size().height, built_in_interface_font(24.0f)->line_height());
+    image.set_style(dark_style());
+    const auto interface{built_in_interface_font(24.0f, InterfaceFont::noto_sans)->line_height()};
+    EXPECT_EQ(interface, 24);
+    EXPECT_GE(image.cell_size().height, interface + 4);
+}

@@ -338,6 +338,21 @@ class SymbolFont final : public Font
     std::unordered_map<char32_t, GlyphBitmap> m_glyphs;
 };
 
+class SpacedFont final : public Font
+{
+  public:
+    SpacedFont(std::unique_ptr<Font> font, int leading) : m_font{std::move(font)}, m_leading{leading} {}
+
+    const GlyphBitmap& glyph(char32_t character) override { return m_font->glyph(character); }
+    bool has_glyph(char32_t character) const override { return m_font->has_glyph(character); }
+    int ascent() const override { return m_font->ascent() + m_leading / 2; }
+    int line_height() const override { return m_font->line_height() + m_leading; }
+
+  private:
+    std::unique_ptr<Font> m_font;
+    int m_leading;
+};
+
 } // namespace
 
 const GlyphBitmap& FontSet::cell_glyph(char32_t character) const
@@ -411,6 +426,11 @@ std::unique_ptr<Font> psf_font(std::string_view bytes, int scale)
 std::unique_ptr<Font> truetype_font(std::string_view bytes, float pixel_height, int extra_leading)
 {
     return std::make_unique<TrueTypeFont>(bytes, pixel_height, extra_leading);
+}
+
+std::unique_ptr<Font> spaced_font(std::unique_ptr<Font> font, int leading)
+{
+    return std::make_unique<SpacedFont>(std::move(font), leading);
 }
 
 std::unique_ptr<Font> built_in_cell_font(int cell_height)

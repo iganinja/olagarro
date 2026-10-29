@@ -83,6 +83,12 @@ void PixelBackend::load_fonts()
         set_text_metrics(nullptr);
     }
     m_cell_font = built_in_cell_font(level.cell_height);
+    if(m_style.interface_font == InterfaceFont::noto_sans)
+    {
+        // Noto Sans fills the height it is given with room for accents above and tails below, where Jersey 10's lines
+        // hold only its ink; at a row's height its text would sit on the row's lower edge, so the rows are taller.
+        m_cell_font = spaced_font(std::move(m_cell_font), level.cell_height / 6);
+    }
     m_interface_font = built_in_interface_font(level.interface_pixels, m_style.interface_font);
     m_cell = GraphicalPainter::cell_size(*m_cell_font);
     m_symbols = symbol_font(m_cell.width, m_cell.height, m_cell_font->ascent());

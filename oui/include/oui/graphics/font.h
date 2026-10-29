@@ -47,6 +47,8 @@ struct FontSet
 // A TrueType or OpenType font at `pixel_height`, from the top of its ascent to the bottom of its descent. The
 // bytes must outlive the font.
 [[nodiscard]] std::unique_ptr<Font> truetype_font(std::string_view bytes, float pixel_height, int extra_leading = 0);
+// `font` with `leading` more pixels in each line, half above its glyphs and half below, so they stay in the middle.
+[[nodiscard]] std::unique_ptr<Font> spaced_font(std::unique_ptr<Font> font, int leading);
 
 // Arrows, triangles and squares that interface text and cells use and pixel fonts often lack, drawn as shapes for
 // cells of `cell` pixels with the baseline at `ascent`.
