@@ -81,7 +81,10 @@ const std::vector<std::size_t>& TextEdit::line_starts() const
         return m_line_starts;
     }
 
-    m_line_starts = {0};
+    // Not `= {0}`: GCC 13 at -O3 with the address sanitizer (the sanitized tests) sees libstdc++'s copy of a
+    // one-element list read past its end, which it does not (false -Warray-bounds and -Wstringop-overread).
+    m_line_starts.clear();
+    m_line_starts.push_back(0);
     for(std::size_t index{}; index < m_text.size(); ++ index)
     {
         if(m_text.at(index) == '\n')

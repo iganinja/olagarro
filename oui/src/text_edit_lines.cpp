@@ -209,7 +209,16 @@ bool TextEdit::toggle_line_comment(std::string_view prefix)
         else
         {
             const auto at{line->start + indentation};
+            // GCC 12 and 13 at -O3 see an overlapping memcpy inside libstdc++'s string concatenation that cannot
+            // happen (GCC bug 105329, a false -Wrestrict); silenced here only, where it fires.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
             const auto inserted{std::string{prefix} + " "};
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
             text.insert(at, inserted);
             inserted_at(block_start + at, inserted.size());
         }
