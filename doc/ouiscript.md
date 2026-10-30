@@ -48,9 +48,10 @@ working example of a different use:
 
 ## ScriptEngine
 
-A `ScriptEngine` is one QuickJS runtime and context. It runs on the thread that made it, and every call into it must
-come from that thread; work that ends elsewhere, as a process's exit, comes back through `Application::post`. Scripts
-run in strict mode.
+A `ScriptEngine` is one QuickJS runtime and context. It is used by one thread at a time: the one that made it, or
+another it was handed to, as a renderer's engine is passed between the threads of a task pool, the program making sure
+two never use it at once. Each run, call or read from outside a script measures the stack from the thread making it.
+Work that ends elsewhere, as a process's exit, comes back through `Application::post`. Scripts run in strict mode.
 
 ```cpp
 olagarro::oui::script::ScriptEngine engine;

@@ -145,10 +145,21 @@ class Runtime : public std::enable_shared_from_this<Runtime>
         return result;
     }
 
+    // QuickJS measures its stack from where it was told the stack starts: the engine may pass from one thread to
+    // another between uses, so each use from outside a script starts from the calling thread's stack.
+    void enter()
+    {
+        if(depth == 0)
+        {
+            JS_UpdateStackTop(runtime);
+        }
+    }
+
     // Runs `work` against the clock, then whatever promises it settled; the clock starts with the outermost.
     template <typename Work> auto timed(Work&& work)
     {
         const auto outermost{depth == 0};
+        enter();
         if(outermost)
         {
             deadline = std::chrono::steady_clock::now() + limit;
@@ -316,7 +327,12 @@ bool Value::is_regexp() const
 
 std::string Value::to_string() const
 {
-    return m_handle == nullptr ? "undefined" : m_handle->runtime->text_of(m_handle->value);
+    if(m_handle == nullptr)
+    {
+        return "undefined";
+    }
+    m_handle->runtime->enter();
+    return m_handle->runtime->text_of(m_handle->value);
 }
 
 bool Value::to_bool() const
@@ -327,6 +343,10 @@ bool Value::to_bool() const
 double Value::to_number() const
 {
     double result{std::numeric_limits<double>::quiet_NaN()};
+    if(m_handle != nullptr)
+    {
+        m_handle->runtime->enter();
+    }
     if(m_handle != nullptr && JS_ToFloat64(m_handle->runtime->context, &result, m_handle->value) != 0)
     {
         JS_FreeValue(m_handle->runtime->context, JS_GetException(m_handle->runtime->context));
@@ -342,6 +362,7 @@ Value Value::get(std::string_view property) const
     }
     const std::string name{property};
     auto& runtime{*m_handle->runtime};
+    runtime.enter();
     const auto value{JS_GetPropertyStr(runtime.context, m_handle->value, name.c_str())};
     if(JS_IsException(value))
     {
@@ -388,6 +409,7 @@ std::size_t Value::length() const
         return 0;
     }
     std::int64_t length{};
+    m_handle->runtime->enter();
     if(JS_GetLength(m_handle->runtime->context, m_handle->value, &length) != 0)
     {
         throw m_handle->runtime->pending_error();
@@ -402,6 +424,7 @@ Value Value::at(std::size_t index) const
         return {};
     }
     auto& runtime{*m_handle->runtime};
+    runtime.enter();
     const auto value{JS_GetPropertyUint32(runtime.context, m_handle->value, static_cast<std::uint32_t>(index))};
     if(JS_IsException(value))
     {
@@ -418,6 +441,7 @@ std::vector<std::string> Value::keys() const
         return result;
     }
     auto* const context{m_handle->runtime->context};
+    m_handle->runtime->enter();
     JSPropertyEnum* properties{};
     std::uint32_t count{};
     if(JS_GetOwnPropertyNames(context, &properties, &count, m_handle->value, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY) !=

@@ -12,6 +12,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -163,6 +164,51 @@ TEST(OuiScriptEngineTests, ReadsValuesAndCallsBackIntoScripts)
     EXPECT_TRUE(kept.get("flag").to_bool());
     EXPECT_TRUE(kept.get("missing").is_undefined());
     EXPECT_EQ(kept.get("shout").call({engine.string("quiet")}).to_string(), "QUIET");
+}
+
+// An engine made on one thread and used on another, one at a time, as a renderer's on a task pool: QuickJS measured the
+// stack against the thread that made the engine, so every run or call on another thread failed with "Maximum call
+// stack size exceeded".
+TEST(OuiScriptEngineTests, RunsOnAnotherThreadThanTheOneThatMadeIt)
+{
+    oui::script::ScriptEngine engine;
+    oui::script::Value kept;
+    engine.define("keep",
+                  [&kept](const std::vector<oui::script::Value>& arguments)
+                  {
+                      kept = arguments.at(0);
+                      return oui::script::Value{};
+                  });
+    engine.run(R"(function depth(n) { return n === 0 ? 0 : 1 + depth(n - 1); }
+                  keep({depth, name: "far"});)",
+               "made.js");
+    std::string ran;
+    double called{};
+    std::string read;
+    std::string failed;
+    std::thread other{[&]
+                      {
+                          try
+                          {
+                              engine.run("keep(depth(100));", "there.js");
+                              ran = kept.to_string();
+                              engine.run(R"(keep({depth, name: "far"});)", "again.js");
+                              called = kept.get("depth").call({engine.number(200)}).to_number();
+                              read = kept.get("name").to_string();
+                          }
+                          catch(const oui::script::ScriptError& error)
+                          {
+                              failed = error.what();
+                          }
+                      }};
+    other.join();
+    EXPECT_EQ(failed, "");
+    EXPECT_EQ(ran, "100");
+    EXPECT_EQ(called, 200.0);
+    EXPECT_EQ(read, "far");
+    // And back on the thread that made it.
+    engine.run("keep(depth(50));", "back.js");
+    EXPECT_EQ(kept.to_string(), "50");
 }
 
 TEST(OuiScriptEngineTests, ReportsWhereAScriptFailed)

@@ -79,9 +79,9 @@ class Value
     std::shared_ptr<detail::Handle> m_handle;
 };
 
-// Runs JavaScript in QuickJS, with what C++ gives scripts to reach. Scripts run in strict mode, on the
-// thread that made the engine, and each run or call has a time limit, so a script that loops forever is
-// stopped with an error instead of hanging the program.
+// Runs JavaScript in QuickJS, with what C++ gives scripts to reach. Scripts run in strict mode, on one thread at a
+// time (the one that made the engine or another it is handed to), and each run or call has a time limit, so a script
+// that loops forever is stopped with an error instead of hanging the program.
 class ScriptEngine
 {
   public:
