@@ -352,7 +352,9 @@ the widget pressed, wherever the pointer is. If that widget goes away mid-click,
 double click just closed, the rest of the click is dropped instead of landing on whatever is now under the pointer.
 `Widget::set_pointer_handler(handler)` hears each of those events before the widget does, as a key handler hears
 keys: returning true keeps it. A number field so drags its value along its text field, which would select the text.
-`pointer_at` says what the pointer looks like over a widget, an arrow or a line to drag between columns or rows.
+`Widget::set_focus_handler(handler)` hears a widget take the focus and lose it, however it goes, by Tab, a click
+elsewhere or a dialog opening: a program ends there what was typed in a field. `pointer_at` says what the pointer
+looks like over a widget, an arrow or a line to drag between columns or rows.
 
 **Hit testing.** `Container::hit_test` asks its children from the last added to the first, so later children are
 over earlier ones; a disabled widget is not there for the pointer, and what is under it is. Overlays come first.

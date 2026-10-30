@@ -133,6 +133,23 @@ TEST(OuiKeyHandlerTests, AWidgetsKeyHandlerHearsFirstAndCanKeepAKey)
     EXPECT_EQ(heard.size(), 3u);
 }
 
+TEST(OuiFocusHandlerTests, AWidgetsFocusHandlerHearsItTakeAndLoseTheFocus)
+{
+    // As a program ends what was typed in a field, however the focus leaves it: by Tab, or a click elsewhere.
+    Form form;
+    std::vector<bool> heard;
+    form.field->set_focus_handler([&heard](bool focused) { heard.push_back(focused); });
+    ASSERT_TRUE(form.field->is_focused()) << "the window's first field";
+    form.application->focus(*form.field);
+    form.click(*form.field);
+    EXPECT_TRUE(heard.empty()) << "focused again, and clicked in, it neither lost the focus nor took it";
+    form.application->dispatch_event(oui::KeyEvent{oui::Key::tab});
+    EXPECT_EQ(heard, (std::vector<bool>{false}));
+    form.click(*form.field);
+    form.click(*form.quit);
+    EXPECT_EQ(heard, (std::vector<bool>{false, true, false}));
+}
+
 TEST(OuiMenuBarTests, AMenuBarWithNoMenusTakesNoRoom)
 {
     oui::CommandRegistry commands;

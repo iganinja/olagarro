@@ -157,9 +157,18 @@ void Widget::set_parent(Container* const parent)
 {
     m_parent = parent;
 }
+void Widget::set_focus_handler(std::function<void(bool)> handler)
+{
+    m_focus_handler = std::move(handler);
+}
 void Widget::set_focused(bool focused)
 {
+    const auto changed{m_is_focused != focused};
     m_is_focused = focused;
+    if(changed && m_focus_handler)
+    {
+        m_focus_handler(focused);
+    }
 }
 
 } // namespace olagarro::oui

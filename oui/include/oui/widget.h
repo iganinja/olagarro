@@ -75,6 +75,9 @@ class Widget
     void set_pointer_handler(std::function<bool(const MouseEvent&)> handler);
     // Whether its pointer handler kept `event`.
     [[nodiscard]] bool pointer_handler_keeps(const Event& event) const;
+    // What hears the widget take the focus, with true, and lose it, with false, however that happens: Tab, a click
+    // elsewhere, a dialog opening. A program ends there what was typed in a field, as one undo step for all of it.
+    void set_focus_handler(std::function<void(bool)> handler);
 
     void set_id(std::string id);
 
@@ -160,6 +163,7 @@ class Widget
     bool m_is_enabled{true};
     std::function<bool(const Event&)> m_key_handler;
     std::function<bool(const MouseEvent&)> m_pointer_handler;
+    std::function<void(bool)> m_focus_handler;
     std::string m_id;
     std::string m_tooltip;
     std::shared_ptr<void> m_lifetime{std::make_shared<int>(0)};

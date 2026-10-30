@@ -1433,7 +1433,14 @@ void Application::focus_previous()
 }
 void Application::set_focus(Widget* const widget)
 {
-    if(m_focused != nullptr && !m_focused_lifetime.expired() && m_content != nullptr && m_content->contains(m_focused))
+    const auto valid{m_focused != nullptr && !m_focused_lifetime.expired() && m_content != nullptr &&
+                     m_content->contains(m_focused)};
+    // Given to what has it, as a click in the field typed in, the focus neither leaves nor comes.
+    if(valid && widget == m_focused)
+    {
+        return;
+    }
+    if(valid)
     {
         m_focused->set_focused(false);
     }
