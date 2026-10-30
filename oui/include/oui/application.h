@@ -169,7 +169,8 @@ class Application
     }
     [[nodiscard]] bool reports_modifiers() const;
     // Says what a CloseRequestEvent does, such as asking about unsaved work before quitting; without it the
-    // application quits.
+    // application quits. A request that comes while the callback is still running, as a question it shows runs
+    // frames, is the same request and is dropped.
     void on_close_requested(std::function<void()> callback);
     // After Ctrl and the wheel made everything bigger or smaller, for a program that keeps the size it was left at.
     void on_zoomed(std::function<void()> callback);
@@ -262,6 +263,8 @@ class Application
     olagarro::signal_slot::Signal<bool> m_terminal_focus_changed;
     olagarro::signal_slot::Signal<ShutdownEvent::Reason> m_shutdown;
     std::function<void()> m_close_requested;
+    // While m_close_requested runs.
+    bool m_answering_close{false};
     std::function<void()> m_zoomed;
     bool m_wheel_zooms{true};
     olagarro::signal_slot::Signal<ModifiersEvent> m_modifiers_changed;

@@ -709,6 +709,7 @@ if(OLAGARRO_BUILD_TESTS)
              tests/oui/script_test.cpp
             tests/oui/trace_test.cpp
             tests/oui/title_test.cpp
+            tests/oui/close_request_test.cpp
             tests/oui/translation_test.cpp
             tests/oui/turbo_c_theme_test.cpp
             tests/oui/terminal_themes_test.cpp

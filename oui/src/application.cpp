@@ -718,8 +718,20 @@ void Application::deliver_event(const Event& event)
     }
     if(std::holds_alternative<CloseRequestEvent>(event))
     {
+        if(m_answering_close)
+        {
+            return;
+        }
         if(m_close_requested)
         {
+            // Let go of however the callback ends.
+            struct Answering
+            {
+                bool& flag;
+                ~Answering() { flag = false; }
+            };
+            m_answering_close = true;
+            const Answering answering{m_answering_close};
             m_close_requested();
         }
         else
