@@ -310,7 +310,9 @@ same key, so here it is, as the code does it:
 8. An open overlay that takes the keyboard, as an open menu, hears the key, up through its parents.
 9. Reserved commands run (outside dialogs).
 10. A key the focused widget claims as its own, through `Widget::claims_key`, goes to it: a file panel's F5, a
-    terminal's Ctrl+W.
+    terminal's Ctrl+W, the arrows of a field, a number field, an open drop-down, a slider, a table or a tree, which
+    a program may bind elsewhere as a video editor moves its playhead with them. A field's key handler that uses
+    more keys says which with `LineEdit::claim_keys`.
 11. The application's shortcuts run, outside dialogs and while no overlay holds the keyboard.
 12. The focused widget hears it: first its key handler and then `handle_event`, then each of its parents the same
     way.

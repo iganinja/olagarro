@@ -158,6 +158,8 @@ class Table : public Container
     [[nodiscard]] bool is_focusable() const override;
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     bool handle_event(const Event& event) override;
+    // The arrows, the page keys, Home and End move along its rows before any shortcut of the application.
+    [[nodiscard]] bool claims_key(const Event& event) const override;
     void arrange(const Rect& bounds) override;
     void paint(Painter& painter, const Theme& theme) const override;
     [[nodiscard]] bool is_selected_child(const Widget& child) const override;

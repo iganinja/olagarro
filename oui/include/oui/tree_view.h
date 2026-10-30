@@ -61,6 +61,8 @@ class TreeView final : public Widget
     }
 
     bool handle_event(const Event& event) override;
+    // The arrows and the page keys move along its nodes before any shortcut of the application.
+    [[nodiscard]] bool claims_key(const Event& event) const override;
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     void arrange(const Rect& bounds) override;
     void paint(Painter& painter, const Theme& theme) const override;

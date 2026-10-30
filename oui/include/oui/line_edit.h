@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace olagarro::oui
 {
@@ -47,6 +48,9 @@ class LineEdit final : public Widget
     // What is typed, and the keys that edit it and move along it, are the field's before any shortcut of the
     // application: Backspace in a field deletes, whatever the application binds Backspace to.
     [[nodiscard]] bool claims_key(const Event& event) const override;
+    // Keys pressed alone that the field keeps too, for what its key handler does with them, as a number field's
+    // arrows step its number.
+    void claim_keys(std::vector<Key> keys);
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     void paint(Painter& painter, const Theme& theme) const override;
 
@@ -71,6 +75,7 @@ class LineEdit final : public Widget
     std::size_t m_anchor{};
     bool m_mouse_selecting{false};
     bool m_password{false};
+    std::vector<Key> m_claimed;
     // The byte the field shows from, when its text is wider than it; painting keeps the cursor in sight.
     mutable std::size_t m_first_shown{};
     olagarro::signal_slot::Signal<std::string_view> m_changed;

@@ -104,6 +104,10 @@ bool LineEdit::claims_key(const Event& event) const
     {
         return false;
     }
+    if(!key->control && std::find(m_claimed.begin(), m_claimed.end(), key->key) != m_claimed.end())
+    {
+        return true;
+    }
     switch(key->key)
     {
     // With Ctrl too: a word at a time, or the start and end of the text.
@@ -119,6 +123,11 @@ bool LineEdit::claims_key(const Event& event) const
     default:
         return false;
     }
+}
+
+void LineEdit::claim_keys(std::vector<Key> keys)
+{
+    m_claimed = std::move(keys);
 }
 
 bool LineEdit::handle_event(const Event& event)

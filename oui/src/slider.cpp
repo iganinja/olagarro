@@ -108,6 +108,29 @@ double Slider::value_at(const MouseEvent& mouse) const
     return m_minimum + std::clamp(fraction, 0.0, 1.0) * (m_maximum - m_minimum);
 }
 
+bool Slider::claims_key(const Event& event) const
+{
+    const auto* const key{std::get_if<KeyEvent>(&event)};
+    if(key == nullptr || key->control || key->alt || !is_enabled())
+    {
+        return false;
+    }
+    switch(key->key)
+    {
+    case Key::left:
+    case Key::right:
+    case Key::up:
+    case Key::down:
+    case Key::page_up:
+    case Key::page_down:
+    case Key::home:
+    case Key::end:
+        return true;
+    default:
+        return false;
+    }
+}
+
 bool Slider::handle_event(const Event& event)
 {
     if(!is_enabled())

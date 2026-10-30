@@ -66,6 +66,7 @@ NumberField::NumberField()
                 return false;
             }
         });
+    m_field->claim_keys({Key::up, Key::down, Key::page_up, Key::page_down});
     m_field->set_pointer_handler([this](const MouseEvent& mouse) { return drag_with(mouse); });
     show_value();
 }

@@ -33,6 +33,8 @@ class ComboBox final : public Widget
 
     [[nodiscard]] bool is_focusable() const override;
     bool handle_event(const Event& event) override;
+    // While open, the arrows, Home and End choose among its options before any shortcut of the application.
+    [[nodiscard]] bool claims_key(const Event& event) const override;
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     [[nodiscard]] Rect paint_bounds() const override;
     [[nodiscard]] Widget* hit_test(int x, int y) override;

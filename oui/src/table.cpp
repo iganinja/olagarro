@@ -428,6 +428,29 @@ bool Table::is_focusable() const
     return true;
 }
 
+bool Table::claims_key(const Event& event) const
+{
+    const auto* const key{std::get_if<KeyEvent>(&event)};
+    if(key == nullptr || key->control || key->alt || row_count() == 0)
+    {
+        return false;
+    }
+    switch(key->key)
+    {
+    case Key::up:
+    case Key::down:
+    case Key::left:
+    case Key::right:
+    case Key::page_up:
+    case Key::page_down:
+    case Key::home:
+    case Key::end:
+        return true;
+    default:
+        return false;
+    }
+}
+
 bool Table::handle_event(const Event& event)
 {
     if(const auto* const text{std::get_if<TextEvent>(&event)};

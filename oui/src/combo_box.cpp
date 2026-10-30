@@ -52,6 +52,13 @@ void ComboBox::choose(std::size_t index)
     }
 }
 
+bool ComboBox::claims_key(const Event& event) const
+{
+    const auto* const key{std::get_if<KeyEvent>(&event)};
+    return key != nullptr && m_expanded && !key->control && !key->alt &&
+           (key->key == Key::up || key->key == Key::down || key->key == Key::home || key->key == Key::end);
+}
+
 bool ComboBox::handle_event(const Event& event)
 {
     if(m_options.empty())

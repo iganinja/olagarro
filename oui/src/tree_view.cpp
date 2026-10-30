@@ -109,6 +109,27 @@ void TreeView::select(const TreeNode& node)
     }
 }
 
+bool TreeView::claims_key(const Event& event) const
+{
+    const auto* const key{std::get_if<KeyEvent>(&event)};
+    if(key == nullptr || key->control || key->alt || m_nodes.empty())
+    {
+        return false;
+    }
+    switch(key->key)
+    {
+    case Key::up:
+    case Key::down:
+    case Key::left:
+    case Key::right:
+    case Key::page_up:
+    case Key::page_down:
+        return true;
+    default:
+        return false;
+    }
+}
+
 bool TreeView::handle_event(const Event& event)
 {
     const auto* const before{selected()};

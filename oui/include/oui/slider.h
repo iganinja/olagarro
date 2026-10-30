@@ -38,6 +38,8 @@ class Slider final : public Widget
     void paint(Painter& painter, const Theme& theme) const override;
     [[nodiscard]] bool is_focusable() const override;
     bool handle_event(const Event& event) override;
+    // The arrows, the page keys, Home and End move it before any shortcut of the application.
+    [[nodiscard]] bool claims_key(const Event& event) const override;
     [[nodiscard]] bool takes_raw_pointer() const override;
 
   private:
