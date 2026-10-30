@@ -196,6 +196,10 @@ class Application
     // pointer. Escape cancels it, the rest of the click then heard by nobody.
     void begin_drag(DragPayload payload);
     [[nodiscard]] bool is_dragging() const;
+    // Whether the pointer, where it was last heard, is over `widget` or something in it; false before it was heard.
+    // A widget that waits for the pointer to rest on it, to show something, asks once the wait is over, as it hears
+    // nothing when the pointer goes on to another.
+    [[nodiscard]] bool is_under_pointer(const Widget& widget) const;
     void run_frame();
     // Asks again what the pointer should look like where it is, as when what is under it changed without its moving:
     // a program on the desktop answers after the pointer came over its window.

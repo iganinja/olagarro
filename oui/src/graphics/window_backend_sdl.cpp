@@ -577,6 +577,10 @@ class WindowBackend final : public DesktopWindow
             return SDL_SYSTEM_CURSOR_EW_RESIZE;
         case Pointer::resize_rows:
             return SDL_SYSTEM_CURSOR_NS_RESIZE;
+        case Pointer::resize_down_right:
+            return SDL_SYSTEM_CURSOR_NWSE_RESIZE;
+        case Pointer::resize_up_right:
+            return SDL_SYSTEM_CURSOR_NESW_RESIZE;
         case Pointer::crosshair:
             return SDL_SYSTEM_CURSOR_CROSSHAIR;
         case Pointer::hand:

@@ -5314,6 +5314,66 @@ TEST(OuiWidgetTests, ThePointerIsAskedAgainWhenWhatIsUnderItChanges)
     EXPECT_EQ(screen->pointer(), oui::Pointer::resize_rows);
 }
 
+namespace
+{
+
+// A widget that tells its parts by where it heard the pointer last, as one drawing its own pixels does: the left half
+// pulls up to the right, the right half down to the right.
+class HeardPointer final : public oui::Widget
+{
+  public:
+    [[nodiscard]] oui::Size measure(const oui::Constraints& constraints) const override
+    {
+        return constraints.constrain({constraints.max_width, constraints.max_height});
+    }
+    bool handle_event(const oui::Event& event) override
+    {
+        if(const auto* const mouse{std::get_if<oui::MouseEvent>(&event)})
+        {
+            m_wanted = mouse->x >= 10 ? oui::Pointer::resize_down_right : oui::Pointer::resize_up_right;
+            return true;
+        }
+        return false;
+    }
+    [[nodiscard]] oui::Pointer pointer_at(oui::Point) const override { return m_wanted; }
+
+  private:
+    oui::Pointer m_wanted{oui::Pointer::arrow};
+};
+
+} // namespace
+
+TEST(OuiWidgetTests, ThePointerIsAskedOnceTheWidgetUnderItHeardWhereItIs)
+{
+    auto backend{oui::scripted_backend({}, {20, 5})};
+    auto* const screen{backend.get()};
+    oui::Application application{std::move(backend)};
+    application.set_content(std::make_unique<HeardPointer>());
+    application.render();
+    application.dispatch_event(oui::MouseEvent{12, 2, false, 0, false, false, true});
+    EXPECT_EQ(screen->pointer(), oui::Pointer::resize_down_right);
+    application.dispatch_event(oui::MouseEvent{3, 2, false, 0, false, false, true});
+    EXPECT_EQ(screen->pointer(), oui::Pointer::resize_up_right);
+}
+
+TEST(OuiApplicationTests, ItTellsWhetherThePointerIsOverAWidget)
+{
+    oui::Application application{oui::scripted_backend({}, {20, 5})};
+    auto grid{oui::grid()};
+    grid->set_columns({oui::Length::fill(), oui::Length::fill()});
+    auto& left{grid->add(std::make_unique<ChangingPointer>())};
+    auto& right{grid->add(std::make_unique<ChangingPointer>())};
+    application.set_content(std::move(grid));
+    application.render();
+    EXPECT_FALSE(application.is_under_pointer(left)) << "before the pointer was heard";
+    application.dispatch_event(oui::MouseEvent{2, 2, false, 0, false, false, true});
+    EXPECT_TRUE(application.is_under_pointer(left));
+    EXPECT_FALSE(application.is_under_pointer(right));
+    application.dispatch_event(oui::MouseEvent{17, 2, false, 0, false, false, true});
+    EXPECT_FALSE(application.is_under_pointer(left));
+    EXPECT_TRUE(application.is_under_pointer(right));
+}
+
 TEST(OuiApplicationTests, TheFocusGoesToWhatIsNearestOnTheSideAnArrowSays)
 {
     oui::Application application{oui::scripted_backend({}, {40, 10})};

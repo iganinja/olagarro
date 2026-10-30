@@ -666,6 +666,23 @@ bool Application::is_dragging() const
     return m_drag.has_value();
 }
 
+bool Application::is_under_pointer(const Widget& widget) const
+{
+    if(m_content == nullptr || !m_pointer_position)
+    {
+        return false;
+    }
+    for(const auto* under{m_content->hit_test(m_pointer_position->x, m_pointer_position->y)}; under != nullptr;
+        under = under->parent())
+    {
+        if(under == &widget)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Application::handle_drag(const Event& event)
 {
     if(!m_drag)
@@ -905,12 +922,7 @@ void Application::deliver_event(const Event& event)
         {
             if(widget->pointer_handler_keeps(counted_event) || widget->handle_event(counted_event))
             {
-                if(mouse->released)
-                {
-                    m_mouse_capture = nullptr;
-                    m_mouse_capture_lifetime.reset();
-                }
-                return;
+                break;
             }
         }
         if(mouse->released)
@@ -918,6 +930,9 @@ void Application::deliver_event(const Event& event)
             m_mouse_capture = nullptr;
             m_mouse_capture_lifetime.reset();
         }
+        // Asked again now the widget heard where the pointer is, as one that tells its parts by the pixel it heard
+        // last, and now a release let go of what was dragged.
+        update_pointer();
         return;
     }
     if(const auto* const key{std::get_if<KeyEvent>(&event)})

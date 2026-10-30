@@ -71,6 +71,10 @@ enum class Pointer
     arrow,
     resize_columns,
     resize_rows,
+    // Arrows to the top left and the bottom right, as over a box's corner that is pulled that way, and to the top
+    // right and the bottom left.
+    resize_down_right,
+    resize_up_right,
     crosshair,
     // An open hand, over something that can be grabbed and moved, and the hand closed while it moves it.
     hand,

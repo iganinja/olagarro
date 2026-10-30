@@ -360,7 +360,11 @@ nobody's. `is_dragging` says whether one goes on.
 keys: returning true keeps it. A number field so drags its value along its text field, which would select the text.
 `Widget::set_focus_handler(handler)` hears a widget take the focus and lose it, however it goes, by Tab, a click
 elsewhere or a dialog opening: a program ends there what was typed in a field. `pointer_at` says what the pointer
-looks like over a widget, an arrow or a line to drag between columns or rows.
+looks like over a widget, an arrow, a line to drag between columns or rows, a corner to pull either way, a hand, a
+cross or arrows four ways; it is asked after the widget heard the event, so one that tells its parts by the pixel it
+heard last answers for where the pointer is now. `Application::is_under_pointer(widget)` says whether the pointer,
+where it was last heard, is over a widget: one that shows something once the pointer rested on it asks when the wait
+is over, since it hears nothing when the pointer goes on to another.
 
 **Hit testing.** `Container::hit_test` asks its children from the last added to the first, so later children are
 over earlier ones; a disabled widget is not there for the pointer, and what is under it is. Overlays come first.
