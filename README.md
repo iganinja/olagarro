@@ -16,7 +16,8 @@ OUI Code, a text editor made with OUI, the same program in a terminal and in a w
 - `Tasks`: dynamic task composition.
 - `CTTasks`: static task composition for small binaries.
 - `Concurrency`: standard-library-based task pool, cancelling and `concurrent_for`.
-- `Effects`: the pieces picture effects are made of, blurs, noise, tables, colour and blend modes, on the task pool.
+- `Effects`: the pieces picture and sound effects are made of: blurs, noise, tables, colour and blend modes, on the
+  task pool; gain, filters, an equaliser, echo, bitcrush, mono and crackle, cut into blocks exactly by their tails.
 - `OUI`: a small UI toolkit for terminals, desktop windows and the whole screen.
 - `OUIScript`: JavaScript for OUI programs, run by QuickJS.
 

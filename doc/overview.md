@@ -23,7 +23,7 @@ installed package, where `find_package(Olagarro)` gives it to a consumer by its 
 | `olagarro::Tasks` | Tasks composed at run time: serial, parallel, select, repeat, wait, trigger and others, driven by a `TaskExecutor` one update at a time. [Tasks](tasks_library.md) |
 | `olagarro::CTTasks` | The same idea composed at compile time, with templates: no virtual dispatch and no heap allocation, for small binaries. [Tasks](tasks_library.md) |
 | `olagarro::Concurrency` | Header-only: a task pool whose work can be cancelled, "latest wins" requests, and `concurrent_for`, which spreads a range over the pool and returns a future. [Concurrency](concurrency.md) |
-| `olagarro::Effects` | The pieces picture effects are made of: blurs, noise, tables, colour changes, vignettes and blend modes, on linear premultiplied floats, their rows shared over a task pool. [Effects](effects.md) |
+| `olagarro::Effects` | The pieces picture effects are made of: blurs, noise, tables, colour changes, vignettes and blend modes, on linear premultiplied floats, their rows shared over a task pool; and those sound effects are made of: gain, filters, an equaliser, echo, bitcrush, mono and crackle, on stereo floats, each with the tail that lets a block be cut anywhere. [Effects](effects.md) |
 | `olagarro::OUI` | The UI toolkit: widgets, layout, commands, dialogs, text editing, processes, pseudo-terminals, translations, settings, and the terminal backend. |
 | `olagarro::OUIGraphics` | OUI in pixels: a canvas, the fonts built into the program, the graphical painter, the full-screen DRM backend and the pixel side of OUI's desktop. |
 | `olagarro::OUIWindow` | A desktop window and the system's sound through SDL3, linked statically. Only with `OLAGARRO_OUI_WINDOW=ON`, and not installed: SDL3 is fetched and built into it, and is no package of its own to depend on. |
@@ -93,7 +93,7 @@ which runs on Concurrency's pool: OUI uses only SignalSlot of them, for its widg
 
 | Folder | What it holds |
 |--------|---------------|
-| `bytestream/`, `signalslot/`, `concurrency/`, `effects/` | The small libraries, a header (and for ByteStream and Effects a source) each. |
+| `bytestream/`, `signalslot/`, `concurrency/`, `effects/` | The small libraries, a header each (Effects two, for pictures and sounds), and for ByteStream and Effects their sources. |
 | `tasks/`, `cttasks/` | Tasks and CTTasks: headers in `include/tasks` and `include/cttasks`, sources in `src/`. |
 | `oui/include/oui` | OUI's public headers, one for each widget or part; `oui/oui.h` includes the common ones. `graphics/` and `script/` hold the headers of oui_graphics, oui_window and oui_script. |
 | `oui/src` | One source for each widget or part, with `_posix` and `_win32` sources for what differs by system (terminal, processes, pseudo-terminals, files, clipboard, settings, crash reports, language); `graphics/` and `script/` as above. A big class takes several sources named after it, as `text_edit.cpp`, `text_edit_input.cpp`, `text_edit_view.cpp`. |

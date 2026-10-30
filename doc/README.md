@@ -44,4 +44,4 @@ Code's architecture](https://github.com/iganinja/oui_code/blob/master/doc/oui_co
   games and animations.
 - [Concurrency](concurrency.md): the task pool, cancelling, `concurrent_for`, and CTTasks, tasks composed at
   compile time.
-- [Effects](effects.md): the pieces picture effects are made of, on the task pool.
+- [Effects](effects.md): the pieces picture effects are made of, on the task pool, and those sound effects are made of.
