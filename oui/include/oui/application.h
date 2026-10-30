@@ -80,6 +80,14 @@ enum class KeyModeAnswer
     end_and_pass
 };
 
+// What a drag between widgets carries: the paths the widget it is let go on hears as dropped files, and the text
+// shown by the pointer while it goes.
+struct DragPayload
+{
+    std::vector<std::string> paths;
+    std::string text;
+};
+
 class Application
 {
   public:
@@ -181,6 +189,13 @@ class Application
     // commands zoom.in, zoom.out and zoom.reset do, on Ctrl and plus, minus or 0; false where it cannot.
     bool zoom(int step);
     void dispatch_event(const Event& event);
+    // Carries `payload` from the widget the left button was pressed on, which calls this while the button is held, as
+    // a move begins. Until the button is let go the moves and the release are the drag's, not that widget's: the widget
+    // under the pointer hears DropEvents as for files from the system, `moving`, then `dropped` with the paths, or
+    // `left` when the drag goes on to another or is let go where nothing takes it, and the payload's text shows by the
+    // pointer. Escape cancels it, the rest of the click then heard by nobody.
+    void begin_drag(DragPayload payload);
+    [[nodiscard]] bool is_dragging() const;
     void run_frame();
     // Asks again what the pointer should look like where it is, as when what is under it changed without its moving:
     // a program on the desktop answers after the pointer came over its window.
@@ -205,6 +220,8 @@ class Application
     void deliver_event(const Event& event);
     // Files from the system to the widget under them, and their leaving to the one that heard them before.
     void deliver_drop(const DropEvent& drop);
+    // A mouse event or Escape during a drag between widgets, as begin_drag says; true when it was the drag's.
+    [[nodiscard]] bool handle_drag(const Event& event);
     void show_pointer(const Widget* target);
     void hide_tooltip();
     bool edit_focused_field(const Event& event);
@@ -242,6 +259,8 @@ class Application
     Widget* m_mouse_capture{};
     // The widget that took files carried from the system as they moved over it, to tell when they leave it.
     WidgetRef<Widget> m_drop_target;
+    // What a drag between widgets carries, while one goes on.
+    std::optional<DragPayload> m_drag;
     std::unique_ptr<Widget> m_popup;
     std::function<void()> m_popup_closed;
     // Popups closed while an event was being handled, perhaps their own, kept until the next frame.

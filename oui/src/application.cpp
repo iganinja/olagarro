@@ -651,6 +651,68 @@ void Application::deliver_drop(const DropEvent& drop)
     m_drop_target = drop.phase == DropEvent::Phase::moving ? taker : nullptr;
 }
 
+void Application::begin_drag(DragPayload payload)
+{
+    if(m_pointer_position)
+    {
+        set_drag_image(DragImage{payload.text, *m_pointer_position});
+    }
+    m_drag = std::move(payload);
+    m_needs_render = true;
+}
+
+bool Application::is_dragging() const
+{
+    return m_drag.has_value();
+}
+
+bool Application::handle_drag(const Event& event)
+{
+    if(!m_drag)
+    {
+        return false;
+    }
+    const auto end{[this]
+                   {
+                       m_drag.reset();
+                       set_drag_image(std::nullopt);
+                       m_mouse_capture = nullptr;
+                       m_mouse_capture_lifetime.reset();
+                       m_needs_render = true;
+                   }};
+    if(const auto* const key{std::get_if<KeyEvent>(&event)}; key != nullptr && key->key == Key::escape)
+    {
+        end();
+        deliver_drop(DropEvent{DropEvent::Phase::left});
+        m_discard_mouse_until_release = true;
+        return true;
+    }
+    const auto* const mouse{std::get_if<MouseEvent>(&event)};
+    if(mouse == nullptr || mouse->wheel_delta != 0)
+    {
+        return false;
+    }
+    m_pointer_position = Point{mouse->x, mouse->y};
+    if(mouse->dragging)
+    {
+        set_drag_image(DragImage{m_drag->text, {mouse->x, mouse->y}, mouse->cell_offset});
+        m_needs_render = true;
+        deliver_drop(DropEvent{DropEvent::Phase::moving, mouse->x, mouse->y, {}, mouse->pixel});
+        return true;
+    }
+    if(mouse->released)
+    {
+        auto paths{std::move(m_drag->paths)};
+        end();
+        deliver_drop(DropEvent{DropEvent::Phase::dropped, mouse->x, mouse->y, std::move(paths), mouse->pixel});
+        return true;
+    }
+    // The button was let go where nobody heard it, as outside the window: the drag is over and the event is as any.
+    end();
+    deliver_drop(DropEvent{DropEvent::Phase::left});
+    return false;
+}
+
 bool Application::is_wanted(const Event& event)
 {
     const auto* const mouse{std::get_if<MouseEvent>(&event)};
@@ -743,6 +805,10 @@ void Application::deliver_event(const Event& event)
     if(const auto* const drop{std::get_if<DropEvent>(&event)})
     {
         deliver_drop(*drop);
+        return;
+    }
+    if(handle_drag(event))
+    {
         return;
     }
     ensure_focus_is_valid();

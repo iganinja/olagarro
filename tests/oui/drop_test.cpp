@@ -2,6 +2,7 @@
 #include <oui/event.h>
 #include <oui/layout.h>
 #include <oui/scripted_backend.h>
+#include <oui/text_metrics.h>
 #include <oui/window.h>
 
 #include <gtest/gtest.h>
@@ -156,6 +157,151 @@ TEST(OuiDropTests, ADropOnNoWidgetIsIgnored)
     screen.application->run_frame();
     EXPECT_TRUE(screen.left->heard.empty());
     EXPECT_TRUE(screen.right->heard.empty());
+}
+
+namespace
+{
+
+// A widget of a fixed width that starts a drag of `payload` when the mouse pressed on it moves, and keeps the mouse
+// events it hears.
+class DragSource final : public oui::Widget
+{
+  public:
+    DragSource(oui::Application& application, oui::DragPayload payload)
+        : m_application{application}, m_payload{std::move(payload)}
+    {
+    }
+
+    [[nodiscard]] oui::Size measure(const oui::Constraints& constraints) const override
+    {
+        return {10, constraints.max_height};
+    }
+    bool handle_event(const oui::Event& event) override
+    {
+        const auto* const mouse{std::get_if<oui::MouseEvent>(&event)};
+        if(mouse == nullptr)
+        {
+            return false;
+        }
+        heard.push_back(*mouse);
+        if(mouse->dragging && !m_application.is_dragging())
+        {
+            m_application.begin_drag(m_payload);
+        }
+        return mouse->pressed || mouse->dragging || mouse->released;
+    }
+
+    std::vector<oui::MouseEvent> heard;
+
+  private:
+    oui::Application& m_application;
+    oui::DragPayload m_payload;
+};
+
+// A source ten cells wide on the left and a recorder that takes drops on the right, twenty wide.
+struct DragScreen
+{
+    DragScreen()
+    {
+        application = std::make_unique<oui::Application>(oui::scripted_backend({}, {40, 12}));
+        auto window{oui::window("Drags")};
+        window->set_border(oui::WindowBorder::none);
+        auto& sides{oui::row(*window)};
+        auto made_source{std::make_unique<DragSource>(
+            *application, oui::DragPayload{{"/home/someone/beach.png", "/home/someone/sea.png"}, "2 files"})};
+        source = made_source.get();
+        sides.add(std::move(made_source));
+        auto made_target{std::make_unique<DropRecorder>(20, true)};
+        target = made_target.get();
+        sides.add(std::move(made_target));
+        application->set_window(std::move(window));
+        application->render();
+    }
+
+    void press(int x, int y) const { application->dispatch_event(oui::MouseEvent{x, y, true}); }
+    void drag(int x, int y) const
+    {
+        oui::MouseEvent move{x, y, false};
+        move.dragging = true;
+        application->dispatch_event(move);
+    }
+    void release(int x, int y) const
+    {
+        oui::MouseEvent up{x, y, false};
+        up.released = true;
+        application->dispatch_event(up);
+    }
+
+    std::unique_ptr<oui::Application> application;
+    DragSource* source{};
+    DropRecorder* target{};
+};
+
+} // namespace
+
+TEST(OuiDropTests, AWidgetStartsADragThatAnotherHearsMoveAndDropWithItsPaths)
+{
+    DragScreen screen;
+    screen.press(3, 3);
+    screen.drag(4, 3);
+    ASSERT_TRUE(screen.application->is_dragging());
+    ASSERT_TRUE(oui::drag_image().has_value());
+    EXPECT_EQ(oui::drag_image()->text, "2 files");
+
+    screen.drag(15, 4);
+    screen.drag(16, 4);
+    ASSERT_EQ(screen.target->heard.size(), 2u);
+    EXPECT_EQ(screen.target->heard[0].phase, oui::DropEvent::Phase::moving);
+    EXPECT_EQ(screen.target->heard[1].x, 16);
+    EXPECT_TRUE(screen.target->heard[1].paths.empty());
+    EXPECT_EQ(oui::drag_image()->position.x, 16);
+
+    const auto heard_by_source{screen.source->heard.size()};
+    screen.release(17, 5);
+    ASSERT_EQ(screen.target->heard.size(), 3u);
+    const auto& drop{screen.target->heard[2]};
+    EXPECT_EQ(drop.phase, oui::DropEvent::Phase::dropped);
+    EXPECT_EQ(drop.x, 17);
+    EXPECT_EQ(drop.y, 5);
+    EXPECT_EQ(drop.paths, (std::vector<std::string>{"/home/someone/beach.png", "/home/someone/sea.png"}));
+    // The moves and the release went to the drag, not to the widget that started it.
+    EXPECT_EQ(screen.source->heard.size(), heard_by_source);
+    EXPECT_FALSE(screen.application->is_dragging());
+    EXPECT_FALSE(oui::drag_image().has_value());
+}
+
+TEST(OuiDropTests, EscapeCancelsADragAndTheWidgetUnderItHearsItLeave)
+{
+    DragScreen screen;
+    screen.press(3, 3);
+    screen.drag(4, 3);
+    screen.drag(15, 4);
+    ASSERT_EQ(screen.target->heard.size(), 1u);
+
+    screen.application->dispatch_event(oui::KeyEvent{oui::Key::escape});
+    EXPECT_FALSE(screen.application->is_dragging());
+    EXPECT_FALSE(oui::drag_image().has_value());
+    ASSERT_EQ(screen.target->heard.size(), 2u);
+    EXPECT_EQ(screen.target->heard[1].phase, oui::DropEvent::Phase::left);
+
+    // The rest of that click is nobody's: the release drops nothing.
+    const auto heard_by_source{screen.source->heard.size()};
+    screen.drag(16, 4);
+    screen.release(16, 4);
+    EXPECT_EQ(screen.target->heard.size(), 2u);
+    EXPECT_EQ(screen.source->heard.size(), heard_by_source);
+}
+
+TEST(OuiDropTests, ADragLetGoOverNoWidgetDropsNothingAndTheLastHearsItLeave)
+{
+    DragScreen screen;
+    screen.press(3, 3);
+    screen.drag(4, 3);
+    screen.drag(15, 4);
+    screen.release(35, 4);
+    ASSERT_EQ(screen.target->heard.size(), 2u);
+    EXPECT_EQ(screen.target->heard[1].phase, oui::DropEvent::Phase::left);
+    EXPECT_FALSE(screen.application->is_dragging());
 }
 
 TEST(OuiDropTests, ADropAWidgetDoesNotTakeGoesToWhatHoldsIt)

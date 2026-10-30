@@ -299,7 +299,8 @@ same key, so here it is, as the code does it:
 2. `ShutdownEvent`, `ModifiersEvent` and `CloseRequestEvent` are the application's, and go no further. A
    `DropEvent` goes to the widget under it and up through its parents until one takes it, whatever is focused or
    shown as a popup; the one that took the files while they moved hears `left` when another takes them, they are
-   dropped elsewhere or they leave the window.
+   dropped elsewhere or they leave the window. During a drag between widgets (below), the moves, the release and
+   Escape are the drag's.
 3. A key mode, while one runs (see [Focus](#focus)), takes every key; in a dialog, Ctrl+L starts placing it from the
    keyboard.
 4. The popup, if one is shown, sees keys and the mouse over it first; a press elsewhere closes it and goes on.
@@ -350,6 +351,11 @@ until one handles it. A press also gives the focus to the first widget from ther
 it for a click on one of its rows. From the press to the release the mouse is captured: drags and the release go to
 the widget pressed, wherever the pointer is. If that widget goes away mid-click, as the editor under a dialog a
 double click just closed, the rest of the click is dropped instead of landing on whatever is now under the pointer.
+A widget carries something to another by calling `Application::begin_drag(DragPayload{paths, text})` while the
+button is held, as a file in a list is pressed and moved: from then until the release the moves are the drag's, the
+widget under the pointer hearing `DropEvent`s as for files from the system (`moving`, then `dropped` with the
+payload's paths, or `left`), and the text shows by the pointer; Escape cancels it, and the rest of the click is
+nobody's. `is_dragging` says whether one goes on.
 `Widget::set_pointer_handler(handler)` hears each of those events before the widget does, as a key handler hears
 keys: returning true keeps it. A number field so drags its value along its text field, which would select the text.
 `Widget::set_focus_handler(handler)` hears a widget take the focus and lose it, however it goes, by Tab, a click
