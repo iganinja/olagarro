@@ -54,7 +54,7 @@ struct Fixture
     {
         std::string text;
         const auto& frame{*scripted->last_frame()};
-        for(int x{}; x < frame.width(); ++ x)
+        for(int x{}; x < frame.width(); ++x)
         {
             text += static_cast<char>(frame.cell_at(x, y).glyph < 128 ? frame.cell_at(x, y).glyph : '?');
         }
@@ -173,7 +173,7 @@ TEST(OuiPopupListTests, WhileFilteringTypingNarrowsTheListAndEnterChoosesTheBest
     EXPECT_NE(fixture.row(5).find("Nothing"), std::string::npos) << fixture.row(5);
 }
 
-TEST(OuiPopupListTests, PlacedAtItsAnchorItsCornerIsThereAndItStaysOnTheScreen)
+TEST(OuiPopupListTests, PlacedAtItsAnchorItsCornerIsThereOrItOpensUpwardsAndItStaysOnTheScreen)
 {
     Fixture fixture;
     fixture.popup->set_placement(oui::PopupPlacement::at_anchor);
@@ -185,7 +185,13 @@ TEST(OuiPopupListTests, PlacedAtItsAnchorItsCornerIsThereAndItStaysOnTheScreen)
     fixture.send(TextEvent{U'y'});
     const auto& area{fixture.popup->bounds()};
     EXPECT_EQ(area.x + area.width, 40);
-    EXPECT_EQ(area.y + area.height, 12);
+    EXPECT_EQ(area.y + area.height, 10) << "with no room below, it opens upwards, ending just above its anchor";
+    // With room neither below nor above, it stays whole on the screen.
+    fixture.popup->set_anchor({5, 6});
+    fixture.send(TextEvent{U'y'});
+    const auto& middle{fixture.popup->bounds()};
+    EXPECT_GE(middle.y, 0);
+    EXPECT_LE(middle.y + middle.height, 12);
 }
 
 } // namespace

@@ -35,7 +35,8 @@ enum class PopupPlacement
 {
     // Under its anchor cell, the labels in its column, or over it when there is no room below: suggestions.
     under_anchor,
-    // With its top left corner at the anchor, moved in to stay on the screen: a list at the pointer.
+    // With its top left corner at the anchor, moved left to stay on the screen; with no room below the anchor, its
+    // bottom just above it instead, as a menu at the bottom of a window opens upwards: a list at the pointer.
     at_anchor
 };
 

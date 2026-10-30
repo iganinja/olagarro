@@ -94,7 +94,7 @@ void PopupList::refilter()
     m_selected = 0;
     m_first = 0;
     std::optional<int> best;
-    for(std::size_t index{}; index < m_items.size(); ++ index)
+    for(std::size_t index{}; index < m_items.size(); ++index)
     {
         const auto& item{m_items[index]};
         if(m_filtering && !m_filter.empty())
@@ -137,7 +137,7 @@ int PopupList::visible_rows() const
 
 std::size_t PopupList::row_of_selected() const
 {
-    for(std::size_t row{}; row < m_rows.size(); ++ row)
+    for(std::size_t row{}; row < m_rows.size(); ++row)
     {
         if(!m_rows[row].heading && m_rows[row].item == m_shown[m_selected])
         {
@@ -171,8 +171,13 @@ void PopupList::arrange(const Rect& screen)
     const auto bottom{screen.y + std::max(0, screen.height - size.height)};
     if(m_placement == PopupPlacement::at_anchor)
     {
-        Widget::arrange({std::clamp(m_anchor.x, screen.x, right), std::clamp(m_anchor.y, screen.y, bottom), size.width,
-                         size.height});
+        auto y{m_anchor.y};
+        if(y + size.height > screen.y + screen.height)
+        {
+            y = std::max(screen.y, m_anchor.y - size.height);
+        }
+        Widget::arrange(
+            {std::clamp(m_anchor.x, screen.x, right), std::clamp(y, screen.y, bottom), size.width, size.height});
         return;
     }
     // The labels start in the anchor's column, the frame and its room before them.
@@ -208,7 +213,7 @@ void PopupList::paint(Painter& painter, const Theme& theme) const
         painter.draw_label({area.x + 2, top}, empty_message(),
                            {theme.menu_foreground, theme.menu_background, text_italic});
     }
-    for(int row{}; row < visible_rows() && m_first + static_cast<std::size_t>(row) < m_rows.size(); ++ row)
+    for(int row{}; row < visible_rows() && m_first + static_cast<std::size_t>(row) < m_rows.size(); ++row)
     {
         const auto& shown{m_rows[m_first + static_cast<std::size_t>(row)]};
         const auto& item{m_items[shown.item]};
@@ -247,7 +252,7 @@ void PopupList::show_selected()
     // The heading over the item shows with it.
     if(row > 0 && m_rows[row - 1].heading)
     {
-        -- row;
+        --row;
     }
     if(row < m_first)
     {
@@ -321,7 +326,7 @@ bool PopupList::handle_event(const Event& event)
                 auto end{m_filter.size() - 1};
                 while(end > 0 && (static_cast<unsigned char>(m_filter[end]) & 0xc0u) == 0x80u)
                 {
-                    -- end;
+                    --end;
                 }
                 m_filter.erase(end);
                 refilter();
