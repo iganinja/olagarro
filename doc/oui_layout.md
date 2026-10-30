@@ -407,7 +407,9 @@ commands.bind("search.previous", oui::KeyShortcut{oui::Key::f3, false, false, tr
 A `Shortcut` is a character, in lowercase with `shift` for Shift, or a named key in `key`; `KeyShortcut` is the
 short way to write a named one. `parse_shortcut("Ctrl+Shift+F3")` reads one from text and `format_shortcut` writes
 one, translated. Binding to a command that is not registered throws, as a slip that should show at once. A command
-can have several shortcuts; `shortcut(id)` gives the first.
+can have several shortcuts; `shortcut(id)` gives the first and `shortcuts(id)` all of them. `commands()` lists what
+the palette offers; `all_commands()` every command, disabled or hidden from the palette too, as a program's list of
+its keys wants them.
 
 - `set_enabled(id, false)`: the command does not run from its keys or anywhere, menus show it dimmed and the palette
   leaves it out.

@@ -2624,6 +2624,37 @@ TEST(OuiCommandTests, DisabledCommandsDoNotRunAndLeaveThePalette)
     EXPECT_FALSE(commands.title("edit.undo"));
 }
 
+// A list of every key, as a program's help gives it, finds the commands the palette leaves out and every shortcut
+// of each.
+TEST(OuiCommandTests, ListsEveryCommandWithEveryShortcut)
+{
+    oui::CommandRegistry commands;
+    commands.register_command("edit.redo", "&Redo", [] {});
+    commands.bind("edit.redo", {U'z', true, false, true});
+    commands.bind("edit.redo", {U'y', true});
+    commands.set_enabled("edit.redo", false);
+    commands.register_command("menu.file", "File", [] {});
+    commands.set_palette_visible("menu.file", false);
+    commands.register_command("file.close", "Close", [] {});
+
+    EXPECT_EQ(commands.commands().size(), 1u) << "the palette offers only the enabled and visible";
+    const auto all{commands.all_commands()};
+    ASSERT_EQ(all.size(), 3u);
+    EXPECT_EQ(all[0].id, "edit.redo");
+    EXPECT_FALSE(all[0].enabled);
+    EXPECT_TRUE(all[0].palette_visible);
+    EXPECT_EQ(all[1].id, "menu.file");
+    EXPECT_FALSE(all[1].palette_visible);
+    EXPECT_EQ(all[2].id, "file.close");
+
+    const auto redo{commands.shortcuts("edit.redo")};
+    ASSERT_EQ(redo.size(), 2u);
+    EXPECT_EQ(oui::format_shortcut(redo[0]), "Ctrl+Shift+Z");
+    EXPECT_EQ(oui::format_shortcut(redo[1]), "Ctrl+Y");
+    EXPECT_TRUE(commands.shortcuts("file.close").empty());
+    EXPECT_TRUE(commands.shortcuts("nothing").empty());
+}
+
 TEST(OuiCommandTests, NamedKeysAndCharactersNeverMatchEachOther)
 {
     oui::CommandRegistry commands;

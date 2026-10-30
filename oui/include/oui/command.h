@@ -43,6 +43,7 @@ struct CommandInfo
     std::optional<Shortcut> shortcut;
     std::optional<bool> checked;
     bool enabled{true};
+    bool palette_visible{true};
 };
 
 // What format_shortcut calls the modifiers and named keys: English, or their translation.
@@ -122,8 +123,13 @@ class CommandRegistry
     [[nodiscard]] bool enabled(std::string_view id) const;
     // The commands the palette offers: visible there and enabled.
     [[nodiscard]] std::vector<CommandInfo> commands() const;
+    // Every command in the order they were registered, enabled or not and offered by the palette or not, as a list of
+    // the program's keys wants them.
+    [[nodiscard]] std::vector<CommandInfo> all_commands() const;
     // The first shortcut bound to the command.
     [[nodiscard]] std::optional<Shortcut> shortcut(std::string_view id) const;
+    // Every shortcut bound to the command, in the order they were bound.
+    [[nodiscard]] std::vector<Shortcut> shortcuts(std::string_view id) const;
     [[nodiscard]] bool dispatch(const Event& event);
     // Runs the reserved command the event is the shortcut of, when there is one.
     [[nodiscard]] bool dispatch_reserved(const Event& event);

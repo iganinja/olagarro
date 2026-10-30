@@ -299,6 +299,17 @@ std::vector<CommandInfo> CommandRegistry::commands() const
     }
     return result;
 }
+std::vector<CommandInfo> CommandRegistry::all_commands() const
+{
+    std::vector<CommandInfo> result;
+    result.reserve(m_commands.size());
+    for(const auto& command : m_commands)
+    {
+        result.push_back({command.id, command.title, shortcut(command.id), command.checked, command.enabled,
+                          command.palette_visible});
+    }
+    return result;
+}
 std::optional<Shortcut> CommandRegistry::shortcut(std::string_view id) const
 {
     for(const auto& binding : m_bindings)
@@ -309,6 +320,18 @@ std::optional<Shortcut> CommandRegistry::shortcut(std::string_view id) const
         }
     }
     return std::nullopt;
+}
+std::vector<Shortcut> CommandRegistry::shortcuts(std::string_view id) const
+{
+    std::vector<Shortcut> result;
+    for(const auto& binding : m_bindings)
+    {
+        if(binding.command_id == id)
+        {
+            result.push_back(binding.shortcut);
+        }
+    }
+    return result;
 }
 bool CommandRegistry::dispatch(const Event& event)
 {
