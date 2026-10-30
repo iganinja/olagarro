@@ -382,4 +382,22 @@ double crackle_tail_seconds(int, double, std::uint32_t)
     return 0.0;
 }
 
+Sound mix(const Sound& below, const Sound& above, double opacity)
+{
+    Sound result{below};
+    const auto share{static_cast<float>(std::clamp(opacity, 0.0, 1.0))};
+    const auto reached{std::min(below.samples.size(), above.samples.size())};
+    for(std::size_t index{}; index < reached; ++ index)
+    {
+        // Exactly `below` at 0 and `above` at 1.
+        result.samples[index] = (1.0f - share) * below.samples[index] + share * above.samples[index];
+    }
+    return result;
+}
+
+double mix_tail_seconds(int, double)
+{
+    return 0.0;
+}
+
 } // namespace olagarro::effects

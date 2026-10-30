@@ -74,4 +74,10 @@ struct Sound
 [[nodiscard]] Sound crackle(const Sound& sound, double amount, std::uint32_t seed, std::int64_t start);
 [[nodiscard]] double crackle_tail_seconds(int rate, double amount, std::uint32_t seed);
 
+// `above` over `below` by `opacity`, from 0 (`below` alone) to 1 (`above` alone): how much of a changed sound replaces
+// the sound it was made from, as a dry and wet mix. The result is `below`'s length; where `above` does not reach,
+// `below` stays. No tail of its own: each frame is the two frames at its place.
+[[nodiscard]] Sound mix(const Sound& below, const Sound& above, double opacity);
+[[nodiscard]] double mix_tail_seconds(int rate, double opacity);
+
 } // namespace olagarro::effects

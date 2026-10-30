@@ -2,7 +2,7 @@
 
 The pieces effects are made of. For pictures, `effects/image.h`: blurs, noise, tables, colour changes, vignettes and
 mixing one picture over another with a blend mode. For sounds, `effects/sound.h`: gain, filters, an equaliser, echo,
-bitcrush, mono and crackle. Namespace `olagarro::effects`, CMake target `olagarro::Effects`, in the build tree and from
+bitcrush, mono, crackle and mixing a changed sound with the one it came from. Namespace `olagarro::effects`, CMake target `olagarro::Effects`, in the build tree and from
 an installed package alike. It depends on [Concurrency](concurrency.md) and nothing else: no OUI, no files, no scripts.
 A program chains the pieces into its effects and binds them to its scripts itself.
 
@@ -121,7 +121,7 @@ const auto run{low_pass(frames_of(whole, earlier, to), 1000.0, 0.707)};
 // The block is run's frames from (from - earlier) on.
 ```
 
-Gain, mono and crackle have no tail (0). A filter's is how long its slowest pole takes to die down, a few periods of its
+Gain, mono, crackle and mix have no tail (0). A filter's is how long its slowest pole takes to die down, a few periods of its
 frequency: milliseconds at 1 kHz, a few tenths of a second at 20 Hz. An echo's is its delay times the repeats still
 heard, which a feedback near 1 makes long. Pieces in a row have the sum of their tails.
 
@@ -142,6 +142,7 @@ the frame the stretch starts at in the whole sound.
 | `bitcrush(sound, bits, rate, start)` | Each sample rounded to `bits` bits (fractions allowed), and held so only `rate` samples a second are heard (none held at the sound's rate or more). | One hold |
 | `mono(sound)` | Both channels their average. | None |
 | `crackle(sound, amount, seed, start)` | An old record: sparse clicks alike on both channels and a little hiss, as many and as loud as `amount` from 0 to 1. The same seed gives the same crackle. | None |
+| `mix(below, above, opacity)` | `above` over `below` by `opacity` from 0 to 1, exactly `below` at 0 and `above` at 1: a changed sound mixed with the one it was made from, dry and wet. `below`'s length; where `above` does not reach, `below` stays. | None |
 
 An old radio, from a few pieces:
 
@@ -149,4 +150,5 @@ An old radio, from a few pieces:
 using namespace olagarro::effects;
 
 const auto radio{crackle(bitcrush(mono(band_pass(sound, 948.7, 0.351)), 8.0, 11025.0, start), 0.3, seed, start)};
+const auto coming_in{mix(sound, radio, amount)}; // from the sound as it was at 0 to the radio at 1
 ```

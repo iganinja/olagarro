@@ -209,6 +209,29 @@ TEST(EffectsSound, TheSameSeedGivesTheSameCrackle)
     EXPECT_EQ(crackle(silence, 0.0, 7, 0).samples, silence.samples);
 }
 
+TEST(EffectsSound, MixGoesFromTheSoundBelowToTheOneAbove)
+{
+    const auto dry{music(48000, 0.1)};
+    const auto wet{mono(low_pass(dry, 500.0, 0.707))};
+    EXPECT_EQ(mix(dry, wet, 0.0).samples, dry.samples);
+    EXPECT_EQ(mix(dry, wet, 1.0).samples, wet.samples);
+    // Past either end it is held there.
+    EXPECT_EQ(mix(dry, wet, -1.0).samples, dry.samples);
+    EXPECT_EQ(mix(dry, wet, 2.0).samples, wet.samples);
+    const auto quarter{mix(dry, wet, 0.25)};
+    for(std::size_t index{}; index < dry.samples.size(); ++ index)
+    {
+        EXPECT_NEAR(quarter.samples[index], 0.75 * dry.samples[index] + 0.25 * wet.samples[index], 1e-6);
+    }
+    // Where the sound above stops, the one below goes on.
+    const auto short_one{stretch(wet, 0, 100)};
+    const auto mixed{mix(dry, short_one, 1.0)};
+    ASSERT_EQ(mixed.samples.size(), dry.samples.size());
+    EXPECT_EQ(mixed.samples[198], wet.samples[198]);
+    EXPECT_EQ(mixed.samples[200], dry.samples[200]);
+    EXPECT_EQ(mix_tail_seconds(48000, 0.5), 0.0);
+}
+
 TEST(EffectsSound, EveryPieceCutIntoBlocksWithItsTailEqualsItWhole)
 {
     const auto rate{48000};
@@ -234,6 +257,7 @@ TEST(EffectsSound, EveryPieceCutIntoBlocksWithItsTailEqualsItWhole)
         {"mono", [](const Sound& s, std::int64_t) { return mono(s); }, mono_tail_seconds(rate)},
         {"crackle", [](const Sound& s, std::int64_t start) { return crackle(s, 0.8, 3, start); },
          crackle_tail_seconds(rate, 0.8, 3)},
+        {"mix", [](const Sound& s, std::int64_t) { return mix(s, mono(s), 0.3); }, mix_tail_seconds(rate, 0.3)},
     };
     EXPECT_EQ(gain_tail_seconds(rate, -6.0), 0.0);
     EXPECT_EQ(mono_tail_seconds(rate), 0.0);
