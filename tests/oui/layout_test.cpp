@@ -3027,6 +3027,27 @@ TEST(OuiMenuBarTests, OpensAMenuFromAMousePress)
     EXPECT_EQ(menu_bar.measure({30, 10}).height, 1);
 }
 
+// A window's pointer falls between cells: anywhere in the bar's row is on it, and opens the menu under it.
+TEST(OuiMenuBarTests, APressAnywhereInItsRowIsOnTheBar)
+{
+    auto backend{std::make_unique<MemoryBackend>()};
+    oui::Application application{std::move(backend)};
+    application.commands().register_command("file.quit", "Quit", [] {});
+    auto menu_bar{oui::menu_bar(application.commands())};
+    auto* const bar{menu_bar.get()};
+    bar->add_menu("File", {"file.quit"});
+    application.set_content(std::move(menu_bar));
+    application.render();
+
+    EXPECT_EQ(bar->hit_test(1.5, 0.4), bar);
+    EXPECT_EQ(bar->hit_test(1.5, 1.0), nullptr);
+    application.dispatch_event(oui::MouseEvent{1.5, 0.4, true});
+    EXPECT_TRUE(bar->is_open());
+    // Another press on its title, lower in the row, closes it rather than taking it for one outside.
+    application.dispatch_event(oui::MouseEvent{1.5, 0.7, true});
+    EXPECT_FALSE(bar->is_open());
+}
+
 TEST(OuiMenuBarTests, RoutesKeysToAnOpenMenuWithoutChangingEditorFocus)
 {
     auto backend{std::make_unique<MemoryBackend>()};
