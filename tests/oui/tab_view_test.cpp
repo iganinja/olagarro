@@ -64,6 +64,32 @@ TEST(OuiTabViewTests, MovesATabAmongTheOthersKeepingTheSelection)
     EXPECT_FALSE(tabs->tab_at(59));
 }
 
+TEST(OuiTabViewTests, StepsThroughTheTabsFromTheMostRecentlyUsed)
+{
+    auto tabs{three_tabs()};
+    tabs->select(2);
+    tabs->select(0);
+    // Used last: one, three, two.
+    tabs->step_recent(1);
+    EXPECT_EQ(tabs->title(tabs->selected_index()), "three") << "the tab used before";
+    tabs->end_recent_steps();
+    tabs->step_recent(1);
+    EXPECT_EQ(tabs->title(tabs->selected_index()), "one") << "and back, from a new start";
+
+    // Going on while stepping keeps the order it began with, and the one it ends on comes first in it.
+    tabs->step_recent(1);
+    EXPECT_EQ(tabs->title(tabs->selected_index()), "two");
+    tabs->end_recent_steps();
+    EXPECT_EQ(tabs->recent_order(), (std::vector<std::size_t>{1, 2, 0}));
+
+    // Backwards it starts at the one used longest ago; selecting any other way starts afresh.
+    tabs->step_recent(-1);
+    EXPECT_EQ(tabs->title(tabs->selected_index()), "one");
+    tabs->select(1);
+    tabs->step_recent(1);
+    EXPECT_EQ(tabs->title(tabs->selected_index()), "one");
+}
+
 } // namespace
 
 namespace

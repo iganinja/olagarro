@@ -50,6 +50,12 @@ class TabView final : public Container
     // Every tab's index, from the selected one through the others as recently as they were selected, as an editor
     // goes back to the document used before.
     [[nodiscard]] std::vector<std::size_t> recent_order() const;
+    // Ctrl+Tab's way through the tabs: the first step selects the tab used before the selected one (`step` 1) or the
+    // one used longest ago (-1), and each step after goes on by `step` through the order as it was when they began,
+    // until end_recent_steps or a tab selected another way. The tabs passed over keep their place in it: the one
+    // stepped to comes first, and the one stepping began on second.
+    void step_recent(int step);
+    void end_recent_steps();
     // The tab whose title covers column `x` of the header, if any.
     [[nodiscard]] std::optional<std::size_t> tab_at(double x) const;
     // What a pointer resting on a tab's title is told about it, such as the whole path of the file it holds.
@@ -88,6 +94,9 @@ class TabView final : public Container
     [[nodiscard]] std::size_t index_of(const Widget* content) const;
     // The tabs' contents, most recently selected first.
     std::vector<const Widget*> m_recent;
+    // While stepping through them, the tabs in the order stepping began with, and where it is among them.
+    std::vector<const Widget*> m_stepping;
+    std::size_t m_step{};
     std::vector<std::string> m_titles;
     std::function<bool(std::size_t)> m_is_highlighted;
     bool m_close_on_right_click{false};

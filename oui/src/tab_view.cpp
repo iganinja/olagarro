@@ -47,6 +47,7 @@ std::unique_ptr<Widget> TabView::take_tab(std::size_t index)
         return nullptr;
     }
     const auto was_selected{index == m_selected};
+    m_stepping.clear();
     auto content{remove_at(index)};
     m_titles.erase(m_titles.begin() + static_cast<std::ptrdiff_t>(index));
     m_recent.erase(std::remove(m_recent.begin(), m_recent.end(), content.get()), m_recent.end());
@@ -74,6 +75,7 @@ std::unique_ptr<Widget> TabView::take_tab(std::size_t index)
 }
 void TabView::select(std::size_t index)
 {
+    m_stepping.clear();
     if(index < child_count())
     {
         const auto changed{index != m_selected};
@@ -298,6 +300,41 @@ std::size_t TabView::index_of(const Widget* content) const
         }
     }
     return 0;
+}
+void TabView::step_recent(int step)
+{
+    if(child_count() < 2)
+    {
+        return;
+    }
+    auto stepping{std::move(m_stepping)};
+    auto position{m_step};
+    if(stepping.empty())
+    {
+        for(const auto index : recent_order())
+        {
+            stepping.push_back(&child_at(index));
+        }
+        position = 0;
+    }
+    const auto count{static_cast<int>(stepping.size())};
+    position = static_cast<std::size_t>(((static_cast<int>(position) + step) % count + count) % count);
+    const auto* const chosen{stepping.at(position)};
+    select(index_of(chosen));
+    m_recent = {chosen};
+    for(const auto* const content : stepping)
+    {
+        if(content != chosen)
+        {
+            m_recent.push_back(content);
+        }
+    }
+    m_stepping = std::move(stepping);
+    m_step = position;
+}
+void TabView::end_recent_steps()
+{
+    m_stepping.clear();
 }
 std::vector<std::size_t> TabView::recent_order() const
 {
