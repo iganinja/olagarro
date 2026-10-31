@@ -98,10 +98,10 @@ resolve(m_background, theme, theme.dialog_background)
 | Function | Where | Look |
 |----------|-------|------|
 | `TurboCTheme::make()` | [turbo_c_theme.h](../oui/include/oui/turbo_c_theme.h) | Turbo C++ / Borland C++ / Turbo Pascal: Turbo Vision's `cpAppColor` palette and their editor's yellow on blue. The comments name the palette entry each colour comes from. |
-| `terminal_themes()` | [terminal_themes.cpp](../oui/src/terminal_themes.cpp) | The looks for characters: `turbo` (the one above), `night`, `light`, `monochrome`, `amber`, `phosphor`, `commander` |
+| `terminal_themes()` | [terminal_themes.cpp](../oui/src/terminal_themes.cpp) | The looks for characters: `turbo` (the one above), `night`, `light`, `monochrome`, `amber`, `phosphor`, `commander`, `slate`, `paper`, `midnight`, `contrast` |
 | `classic_theme()` | [graphical_painter.cpp](../oui/src/graphics/graphical_painter.cpp) | The graphical look, `theme_for(classic_style())`: grey bevelled surfaces, a green title, dark wells, inspired by Transport Tycoon |
 | `dark_theme()` | the same | `theme_for(dark_style())`: dark greys, flat shapes with thin edges, Noto Sans, one blue accent; for programs that show pictures, as ouivi |
-| `graphical_themes()` | the same | The graphical looks: `classic`, `ocean`, `night`, `dark` |
+| `graphical_themes()` | the same | The graphical looks: `classic`, `ocean`, `night`, `dark`, `paper` |
 
 `terminal_themes()` returns `TerminalTheme` values: an `id`, which is the same in every language and is what
 settings keep; a `name`, translated, for a menu; and the `Theme`. The default comes first.
@@ -115,6 +115,13 @@ settings keep; a `name`, translated, for a menu; and the `Theme`. The default co
 - **Phosphor** (`phosphor`): light green and green on black, as a green phosphor monitor.
 - **Commander** (`commander`): light cyan on blue panels, cyan bars, grey dialogs and yellow where something stands
   out, as Norton Commander and Midnight Commander.
+- **Slate** (`slate`): light text on a blue-grey slate, the surfaces a shade lighter: dark without black's glare.
+- **Paper** (`paper`): dark ink on a warm page: light without white's glare.
+- **Midnight** (`midnight`): pale text on a deep night blue, Turbo's blue darkened to rest the eyes.
+- **High Contrast** (`contrast`): white on black and bright colours, what is chosen in yellow.
+
+The last four are made by `from_palette` from a few colours each (the editor, its text, the surfaces, an accent,
+the syntax), in colours of their own rather than the sixteen: see below what a terminal does with them.
 
 Every look but Turbo starts from `TurboCTheme::make()` and then sets every field, so a field added to `Theme` later has
 a sensible value in them before anyone revisits them.
@@ -157,7 +164,7 @@ m_application.set_theme(theme);
 
 ## Terminal themes and the sixteen colours
 
-The terminal themes use only the sixteen colours of a text console, as EGA and VGA showed them; `terminal_themes.cpp`
+The terminal themes but the last four use only the sixteen colours of a text console, as EGA and VGA showed them; `terminal_themes.cpp`
 names them at its top (`black`, `blue`, ... `yellow`, `white`) and `TurboCTheme` has the same as static members.
 Keeping to them is what makes a theme read the same everywhere, because a terminal does not always show the RGB
 values OUI sends:
@@ -171,7 +178,9 @@ values OUI sends:
 - The legacy Windows console (without virtual terminal sequences) takes its own four-bit attributes.
 
 A colour from the sixteen survives all of these unchanged, or as its own console colour. A colour between them may
-land on an unexpected one, or on the same as its neighbour: a theme meant for terminals should keep to the sixteen.
+land on an unexpected one, or on the same as its neighbour: a theme meant for every terminal should keep to the
+sixteen. Slate, Paper, Midnight and High Contrast do not, for terminals of 24 bits, where they are softer on the
+eyes; in sixteen colours they come out as the nearest the terminal has.
 [Rendering](oui_rendering.md#colours-in-a-terminal) has the details. To see a program as it looks on the Linux
 console from any terminal, run it with `OUI_LINUX_CONSOLE=1`.
 
@@ -368,6 +377,7 @@ struct GraphicalStyle
     Color face, light, shadow;       // raised surfaces and their edges, light at the top and left
     Color title, title_text;         // a window's title bar
     Color well, well_text;           // sunken surfaces: lists, text fields, editors
+    Syntax syntax;                   // code on the well: keyword, type, function, string, number, comment, ...
     Color focus;                     // the focus ring, and a window placed from the keyboard
     Color text, muted_text;          // text on raised surfaces
     Color selection, selection_text;
@@ -385,8 +395,10 @@ The two do different jobs. `GraphicalPainter` draws windows, buttons, tabs, scro
 style's shades and ignores most of the theme it is passed: it reads only the button, tab, dialog text, menu
 background and disabled colours. `theme_for(style)` derives the theme widgets paint their content with from the same
 style (dialogs and buttons on `face`, editors, tables, panels and inputs on `well`, the menu's selection on `title`),
-and adds the colours a style does not have: search matches, occurrences, comparison, and syntax colours chosen to
-read on the dark well.
+the syntax colours from `syntax`, and adds the colours a style does not have: search matches, occurrences and
+comparison, deep under white text on a dark well and pale under the well's text on a light one, as `paper`'s.
+Each look has an editor of its own, its well, its text and its code's colours, so choosing another changes the
+editor as well as the controls.
 
 A program that changes the look sets both, as OUI Code's `Workbench::use_window_theme` does:
 
@@ -405,7 +417,7 @@ for(const auto& theme : oui::graphical_themes())
 other way round. A window, a DRM screen and a desktop client take their first style in their options
 (`WindowOptions::style`, `DrmOptions::style`, `desktop_backend(options, style)`), `classic_style()` by default.
 
-`graphical_themes()` builds `ocean` and `night` by copying `classic_style()` and changing its shades, and sets
+`graphical_themes()` builds `ocean`, `night` and `paper`, a light one, by copying `classic_style()` and changing its shades, and sets
 `desktop` to `face` in each, which is what shows at the right and bottom edges of a window that is not a whole number
 of cells. `dark` is `dark_style()`, which also changes the shapes: `flat` draws every raised and sunken surface with a
 one-pixel edge of `shadow` all round, a button held down filled with `light` rather than sunk, and `interface_font`

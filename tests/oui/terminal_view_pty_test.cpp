@@ -218,6 +218,22 @@ TEST(OuiTerminalViewTests, ARightClickPastesAndCtrlShiftCCopies)
     EXPECT_EQ(view.selected_text(), "") << "typing leaves the selection";
 }
 
+TEST(OuiTerminalViewTests, ShiftInsertPastesAsCtrlShiftVDoes)
+{
+    auto backend{std::make_unique<ClipboardBackend>()};
+    const auto clipboard{backend->m_clipboard};
+    *clipboard = "pegado";
+    oui::Application application{std::move(backend)};
+    oui::PtyOptions options;
+    options.command = {"cat"};
+    oui::TerminalView view{application, options};
+    view.arrange({0, 0, 40, 5});
+    EXPECT_TRUE(view.claims_key(oui::KeyEvent{oui::Key::insert_, false, false, true}));
+    view.handle_event(oui::KeyEvent{oui::Key::insert_, false, false, true});
+    run_until(application, [&view] { return shows(view.screen(), "pegado"); });
+    EXPECT_TRUE(shows(view.screen(), "pegado"));
+}
+
 TEST(OuiTerminalViewTests, LeavesTheApplicationItsTabKeys)
 {
     oui::Application application{oui::scripted_backend()};

@@ -162,6 +162,12 @@ const std::vector<TextEdit::VisualLine>& TextEdit::visual_lines() const
                 }
             }
             m_visual_lines.push_back({i, segment_start, line_last});
+            // A last row as wide as the editor leaves no room after it for the cursor at its end, which would
+            // be under the scrollbar or past the edge: it goes to a row of its own, as at any wrap.
+            if(column >= width)
+            {
+                m_visual_lines.push_back({i, line_last, line_last});
+            }
         }
     }
     m_visual_lines_dirty = false;

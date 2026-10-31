@@ -342,6 +342,12 @@ bool TerminalView::handle_event(const Event& event)
             scroll_back((key->key == Key::page_up ? 1 : -1) * std::max(1, m_screen.rows() - 1));
             return true;
         }
+        // Shift+Insert pastes, as in xterm and every terminal since.
+        if(key->shift && !key->control && !key->alt && key->key == Key::insert_)
+        {
+            paste(m_application.clipboard().text());
+            return true;
+        }
     }
     if(const auto* const text{std::get_if<TextEvent>(&event)}; text != nullptr && text->control && text->shift)
     {
