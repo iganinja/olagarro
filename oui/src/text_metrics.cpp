@@ -137,4 +137,40 @@ double snap_y(double value)
     return snap(value, text_metrics().row_step());
 }
 
+namespace
+{
+
+[[nodiscard]] double length_in_cells(Length length, std::optional<double> cell_pixels, double step)
+{
+    switch(length.kind())
+    {
+    case Length::Kind::cells:
+        return std::max(0.0, static_cast<double>(length.value()));
+    case Length::Kind::pixels:
+        if(cell_pixels && *cell_pixels > 0)
+        {
+            return std::max(0.0, snap(length.pixels() / *cell_pixels, step));
+        }
+        return std::max(0.0, static_cast<double>(length.value()));
+    default:
+        return 0.0;
+    }
+}
+
+} // namespace
+
+double length_across(Length length)
+{
+    const auto& metrics{text_metrics()};
+    const auto cell{metrics.cell_pixels()};
+    return length_in_cells(length, cell ? std::optional{cell->width} : std::nullopt, metrics.column_step());
+}
+
+double length_down(Length length)
+{
+    const auto& metrics{text_metrics()};
+    const auto cell{metrics.cell_pixels()};
+    return length_in_cells(length, cell ? std::optional{cell->height} : std::nullopt, metrics.row_step());
+}
+
 } // namespace olagarro::oui

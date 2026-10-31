@@ -2,6 +2,7 @@
 #include <oui/button.h>
 #include <oui/check_button.h>
 #include <oui/combo_box.h>
+#include <oui/dock_layout.h>
 #include <oui/event.h>
 #include <oui/file_system.h>
 #include <oui/graphics/canvas.h>
@@ -368,6 +369,109 @@ TEST(OuiGraphicsTests, TheSameLayoutsInATerminalAreInWholeCells)
     {
         EXPECT_TRUE(is_whole(child->bounds().x)) << child->bounds().x;
         EXPECT_EQ(child->bounds().width, 4);
+    }
+}
+
+TEST(OuiGraphicsTests, ALengthInPixelsIsItsPixelsInAWindowAndTheFillTakesTheRest)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    auto rows{grid()};
+    rows->set_columns({Length::pixels(30, 3), Length::fill()});
+    rows->set_rows({Length::pixels(6, 1), Length::fill()});
+    const auto& thin{rows->add(label("Thin"))};
+    const auto& beside{rows->add(label("Beside"))};
+    rows->add(label("Under"));
+    const auto& rest{rows->add(label("Rest"))};
+    application.set_content(std::move(rows));
+    application.run_frame();
+    EXPECT_EQ(pixel_of(thin.bounds().height, 24), 6);
+    EXPECT_EQ(pixel_of(thin.bounds().width, 12), 30);
+    EXPECT_EQ(pixel_of(beside.bounds().x, 12), 30);
+    EXPECT_EQ(pixel_of(beside.bounds().x + beside.bounds().width, 12), 1000);
+    EXPECT_EQ(pixel_of(rest.bounds().y, 24), 6);
+    EXPECT_EQ(pixel_of(rest.bounds().y + rest.bounds().height, 24), 700);
+}
+
+TEST(OuiGraphicsTests, ALengthInPixelsIsItsCellsInATerminal)
+{
+    auto backend{scripted_backend({}, {40, 12})};
+    Application application{std::move(backend)};
+    auto rows{grid()};
+    rows->set_columns({Length::pixels(30, 3), Length::fill()});
+    rows->set_rows({Length::pixels(6, 1), Length::fill()});
+    const auto& thin{rows->add(label("Thin"))};
+    const auto& beside{rows->add(label("Beside"))};
+    rows->add(label("Under"));
+    const auto& rest{rows->add(label("Rest"))};
+    application.set_content(std::move(rows));
+    application.run_frame();
+    EXPECT_EQ(thin.bounds().height, 1);
+    EXPECT_EQ(thin.bounds().width, 3);
+    EXPECT_EQ(beside.bounds().x, 3);
+    EXPECT_EQ(beside.bounds().width, 37);
+    EXPECT_EQ(rest.bounds().y, 1);
+    EXPECT_EQ(rest.bounds().height, 11);
+}
+
+TEST(OuiGraphicsTests, AGapInPixelsIsAcrossARowAndDownAColumn)
+{
+    for(const auto window : {true, false})
+    {
+        Application application{window ? std::unique_ptr<Backend>{image_backend({1000, 700})}
+                                       : std::unique_ptr<Backend>{scripted_backend({}, {40, 12})}};
+        auto lines{column()};
+        lines->set_gap(Length::pixels(6, 1));
+        const auto& first{lines->add(label("First"))};
+        const auto& second{lines->add(label("Second"))};
+        auto& across{lines->add(row())};
+        across.set_gap(Length::pixels(6, 1));
+        const auto& left{across.add(label("Left"))};
+        const auto& right{across.add(label("Right"))};
+        application.set_content(std::move(lines));
+        application.run_frame();
+        if(window)
+        {
+            EXPECT_EQ(pixel_of(second.bounds().y, 24), pixel_of(first.bounds().y + first.bounds().height, 24) + 6);
+            EXPECT_EQ(pixel_of(right.bounds().x, 12), pixel_of(left.bounds().x + left.bounds().width, 12) + 6);
+        }
+        else
+        {
+            // In a terminal it is its cells.
+            EXPECT_EQ(second.bounds().y, first.bounds().y + first.bounds().height + 1);
+            EXPECT_EQ(right.bounds().x, left.bounds().x + left.bounds().width + 1);
+        }
+    }
+}
+
+TEST(OuiGraphicsTests, ADockedStripInPixelsIsItsPixelsInAWindowAndItsCellsInATerminal)
+{
+    for(const auto window : {true, false})
+    {
+        Application application{window ? std::unique_ptr<Backend>{image_backend({1000, 700})}
+                                       : std::unique_ptr<Backend>{scripted_backend({}, {40, 12})}};
+        auto layout{dock_layout()};
+        const auto& top{layout->add(Dock::top, label("Top"), Length::pixels(6, 1))};
+        const auto& side{layout->add(Dock::left, label("Side"), Length::pixels(100, 8))};
+        const auto& rest{layout->add(Dock::fill, label("Rest"))};
+        application.set_content(std::move(layout));
+        application.run_frame();
+        if(window)
+        {
+            EXPECT_EQ(pixel_of(top.bounds().height, 24), 6);
+            EXPECT_EQ(pixel_of(side.bounds().width, 12), 100);
+            EXPECT_EQ(pixel_of(rest.bounds().x, 12), 100);
+            EXPECT_EQ(pixel_of(rest.bounds().y, 24), 6);
+            EXPECT_EQ(pixel_of(rest.bounds().x + rest.bounds().width, 12), 1000);
+        }
+        else
+        {
+            EXPECT_EQ(top.bounds().height, 1);
+            EXPECT_EQ(side.bounds().width, 8);
+            EXPECT_EQ(rest.bounds().x, 8);
+            EXPECT_EQ(rest.bounds().y, 1);
+            EXPECT_EQ(rest.bounds().width, 32);
+        }
     }
 }
 

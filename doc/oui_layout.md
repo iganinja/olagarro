@@ -163,11 +163,19 @@ Sizes in a grid's columns and rows are `Length`s:
 |--------|-------|
 | `Length::content()` | As wide as its widest child measures, or as tall as its tallest |
 | `Length::cells(n)` | `n` cells |
-| `Length::percent(p)` | `p` percent of the width the grid has (columns only) |
+| `Length::pixels(p, n)` | `p` pixels where the backend draws pixels (`TextMetrics::cell_pixels()`), `n` cells where it does not |
+| `Length::percent(p)` | `p` percent of the width the grid has, or of the height for a row |
 | `Length::fill()` | A share of what the others leave, `flex(1.0f)` |
 | `Length::flex(f)` | A share of what the others leave, in proportion to `f` |
 
-Gaps between children are a `Spacing`: `none`, `tight`, `normal` and `loose`, which are 0, 1, 2 and 3 cells.
+A `Length::pixels` is across in a column, a row's gap and a left or right strip (its pixels over the cell's width), and
+down in a row, a column's gap and a top or bottom strip (over its height), snapped to the step; so
+`Length::pixels(6, 1)` is 6 pixels in a window and a cell in a terminal. `length_across(length)` and
+`length_down(length)` ([text_metrics.h](../oui/include/oui/text_metrics.h)) give a cells or pixels length in cells, for
+a widget of one's own.
+
+Gaps between children are a `Spacing`: `none`, `tight`, `normal` and `loose`, which are 0, 1, 2 and 3 cells. A row's
+and a column's gap may also be a `Length::cells` or a `Length::pixels`.
 
 ## Layout widgets
 
@@ -202,10 +210,9 @@ child, and what is left of the width is shared among the fill and flex columns b
 only measured, a fill or flex column counts as its widest child, which is what it would take with no room to fill;
 so a grid inside a row is as wide as its content, not nothing.
 
-Rows are as tall as their tallest child, unless `set_rows` makes one `flex`: a flex row takes the height the others
-leave, shared by the factors. A text editor over a line of buttons is a grid of one fill column and rows
-`content, flex, content`. In rows only `flex` changes anything: a row given `fill`, `cells` or `percent` is measured
-as its content.
+Rows are as tall as their tallest child, unless `set_rows` gives them lengths, which they take as columns do: a flex
+row takes the height the others leave, shared by the factors, a cells or pixels row is that tall. A text editor over a
+line of buttons is a grid of one fill column and rows `content, flex, content`.
 
 `oui::dynamic_grid()` ([dynamic_grid.h](../oui/include/oui/dynamic_grid.h)) is the other kind: every cell the size of
 the largest child, or `set_column_width(Length::cells(n))` wide, and as many columns as fit the width, the children
@@ -226,8 +233,9 @@ layout->set_resizable(tree, 12);
 layout->add(oui::Dock::fill, oui::text_edit());
 ```
 
-The third argument of `add` is the strip's size, its height for top and bottom and its width for left and right; 0
-uses what the child measures. `set_resizable` gives a left or right strip a line along its inner edge that the mouse
+The third argument of `add` is the strip's size, its height for top and bottom and its width for left and right, in
+cells or as a `Length::cells` or `Length::pixels`; 0 uses what the child measures. `size_of` gives it in whole cells,
+and a strip dragged or given `set_size` is in cells. `set_resizable` gives a left or right strip a line along its inner edge that the mouse
 drags, keeping at least `minimum` cells on each side; `on_resized` fires when a drag ends, so the program can
 remember the size and give it back with `set_size`.
 

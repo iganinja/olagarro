@@ -1,5 +1,6 @@
 #include <oui/dock_layout.h>
 #include <oui/painter.h>
+#include <oui/text_metrics.h>
 
 #include <algorithm>
 
@@ -19,12 +20,18 @@ void DockLayout::set_resizable(const Widget& child, int minimum)
 int DockLayout::size_of(const Widget& child) const
 {
     const auto found{m_docks.find(&child)};
-    return found == m_docks.end() ? 0 : found->second.size;
+    if(found == m_docks.end())
+    {
+        return 0;
+    }
+    const auto& placement{found->second};
+    return whole(placement.dock == Dock::left || placement.dock == Dock::right ? length_across(placement.size)
+                                                                               : length_down(placement.size));
 }
 
 void DockLayout::set_size(const Widget& child, int size)
 {
-    m_docks[&child].size = size;
+    m_docks[&child].size = Length::cells(size);
     if(bounds().width > 0)
     {
         arrange(bounds());
@@ -46,12 +53,13 @@ void DockLayout::arrange(const Rect& bounds)
         const auto found{m_docks.find(&child)};
         const auto placement{found == m_docks.end() ? Placement{} : found->second};
         const auto measured{[&child, &remaining] { return child.measure({remaining.width, remaining.height}); }};
+        const auto down{length_down(placement.size)};
+        const auto across{length_across(placement.size)};
         switch(placement.dock)
         {
         case Dock::top:
         {
-            const auto height{
-                std::clamp(placement.size > 0 ? placement.size : measured().height, 0.0, remaining.height)};
+            const auto height{std::clamp(down > 0 ? down : measured().height, 0.0, remaining.height)};
             child.arrange({remaining.x, remaining.y, remaining.width, height});
             remaining.y += height;
             remaining.height -= height;
@@ -59,8 +67,7 @@ void DockLayout::arrange(const Rect& bounds)
         }
         case Dock::bottom:
         {
-            const auto height{
-                std::clamp(placement.size > 0 ? placement.size : measured().height, 0.0, remaining.height)};
+            const auto height{std::clamp(down > 0 ? down : measured().height, 0.0, remaining.height)};
             child.arrange({remaining.x, remaining.y + remaining.height - height, remaining.width, height});
             remaining.height -= height;
             break;
@@ -68,7 +75,7 @@ void DockLayout::arrange(const Rect& bounds)
         case Dock::left:
         case Dock::right:
         {
-            auto width{std::clamp(placement.size > 0 ? placement.size : measured().width, 0.0, remaining.width)};
+            auto width{std::clamp(across > 0 ? across : measured().width, 0.0, remaining.width)};
             const auto left{placement.dock == Dock::left};
             const auto x{left ? remaining.x : remaining.x + remaining.width - width};
             // A resizable strip gives its inner column to the line, and keeps room on both sides of it.
@@ -163,12 +170,13 @@ bool DockLayout::handle_event(const Event& event)
         // The strip reaches from its edge to the pointer, the line included.
         const auto wanted{placement.dock == Dock::left ? mouse->x - divider.edge + 1 : divider.edge - mouse->x};
         // The sizes it keeps are whole cells.
-        placement.size = whole(std::clamp(wanted, placement.minimum + 1.0, divider.room));
+        const auto size{whole(std::clamp(wanted, placement.minimum + 1.0, divider.room))};
+        placement.size = Length::cells(size);
         arrange(bounds());
         if(mouse->released)
         {
             m_dragging.reset();
-            m_resized.fire(*divider.child, placement.size);
+            m_resized.fire(*divider.child, size);
         }
     }
     return true;

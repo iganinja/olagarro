@@ -9,6 +9,10 @@ namespace olagarro::oui
 
 void Row::set_gap(Spacing gap)
 {
+    m_gap = Length::cells(spacing_cells(gap));
+}
+void Row::set_gap(Length gap)
+{
     m_gap = gap;
 }
 void Row::set_centered(bool centered)
@@ -19,7 +23,7 @@ void Row::set_centered(bool centered)
 Size Row::measure(const Constraints& constraints) const
 {
     Size size{};
-    const auto gap{spacing_cells(m_gap)};
+    const auto gap{length_across(m_gap)};
     auto has_child{false};
     for(const auto& child : children())
     {
@@ -40,7 +44,7 @@ void Row::arrange(const Rect& bounds)
 {
     Widget::arrange(bounds);
     auto x{bounds.x};
-    const auto gap{spacing_cells(m_gap)};
+    const auto gap{length_across(m_gap)};
     if(m_centered)
     {
         x += std::max(0.0, snap_x((bounds.width - measure({bounds.width, bounds.height}).width) / 2));
@@ -60,13 +64,17 @@ void Row::arrange(const Rect& bounds)
 
 void Column::set_gap(Spacing gap)
 {
+    m_gap = Length::cells(spacing_cells(gap));
+}
+void Column::set_gap(Length gap)
+{
     m_gap = gap;
 }
 
 Size Column::measure(const Constraints& constraints) const
 {
     Size size{};
-    const auto gap{spacing_cells(m_gap)};
+    const auto gap{length_down(m_gap)};
     auto has_child{false};
     for(const auto& child : children())
     {
@@ -86,7 +94,7 @@ void Column::arrange(const Rect& bounds)
 {
     Widget::arrange(bounds);
     auto y{bounds.y};
-    const auto gap{spacing_cells(m_gap)};
+    const auto gap{length_down(m_gap)};
     for(const auto& child : children())
     {
         if(!child->is_visible())

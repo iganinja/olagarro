@@ -33,10 +33,11 @@ namespace
 
 // The sizes of the columns, or of the rows, from their lengths: a line without one is as big as its content, `fill`
 // and `flex` share what the others leave when `distribute` says so, and are as big as their content when not, as a
-// grid measured does. A line not shown takes no room, nor a gap. What a share gives is snapped to `step`.
+// grid measured does. A line not shown takes no room, nor a gap. What a share gives is snapped to `step`; cells and
+// pixels are `fixed` of them, `length_across` for columns and `length_down` for rows.
 [[nodiscard]] std::vector<double> line_sizes(const std::vector<Length>& lengths, const std::vector<double>& content,
                                              const std::vector<bool>& shown, double available, int gap, bool distribute,
-                                             double step)
+                                             double step, double (*fixed)(Length))
 {
     std::vector<double> sizes(content.size(), 0.0);
     auto used{0.0};
@@ -53,7 +54,8 @@ namespace
         switch(length.kind())
         {
         case Length::Kind::cells:
-            sizes[line] = std::max(0, static_cast<int>(length.value()));
+        case Length::Kind::pixels:
+            sizes[line] = fixed(length);
             break;
         case Length::Kind::percent:
             // In doubles: a float loses the pixel a window's step is.
@@ -142,7 +144,7 @@ std::vector<double> Grid::column_widths(double available, bool distribute_flexib
         }
     }
     return line_sizes(m_columns, content, shown_columns(), available, spacing_cells(m_gap), distribute_flexible,
-                      text_metrics().column_step());
+                      text_metrics().column_step(), length_across);
 }
 
 std::vector<double> Grid::row_heights(const Constraints& constraints, bool distribute_flexible) const
@@ -158,7 +160,7 @@ std::vector<double> Grid::row_heights(const Constraints& constraints, bool distr
         }
     }
     return line_sizes(m_rows, content, shown, constraints.max_height, spacing_cells(m_gap), distribute_flexible,
-                      text_metrics().row_step());
+                      text_metrics().row_step(), length_down);
 }
 
 Size Grid::measure(const Constraints& constraints) const

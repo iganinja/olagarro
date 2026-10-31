@@ -1,4 +1,5 @@
 #include <oui/dynamic_grid.h>
+#include <oui/text_metrics.h>
 
 #include <algorithm>
 
@@ -22,9 +23,9 @@ Size DynamicGrid::cell_size(const Constraints& constraints) const
         size.width = std::max(size.width, value.width);
         size.height = std::max(size.height, value.height);
     }
-    if(m_column_width.kind() == Length::Kind::cells)
+    if(m_column_width.kind() == Length::Kind::cells || m_column_width.kind() == Length::Kind::pixels)
     {
-        size.width = std::max(1, static_cast<int>(m_column_width.value()));
+        size.width = length_across(m_column_width);
     }
     return {std::max(1.0, size.width), std::max(1.0, size.height)};
 }

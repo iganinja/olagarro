@@ -33,6 +33,11 @@ class DockLayout final : public Container
     // measured size.
     template <typename Child> Child& add(Dock dock, std::unique_ptr<Child>&& child, int size = 0)
     {
+        return add(dock, std::move(child), Length::cells(size));
+    }
+    // The same with the size a `Length::cells` or a `Length::pixels`, as tall or as wide as the strip goes.
+    template <typename Child> Child& add(Dock dock, std::unique_ptr<Child>&& child, Length size)
+    {
         auto& added{Container::add(std::move(child))};
         m_docks[&added] = {dock, size};
         return added;
@@ -41,7 +46,7 @@ class DockLayout final : public Container
     // Gives a left or right strip a line along its inner edge that the mouse drags to make it wider or narrower;
     // the line is part of the strip's size. A strip keeps at least `minimum` cells, and leaves as many to the rest.
     void set_resizable(const Widget& child, int minimum = 8);
-    // The strip's size, line included, as set or as last dragged.
+    // The strip's size, line included, as set or as last dragged, in whole cells.
     [[nodiscard]] int size_of(const Widget& child) const;
     void set_size(const Widget& child, int size);
     // Fires with the strip and its new size when a drag ends.
@@ -61,7 +66,7 @@ class DockLayout final : public Container
     struct Placement
     {
         Dock dock{Dock::fill};
-        int size{};
+        Length size{Length::cells(0)};
         // 0 when the strip is not resizable.
         int minimum{};
     };

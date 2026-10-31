@@ -73,7 +73,8 @@ class Length
         fill,
         flex,
         percent,
-        cells
+        cells,
+        pixels
     };
 
     [[nodiscard]] static constexpr Length content() { return {Kind::content, 0.0f}; }
@@ -81,15 +82,24 @@ class Length
     [[nodiscard]] static constexpr Length flex(float factor = 1.0f) { return {Kind::flex, factor}; }
     [[nodiscard]] static constexpr Length percent(float value) { return {Kind::percent, value}; }
     [[nodiscard]] static constexpr Length cells(int value) { return {Kind::cells, static_cast<float>(value)}; }
+    // `pixels` where the backend draws pixels (across or down, as the length is used), `cells` where it does not.
+    [[nodiscard]] static constexpr Length pixels(double pixels, int cells)
+    {
+        return {Kind::pixels, static_cast<float>(cells), pixels};
+    }
 
     [[nodiscard]] constexpr Kind kind() const { return m_kind; }
+    // The factor, the percentage or the cells; for `pixels`, the cells it is in a terminal.
     [[nodiscard]] constexpr float value() const { return m_value; }
+    // For `pixels`, its pixels; 0 for every other kind.
+    [[nodiscard]] constexpr double pixels() const { return m_pixels; }
 
   private:
-    constexpr Length(Kind kind, float value) : m_kind{kind}, m_value{value} {}
+    constexpr Length(Kind kind, float value, double pixels = 0.0) : m_kind{kind}, m_value{value}, m_pixels{pixels} {}
 
     Kind m_kind;
     float m_value;
+    double m_pixels;
 };
 
 [[nodiscard]] constexpr int spacing_cells(Spacing spacing)

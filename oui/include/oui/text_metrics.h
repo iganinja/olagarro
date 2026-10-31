@@ -80,4 +80,9 @@ void set_text_metrics(const TextMetrics* metrics);
 [[nodiscard]] double snap_x(double value);
 [[nodiscard]] double snap_y(double value);
 
+// A `Length::cells` or a `Length::pixels` in cells, across or down: pixels over text_metrics()'s cell where it has
+// pixels, snapped to its step, and the cells where it has none. Any other kind is no length.
+[[nodiscard]] double length_across(Length length);
+[[nodiscard]] double length_down(Length length);
+
 } // namespace olagarro::oui
