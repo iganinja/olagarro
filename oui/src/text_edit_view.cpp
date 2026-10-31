@@ -142,7 +142,9 @@ const std::vector<TextEdit::VisualLine>& TextEdit::visual_lines() const
                 const auto ch{m_text.at(index)};
                 const auto char_width{char_cell_width(index, column)};
                 static_cast<void>(decode_utf8(m_text, index));
-                if(ch == ' ' || ch == '\t')
+                // A row wraps after a space only where the space fits: one past the width would hold the cursor
+                // under the scrollbar.
+                if((ch == ' ' || ch == '\t') && column + char_width <= width)
                 {
                     last_space_byte = index;
                 }

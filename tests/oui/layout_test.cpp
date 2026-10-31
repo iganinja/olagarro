@@ -2205,6 +2205,81 @@ TEST(OuiWidgetTests, TextEditCursorAfterAWrappedLineThatFillsTheWidthShowsOnTheN
     }
 }
 
+TEST(OuiWidgetTests, TextEditCursorTypingAtTheEndOfWrappedTextIsNeverUnderTheScrollbar)
+{
+    // As someone writes a paragraph with word wrap: after every letter the cursor shows, left of the scrollbar.
+    auto backend{std::make_unique<MemoryBackend>()};
+    auto* const backend_reference{backend.get()};
+    oui::Application application{std::move(backend)};
+    auto editor{oui::text_edit()};
+    editor->set_word_wrap(true);
+    application.set_content(std::move(editor));
+    application.render();
+    const oui::Theme theme;
+    const std::string text{"The quick brown fox jumps over the lazy dog, and then  it runs away again; "
+                           "averyveryverylongwordthatfillsmorethanawholerowofthiseditor and more words after it."};
+    for(std::size_t index{}; index < text.size(); ++ index)
+    {
+        application.dispatch_event(oui::TextEvent{static_cast<char32_t>(text.at(index))});
+        application.render();
+        const auto& frame{*backend_reference->last_frame()};
+        std::optional<int> cursor_column;
+        for(int y{}; y < frame.height() && !cursor_column; ++ y)
+        {
+            for(int x{}; x < frame.width(); ++ x)
+            {
+                if(frame.cell_at(x, y).background == theme.editor_foreground)
+                {
+                    cursor_column = x;
+                    break;
+                }
+            }
+        }
+        ASSERT_TRUE(cursor_column.has_value()) << "after \"" << text.substr(0, index + 1) << '"';
+        EXPECT_LT(*cursor_column, frame.width() - 1) << "after \"" << text.substr(0, index + 1) << '"';
+    }
+}
+
+TEST(OuiWidgetTests, TextEditCursorOnTheSpaceARowWrapsAtShowsLeftOfTheScrollbar)
+{
+    // A row as wide as the editor wraps at the space after it; the cursor on that space, by End on the row or Left
+    // from the next, was a column past the row, under the scrollbar.
+    auto backend{std::make_unique<MemoryBackend>()};
+    auto* const backend_reference{backend.get()};
+    oui::Application application{std::move(backend)};
+    auto editor{oui::text_edit()};
+    auto* const editor_reference{editor.get()};
+    editor->set_word_wrap(true);
+    application.set_content(std::move(editor));
+    application.render();
+    const auto width{backend_reference->last_frame()->width() - 1};
+    editor_reference->set_text(std::string(static_cast<std::size_t>(width), 'a') + " bbb");
+    const oui::Theme theme;
+    const auto cursor_shows{[&]
+                            {
+                                application.render();
+                                const auto& frame{*backend_reference->last_frame()};
+                                for(int y{}; y < frame.height(); ++ y)
+                                {
+                                    for(int x{}; x < width; ++ x)
+                                    {
+                                        if(frame.cell_at(x, y).background == theme.editor_foreground)
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            }};
+
+    application.dispatch_event(oui::KeyEvent{oui::Key::end});
+    EXPECT_TRUE(cursor_shows()) << "by End on the first row";
+    application.dispatch_event(oui::KeyEvent{oui::Key::down});
+    application.dispatch_event(oui::KeyEvent{oui::Key::home});
+    application.dispatch_event(oui::KeyEvent{oui::Key::left});
+    EXPECT_TRUE(cursor_shows()) << "by Left from the start of the second";
+}
+
 TEST(OuiWidgetTests, TextEditHomeAndEndGoToTheEdgesOfTheWrappedRowFirst)
 {
     oui::TextEdit edit;
