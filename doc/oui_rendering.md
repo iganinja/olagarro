@@ -307,6 +307,7 @@ text field must also put its cursor between the right two letters. `TextMetrics`
 | `column_step()`, `row_step()` | 1: a whole cell | a pixel: 1 / the cell's width, 1 / its height |
 | `cell_pixels()` | none | the cell's size in pixels |
 | `width(text)` | columns | pixels of the interface font |
+| `text_margin()` | 0 | the style's `text_margin`, in pixels |
 | `field_padding()` | 0 | half a cell |
 | `popup_frame_rows()` | 1: a frame line above and below | 0: a thin edge inside the entries' rows |
 | `panel_gap()` | 0: panels meet, each in its colour | 1 |
@@ -337,7 +338,8 @@ and through `text_metrics()` itself:
   both measured with `text_metrics()`.
 
 So in a window a label is narrower than its characters, a button with text is as wide as its text and margins (its
-raised face needs no cells of frame and shadow), a menu needs no frame rows, and a window has a title bar of
+raised face needs no cells of frame and shadow), a button with an icon (`set_icon`) is a square as tall as a row with
+`text_margin()` at each side, whatever its text, a menu needs no frame rows, and a window has a title bar of
 two rows; in a terminal the same code gives the Turbo Vision shapes.
 
 ## Zoom

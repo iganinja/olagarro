@@ -1267,6 +1267,46 @@ TEST(OuiGraphicsTests, AButtonWithAnIconDrawsItInPlaceOfItsText)
     EXPECT_EQ(made->text(), "Play");
 }
 
+TEST(OuiGraphicsTests, AnIconButtonInAWindowIsASquareAsTallAsItsRowWithTheTextsMarginsBesideIt)
+{
+    // The icon takes a square as tall as a row, with the margins interface text keeps at each side and none of the
+    // terminal's frame and shadow; its text, which a terminal writes, does not widen it.
+    auto backend{image_backend({480, 240})};
+    const auto& image{*backend};
+    Application application{std::move(backend)};
+    const auto cell{image.cell_size()};
+    const auto margin{classic_style().text_margin};
+    EXPECT_EQ(text_metrics().text_margin(), margin);
+    const auto square{(cell.height + 2 * margin) / cell.width};
+    for(const auto compact : {true, false})
+    {
+        for(const std::string_view text : {"Play", "A much longer name"})
+        {
+            auto made{button(text)};
+            made->set_compact(compact);
+            made->set_icon(Icon::play);
+            const auto measured{made->measure({})};
+            EXPECT_DOUBLE_EQ(measured.width, square) << text << ", compact " << compact;
+            EXPECT_DOUBLE_EQ(measured.height, compact ? 1.0 : 2.0) << text << ", compact " << compact;
+        }
+    }
+}
+
+TEST(OuiGraphicsTests, AnIconButtonInATerminalWritesItsTextInItsFrame)
+{
+    EXPECT_EQ(text_metrics().cell_pixels(), std::nullopt);
+    EXPECT_EQ(text_metrics().text_margin(), 0);
+    auto compact{button("Play")};
+    compact->set_compact(true);
+    compact->set_icon(Icon::play);
+    EXPECT_DOUBLE_EQ(compact->measure({}).width, 4.0 + 2.0);
+    EXPECT_DOUBLE_EQ(compact->measure({}).height, 1.0);
+    auto framed{button("Play")};
+    framed->set_icon(Icon::play);
+    EXPECT_DOUBLE_EQ(framed->measure({}).width, 4.0 + 5.0);
+    EXPECT_DOUBLE_EQ(framed->measure({}).height, 2.0);
+}
+
 TEST(OuiGraphicsTests, EachIconOfAPlayerAndATrackIsDrawnInsideItsAreaAndUnlikeTheOthers)
 {
     const Color ink{255, 255, 255};

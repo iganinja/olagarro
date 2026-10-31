@@ -46,6 +46,11 @@ double TextMetrics::label_width(std::string_view text) const
     return static_cast<double>(text_width(text));
 }
 
+int TextMetrics::text_margin() const
+{
+    return 0;
+}
+
 int TextMetrics::field_padding() const
 {
     return 0;
