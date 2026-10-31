@@ -5062,6 +5062,45 @@ TEST(OuiLayoutTests, AnOpenComboBoxMarksTheOptionUnderThePointer)
     EXPECT_EQ(combo.selected(), 2u);
 }
 
+TEST(OuiLayoutTests, AControlDisabledWithTheFocusShowsItNoMore)
+{
+    // As a program that disables what was just used to start a long task: its text would be dark grey on the
+    // focus's colour, which does not read.
+    auto backend{std::make_unique<MemoryBackend>()};
+    auto* const backend_reference{backend.get()};
+    oui::Application application{std::move(backend)};
+    auto content{oui::column()};
+    auto& combo{oui::combo_box({"First", "Second"}, 0, *content)};
+    auto& button{content->add(oui::button("Publish"))};
+    application.set_content(std::move(content));
+    const oui::Theme theme{};
+    // The first letter of what the control shows.
+    const auto cell{[&](const oui::Widget& widget, char32_t letter)
+                    {
+                        application.render();
+                        const auto& frame{*backend_reference->last_frame()};
+                        const auto y{oui::whole(widget.bounds().y)};
+                        auto x{oui::whole(widget.bounds().x)};
+                        while(x + 1 < frame.width() && frame.cell_at(x, y).glyph != letter)
+                        {
+                            ++ x;
+                        }
+                        return frame.cell_at(x, y);
+                    }};
+
+    application.focus(combo);
+    EXPECT_EQ(cell(combo, U'F').background, theme.focus_background);
+    combo.set_enabled(false);
+    EXPECT_EQ(cell(combo, U'F').background, theme.table_background);
+    EXPECT_EQ(cell(combo, U'F').foreground, theme.disabled_foreground);
+
+    application.focus(button);
+    EXPECT_EQ(cell(button, U'P').background, theme.button_focused_background);
+    button.set_enabled(false);
+    EXPECT_EQ(cell(button, U'P').background, theme.button_background);
+    EXPECT_EQ(cell(button, U'P').foreground, theme.disabled_foreground);
+}
+
 TEST(OuiWindowTests, AHeightShareSizesTheWindowFromTheScreenNotItsContent)
 {
     auto dialog{oui::window("Palette")};

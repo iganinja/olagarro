@@ -116,7 +116,7 @@ void Button::paint(Painter& painter, const Theme& theme) const
 {
     const auto shown{strip_mnemonic(m_text)};
     painter.draw_button(bounds(),
-                        {shown, m_pressed, is_focused(), m_shadow_visible, m_compact, m_default,
+                        {shown, m_pressed, is_focused() && is_enabled(), m_shadow_visible, m_compact, m_default,
                          mnemonic_offset(m_text), resolve(m_background, theme, theme.dialog_background), is_enabled(),
                          m_icon},
                         theme);

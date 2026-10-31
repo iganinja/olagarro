@@ -108,7 +108,7 @@ Size CheckButton::measure(const Constraints& constraints) const
 void CheckButton::paint(Painter& painter, const Theme& theme) const
 {
     painter.draw_check_box(bounds(),
-                           {strip_mnemonic(m_text), m_checked, is_focused(),
+                           {strip_mnemonic(m_text), m_checked, is_focused() && is_enabled(),
                             resolve(m_background, theme, theme.dialog_background), mnemonic_offset(m_text),
                             is_enabled()},
                            theme);

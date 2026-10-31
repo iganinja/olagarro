@@ -78,7 +78,8 @@ void Slider::paint(Painter& painter, const Theme& theme) const
 {
     m_pixels = painter.pixel_bounds(m_bounds);
     const auto span{m_maximum - m_minimum};
-    painter.draw_slider(m_bounds, {span > 0.0 ? (m_value - m_minimum) / span : 0.0, is_focused(), is_enabled()}, theme);
+    painter.draw_slider(
+        m_bounds, {span > 0.0 ? (m_value - m_minimum) / span : 0.0, is_focused() && is_enabled(), is_enabled()}, theme);
 }
 
 bool Slider::is_focusable() const

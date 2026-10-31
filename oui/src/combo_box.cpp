@@ -173,12 +173,13 @@ void ComboBox::dismiss_overlays_at(double x, double y)
 
 void ComboBox::paint(Painter& painter, const Theme& theme) const
 {
-    // Focused like every other control; the open list marks the option under the pointer, or else its choice, with the
-    // selection colours.
-    const auto closed_background{is_focused() ? theme.focus_background : theme.table_background};
-    const auto closed_foreground{!is_enabled()  ? theme.disabled_foreground
-                                 : is_focused() ? theme.focus_text
-                                                : theme.table_foreground};
+    // Focused like every other control, but for a disabled one, whose grey would not read on the focus's colour; the
+    // open list marks the option under the pointer, or else its choice, with the selection colours.
+    const auto focused{is_focused() && is_enabled()};
+    const auto closed_background{focused ? theme.focus_background : theme.table_background};
+    const auto closed_foreground{!is_enabled() ? theme.disabled_foreground
+                                 : focused     ? theme.focus_text
+                                               : theme.table_foreground};
     painter.fill_rect(paint_bounds(), closed_background);
     if(m_options.empty())
     {
