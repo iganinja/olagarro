@@ -5083,6 +5083,22 @@ TEST(OuiLayoutTests, ADisabledComboBoxOrMenuBarIsNotThereForThePointer)
     EXPECT_EQ(bar.hit_test(1, 0), nullptr);
 }
 
+TEST(OuiLayoutTests, TheMenuBarIsThereForThePointerAnywhereInItsRow)
+{
+    // A window gives the pointer where its pixel is, so it falls inside the bar's row as often as on its top edge.
+    oui::CommandRegistry commands;
+    oui::MenuBar bar{commands};
+    bar.add_menu("&File", {oui::menu_action("Open", [] {})});
+    bar.arrange({0, 0, 20, 1});
+    EXPECT_EQ(bar.hit_test(1.5, 0.5), &bar);
+    EXPECT_EQ(bar.hit_test(1.5, 0.99), &bar);
+    EXPECT_EQ(bar.hit_test(1.5, 1.0), nullptr);
+
+    bar.open_menu(0);
+    bar.dismiss_overlays_at(1.5, 0.5);
+    EXPECT_TRUE(bar.is_open());
+}
+
 TEST(OuiLayoutTests, AControlDisabledWithTheFocusShowsItNoMore)
 {
     // As a program that disables what was just used to start a long task: its text would be dark grey on the

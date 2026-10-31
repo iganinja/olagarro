@@ -497,7 +497,7 @@ void MenuBar::dismiss_overlays_at(double x, double y)
     {
         return;
     }
-    const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && y == bounds().y};
+    const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && whole(y - bounds().y) == 0};
     if(!on_bar && !inside(menu_bounds(), x, y) && !(m_submenu_open && inside(submenu_bounds(), x, y)))
     {
         close_menu();
@@ -511,7 +511,7 @@ Widget* MenuBar::hit_test(double x, double y)
     {
         return nullptr;
     }
-    const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && y == bounds().y};
+    const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && whole(y - bounds().y) == 0};
     const auto on_menu{m_active != no_menu && inside(menu_bounds(), x, y)};
     const auto on_sub{m_submenu_open && inside(submenu_bounds(), x, y)};
     return on_bar || on_menu || on_sub ? this : nullptr;
