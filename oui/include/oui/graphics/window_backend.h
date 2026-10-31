@@ -41,6 +41,10 @@ class DesktopWindow : public PixelBackend
     // Makes it as big as content of `cells` needs, its frame and title around it, as far as the display it is on
     // has room, and puts it in the middle of that display.
     virtual void fit_content(Size cells) = 0;
+    // Covers the whole display, without its frame and title bar, as a distraction-free mode or F11 in a browser
+    // does; set back, it is the window it was. geometry() stays the window's meanwhile.
+    virtual void set_full_screen(bool full_screen) = 0;
+    [[nodiscard]] virtual bool is_full_screen() const = 0;
 };
 
 // Opens one; it throws when no window can be opened, as without a display.

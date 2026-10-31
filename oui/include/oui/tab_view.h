@@ -29,6 +29,9 @@ class TabView final : public Container
     void set_close_on_right_click(bool enabled);
     // Tabs show a mark that asks to close them; on by default. Off, a tab cannot be closed from its title.
     void set_closable(bool closable);
+    // Without its row of tabs the selected one has all the room, as a document shown alone; with it by default.
+    void set_header_visible(bool visible);
+    [[nodiscard]] bool header_visible() const;
     void close_tab(std::size_t index);
     // Removes a tab and hands its content over, to be shown elsewhere, such as in another TabView.
     [[nodiscard]] std::unique_ptr<Widget> take_tab(std::size_t index);
@@ -101,6 +104,9 @@ class TabView final : public Container
     std::function<bool(std::size_t)> m_is_highlighted;
     bool m_close_on_right_click{false};
     bool m_closable{true};
+    bool m_header_visible{true};
+    // The rows the row of tabs takes: one, or none when it is hidden.
+    [[nodiscard]] double header_rows() const;
     // A tab's title in the header: its text, the spaces round it, and the close mark when there is one.
     [[nodiscard]] double tab_width(std::size_t index) const;
     std::size_t m_selected{};

@@ -153,7 +153,7 @@ bool TabView::handle_event(const Event& event)
             }
             return true;
         }
-        if(!mouse->pressed || whole(mouse->y - bounds().y) != 0 || mouse->x < bounds().x ||
+        if(!m_header_visible || !mouse->pressed || whole(mouse->y - bounds().y) != 0 || mouse->x < bounds().x ||
            mouse->x >= bounds().x + bounds().width)
             return false;
         auto x{bounds().x - m_header_scroll};
@@ -199,9 +199,10 @@ bool TabView::handle_event(const Event& event)
 }
 Size TabView::measure(const Constraints& constraints) const
 {
-    return child_count() == 0 ? Size{}
-                              : constraints.constrain({child_at(m_selected).measure(constraints).width,
-                                                       child_at(m_selected).measure(constraints).height + 1});
+    return child_count() == 0
+               ? Size{}
+               : constraints.constrain({child_at(m_selected).measure(constraints).width,
+                                        child_at(m_selected).measure(constraints).height + header_rows()});
 }
 void TabView::arrange(const Rect& bounds)
 {
@@ -211,11 +212,24 @@ void TabView::arrange(const Rect& bounds)
         ensure_selected_visible();
     }
     if(child_count() != 0)
-        child_at(m_selected).arrange({bounds.x, bounds.y + 1, bounds.width, std::max(0.0, bounds.height - 1)});
+        child_at(m_selected)
+            .arrange({bounds.x, bounds.y + header_rows(), bounds.width, std::max(0.0, bounds.height - header_rows())});
 }
 void TabView::set_closable(bool closable)
 {
     m_closable = closable;
+}
+void TabView::set_header_visible(bool visible)
+{
+    m_header_visible = visible;
+}
+bool TabView::header_visible() const
+{
+    return m_header_visible;
+}
+double TabView::header_rows() const
+{
+    return m_header_visible ? 1 : 0;
 }
 double TabView::tab_width(std::size_t index) const
 {
@@ -223,16 +237,20 @@ double TabView::tab_width(std::size_t index) const
 }
 void TabView::paint(Painter& painter, const Theme& theme) const
 {
-    painter.push_clip({bounds().x, bounds().y, bounds().width, 1});
-    auto x{bounds().x - m_header_scroll};
-    for(std::size_t index{}; index < m_titles.size(); ++ index)
+    if(m_header_visible)
     {
-        painter.draw_tab(
-            {x, bounds().y, tab_width(index), 1},
-            {m_titles.at(index), index == m_selected, m_closable, m_is_highlighted && m_is_highlighted(index)}, theme);
-        x += tab_width(index);
+        painter.push_clip({bounds().x, bounds().y, bounds().width, 1});
+        auto x{bounds().x - m_header_scroll};
+        for(std::size_t index{}; index < m_titles.size(); ++ index)
+        {
+            painter.draw_tab(
+                {x, bounds().y, tab_width(index), 1},
+                {m_titles.at(index), index == m_selected, m_closable, m_is_highlighted && m_is_highlighted(index)},
+                theme);
+            x += tab_width(index);
+        }
+        painter.pop_clip();
     }
-    painter.pop_clip();
     if(child_count() != 0)
         child_at(m_selected).paint(painter, theme);
 }
@@ -381,7 +399,7 @@ void TabView::set_tooltip_provider(std::function<std::optional<std::string>(std:
 }
 std::optional<std::string> TabView::tooltip_at(Point point) const
 {
-    if(whole(point.y - bounds().y) == 0 && m_tooltip_provider)
+    if(m_header_visible && whole(point.y - bounds().y) == 0 && m_tooltip_provider)
     {
         if(const auto index{tab_at(point.x)})
         {

@@ -257,6 +257,10 @@ class WindowBackend final : public DesktopWindow
 
     WindowGeometry geometry() const override
     {
+        if(m_full_screen)
+        {
+            return m_windowed;
+        }
         auto result{m_normal};
         result.maximized = maximized();
         if(!result.maximized)
@@ -312,8 +316,31 @@ class WindowBackend final : public DesktopWindow
         m_pending.push_back(ResizeEvent{size().width, size().height});
     }
 
+    void set_full_screen(bool full_screen) override
+    {
+        if(full_screen == m_full_screen)
+        {
+            return;
+        }
+        if(full_screen)
+        {
+            m_windowed = geometry();
+        }
+        m_full_screen = full_screen;
+        SDL_SetWindowFullscreen(m_window, full_screen);
+        // The size SDL gives it comes later, as a change of its pixels; till then it shows as it is without its frame.
+        lay_out(canvas().width(), canvas().height());
+        m_pending.push_back(ResizeEvent{size().width, size().height});
+    }
+
+    [[nodiscard]] bool is_full_screen() const override { return m_full_screen; }
+
     void decorate(Canvas& canvas, const GraphicalStyle& style, Font& font) override
     {
+        if(m_full_screen)
+        {
+            return;
+        }
         const PixelRect whole{0, 0, canvas.width(), canvas.height()};
         // The edge of the window, raised as every OUI window's.
         canvas.fill({0, 0, whole.width, frame}, style.light);
@@ -375,6 +402,11 @@ class WindowBackend final : public DesktopWindow
         // The title bar fits its text, whatever the size of the fonts.
         m_title_height = interface_font().line_height() + 10;
         resize(width, height);
+        if(m_full_screen)
+        {
+            set_content_area({0, 0, width, height});
+            return;
+        }
         set_content_area({frame, frame + m_title_height, width - 2 * frame, height - 2 * frame - m_title_height});
     }
 
@@ -395,6 +427,10 @@ class WindowBackend final : public DesktopWindow
 
     [[nodiscard]] Control control_at(int x, int y) const
     {
+        if(m_full_screen)
+        {
+            return Control::none;
+        }
         for(const auto control : {Control::minimize, Control::maximize, Control::close})
         {
             if(inside(button(control), x, y))
@@ -484,6 +520,10 @@ class WindowBackend final : public DesktopWindow
         const auto y{static_cast<int>(static_cast<float>(point->y) * scale)};
         const auto width{self.canvas().width()};
         const auto height{self.canvas().height()};
+        if(self.m_full_screen)
+        {
+            return SDL_HITTEST_NORMAL;
+        }
         if(!self.maximized())
         {
             const auto left{x < grip};
@@ -700,7 +740,7 @@ class WindowBackend final : public DesktopWindow
         case SDL_EVENT_WINDOW_MOVED:
         case SDL_EVENT_WINDOW_RESIZED:
             // What it goes back to from maximized.
-            if(!maximized())
+            if(!maximized() && !m_full_screen)
             {
                 m_normal = geometry();
             }
@@ -937,6 +977,9 @@ class WindowBackend final : public DesktopWindow
 
     std::string m_title;
     int m_title_height{30};
+    // Covering the display, and the window it was before.
+    bool m_full_screen{false};
+    WindowGeometry m_windowed;
     SDL_Window* m_window{};
     SDL_Renderer* m_renderer{};
     SDL_Texture* m_texture{};

@@ -1,5 +1,7 @@
 #include <oui/label.h>
 #include <oui/application.h>
+#include <oui/cell_buffer.h>
+#include <oui/painter.h>
 #include <oui/line_edit.h>
 #include <oui/list.h>
 #include <oui/scripted_backend.h>
@@ -62,6 +64,30 @@ TEST(OuiTabViewTests, MovesATabAmongTheOthersKeepingTheSelection)
     EXPECT_EQ(tabs->selected_index(), 1u);
     EXPECT_EQ(tabs->tab_at(0), std::optional<std::size_t>{0});
     EXPECT_FALSE(tabs->tab_at(59));
+}
+
+TEST(OuiTabViewTests, WithoutItsRowOfTabsTheSelectedOneHasAllTheRoom)
+{
+    // As an editor's distraction-free mode shows a document alone.
+    auto tabs{three_tabs()};
+    EXPECT_TRUE(tabs->header_visible());
+    EXPECT_EQ(tabs->child_at(0).bounds().y, 1);
+    tabs->set_header_visible(false);
+    tabs->arrange({0, 0, 60, 10});
+    EXPECT_EQ(tabs->child_at(0).bounds().y, 0);
+    EXPECT_EQ(tabs->child_at(0).bounds().height, 10);
+    EXPECT_EQ(tabs->measure({60, 10}).height, tabs->child_at(0).measure({60, 10}).height);
+    // Nothing there to click: the press goes to what the tab shows.
+    EXPECT_FALSE(tabs->handle_event(MouseEvent{10, 0, true}));
+    EXPECT_EQ(tabs->selected_index(), 0u);
+    CellBuffer buffer{60, 10};
+    CellBufferPainter painter{buffer};
+    tabs->paint(painter, Theme{});
+    EXPECT_EQ(buffer.cell_at(0, 0).glyph, U'1');
+
+    tabs->set_header_visible(true);
+    tabs->arrange({0, 0, 60, 10});
+    EXPECT_EQ(tabs->child_at(0).bounds().y, 1);
 }
 
 TEST(OuiTabViewTests, StepsThroughTheTabsFromTheMostRecentlyUsed)
