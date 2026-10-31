@@ -58,10 +58,12 @@ using Snapshot = std::map<std::string, Entry>;
     return folder.empty() ? name : folder + "/" + name;
 }
 
+#ifdef __linux__
 [[nodiscard]] bool is_inside(const std::string& path, const std::string& folder)
 {
     return path.size() > folder.size() && path.compare(0, folder.size(), folder) == 0 && path[folder.size()] == '/';
 }
+#endif
 
 // Everything under `relative`, a folder under `root`, into `snapshot`; `found`, when given, hears each thing in the
 // order met, a folder before what it holds. `entered`, when given, is told each folder before it is listed.
@@ -177,6 +179,7 @@ void scan(const std::filesystem::path& root, const std::string& relative, Snapsh
     return changes;
 }
 
+#ifdef __linux__
 // The last of `changes` about `path`, or none.
 [[nodiscard]] std::vector<FolderChange>::iterator last_about(std::vector<FolderChange>& changes,
                                                              const std::string& path)
@@ -238,6 +241,7 @@ void note(std::vector<FolderChange>& changes, FolderChange change)
     }
     changes.push_back(std::move(change));
 }
+#endif
 
 } // namespace
 

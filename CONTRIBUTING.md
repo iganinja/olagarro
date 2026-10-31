@@ -26,6 +26,10 @@ share the desktop's; without them it copies through the terminal (OSC 52).
 
 The build treats warnings as errors. Fix every warning instead of suppressing it.
 
+Code for one system, inside `#ifdef __linux__`, `__APPLE__` or `_WIN32`, takes with it into the same block every helper
+only it uses: built elsewhere, an unused function is a warning, so an error, that the system you build on never shows.
+The continuous integration builds on macOS too; a change is not done until it passes there.
+
 ## Conventions
 
 - Types, classes, structs, enums, and aliases use `PascalCase`.
