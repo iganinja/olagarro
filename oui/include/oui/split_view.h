@@ -43,11 +43,17 @@ class SplitView final : public Container
     void paint(Painter& painter, const Theme& theme) const override;
     bool handle_event(const Event& event) override;
     [[nodiscard]] Pointer pointer_at(Point point) const override;
+    // Within half a cell of the line's middle the pointer is on the line, though in a window a side lies there too.
+    [[nodiscard]] Widget* hit_test(double x, double y) override;
 
   private:
     void check_room() const;
-    // Where the line is, as a column or a row, when both widgets show.
+    // Where the line starts, as a column or a row, when both widgets show.
     [[nodiscard]] std::optional<double> divider() const;
+    // How thick the line is: a cell in a terminal, 6 pixels in a window.
+    [[nodiscard]] double divider_thickness() const;
+    // Whether a column, or a row, is within half a cell of the line's middle.
+    [[nodiscard]] bool on_divider(double position) const;
 
     Orientation m_orientation;
     double m_ratio{0.5};

@@ -175,7 +175,10 @@ down in a row, a column's gap and a top or bottom strip (over its height), snapp
 `length_down(length)` ([text_metrics.h](../oui/include/oui/text_metrics.h)) give a cells or pixels length in cells, for
 a widget of one's own.
 
-Gaps between children are a `Spacing`: `none`, `tight`, `normal` and `loose`, which are 0, 1, 2 and 3 cells. A row's
+Gaps between children are a `Spacing`: `none`, `tight`, `normal` and `loose`, which are 0, 1, 2 and 3 cells in a
+terminal and 0, 6, 12 and 18 pixels in a window: `spacing_length(spacing)` ([geometry.h](../oui/include/oui/geometry.h))
+is `Length::pixels(6 * n, n)` for its `n` cells (`spacing_cells`), across between columns and down between rows. That
+holds for a `Row`, a `Column`, a `Grid` and a `DynamicGrid`; a `Table`'s gap stays in cells, as its text does. A row's
 and a column's gap may also be a `Length::cells` or a `Length::pixels`.
 
 ## Layout widgets
@@ -245,7 +248,9 @@ remember the size and give it back with `set_size`.
 `oui::split_view(orientation)` ([split_view.h](../oui/include/oui/split_view.h)) shows two widgets, side by side
 (`horizontal`) or one over the other (`vertical`), with a line between them that the mouse drags. A third `add` is a
 `std::logic_error`. `set_ratio` is the first one's share, half unless set, and `move_divider(cells)` moves the line
-from the keyboard. When either widget is hidden the other takes all the room and the line goes. Split views nest.
+from the keyboard. When either widget is hidden the other takes all the room and the line goes. Split views nest. The
+line is a cell thick in a terminal and 6 pixels in a window (`Length::pixels(6, 1)`); the pointer takes it within half
+a cell of its middle, so in a window it is as easy to take as a cell, though a side's pixels lie there.
 
 ### TabView
 

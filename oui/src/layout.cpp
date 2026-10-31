@@ -9,7 +9,7 @@ namespace olagarro::oui
 
 void Row::set_gap(Spacing gap)
 {
-    m_gap = Length::cells(spacing_cells(gap));
+    m_gap = spacing_length(gap);
 }
 void Row::set_gap(Length gap)
 {
@@ -64,7 +64,7 @@ void Row::arrange(const Rect& bounds)
 
 void Column::set_gap(Spacing gap)
 {
-    m_gap = Length::cells(spacing_cells(gap));
+    m_gap = spacing_length(gap);
 }
 void Column::set_gap(Length gap)
 {
