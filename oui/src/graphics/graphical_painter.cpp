@@ -36,6 +36,9 @@ GraphicalStyle classic_style()
     GraphicalStyle style;
     // What a window larger than a whole number of cells leaves over, at its right and bottom edges.
     style.desktop = style.face;
+    // Code in the warm colours of its surfaces, greens beside its green title.
+    style.syntax = {{244, 200, 100}, {140, 206, 180}, {226, 222, 206}, {176, 214, 116},
+                    {226, 150, 104}, {136, 136, 124}, {206, 160, 206}, {186, 186, 174}};
     return style;
 }
 
@@ -46,8 +49,11 @@ std::vector<GraphicalTheme> graphical_themes()
     ocean.light = {198, 204, 212};
     ocean.shadow = {124, 130, 140};
     ocean.title = {60, 92, 140};
-    ocean.well = {28, 32, 38};
-    ocean.well_text = {206, 212, 220};
+    // The editor a deep sea blue, its code in cool colours.
+    ocean.well = {16, 30, 52};
+    ocean.well_text = {214, 224, 238};
+    ocean.syntax = {{110, 168, 255}, {96, 206, 226},  {222, 230, 240}, {150, 210, 140},
+                    {236, 160, 120}, {120, 138, 160}, {196, 160, 236}, {176, 190, 210}};
     ocean.text = {14, 18, 24};
     ocean.muted_text = {80, 88, 100};
     ocean.selection = {226, 232, 240};
@@ -60,18 +66,40 @@ std::vector<GraphicalTheme> graphical_themes()
     night.shadow = {40, 38, 36};
     night.title = {112, 88, 52};
     night.title_text = {240, 232, 214};
-    night.well = {26, 26, 24};
-    night.well_text = {208, 208, 200};
+    // The editor nearly black, its text and code in warm, quiet colours, as by lamplight.
+    night.well = {18, 17, 15};
+    night.well_text = {214, 206, 188};
+    night.syntax = {{226, 170, 90},  {170, 190, 140}, {226, 216, 196}, {190, 200, 110},
+                    {220, 140, 110}, {130, 124, 112}, {200, 150, 170}, {180, 172, 156}};
     night.text = {226, 222, 210};
     night.muted_text = {150, 146, 136};
     night.selection = {112, 88, 52};
     night.selection_text = {240, 232, 214};
     night.desktop = night.face;
 
+    // Light: warm paper surfaces, the editor a page with dark ink and its code in deep colours.
+    auto paper{classic_style()};
+    paper.face = {222, 216, 202};
+    paper.light = {240, 236, 226};
+    paper.shadow = {170, 162, 146};
+    paper.title = {70, 110, 160};
+    paper.title_text = {255, 255, 255};
+    paper.well = {250, 247, 238};
+    paper.well_text = {36, 36, 40};
+    paper.syntax = {{20, 80, 170}, {0, 110, 120},   {36, 36, 40},   {40, 110, 30},
+                    {160, 70, 10}, {110, 108, 100}, {120, 40, 140}, {70, 70, 74}};
+    paper.text = {20, 20, 20};
+    paper.muted_text = {96, 90, 80};
+    paper.selection = {190, 210, 240};
+    paper.selection_text = {20, 20, 24};
+    paper.focus = {200, 120, 20};
+    paper.desktop = paper.face;
+
     return {{"classic", translate("GraphicalTheme", "Classic"), classic_style()},
             {"ocean", translate("GraphicalTheme", "Ocean"), ocean},
             {"night", translate("GraphicalTheme", "Night"), night},
-            {"dark", translate("GraphicalTheme", "Dark"), dark_style()}};
+            {"dark", translate("GraphicalTheme", "Dark"), dark_style()},
+            {"paper", translate("GraphicalTheme", "Paper"), paper}};
 }
 
 GraphicalStyle dark_style()
@@ -270,20 +298,25 @@ Theme theme_for(const GraphicalStyle& style)
     theme.selection_foreground = style.selection_text;
     theme.item_selected_background = style.selection;
     theme.item_selected_foreground = style.selection_text;
-    theme.search_match_background = {150, 110, 40};
-    theme.search_match_foreground = {255, 255, 255};
-    theme.occurrence_background = {70, 80, 100};
-    theme.occurrence_foreground = {255, 255, 255};
-    theme.bracket_match_background = {70, 110, 60};
-    theme.bracket_match_foreground = {255, 255, 255};
-    // Comparing, on the editor's dark well: red and green deep enough for its light text.
-    theme.diff_removed_background = {120, 40, 40};
-    theme.diff_removed_foreground = {255, 255, 255};
-    theme.diff_added_background = {40, 105, 50};
-    theme.diff_added_foreground = {255, 255, 255};
-    theme.diff_changed_background = {50, 62, 86};
-    theme.diff_changed_foreground = {255, 255, 255};
-    theme.diff_filler_background = {24, 24, 22};
+    // A light well, as paper's, has what is marked on it in pale colours under its dark text; a dark one in deep
+    // colours under white.
+    const auto light_well{style.well.red + style.well.green + style.well.blue > 3 * 128};
+    const auto marked{[&](Color on_light, Color on_dark) { return light_well ? on_light : on_dark; }};
+    const auto marked_text{marked(style.well_text, {255, 255, 255})};
+    theme.search_match_background = marked({240, 200, 90}, {150, 110, 40});
+    theme.search_match_foreground = marked_text;
+    theme.occurrence_background = marked({214, 222, 236}, {70, 80, 100});
+    theme.occurrence_foreground = marked_text;
+    theme.bracket_match_background = marked({190, 226, 180}, {70, 110, 60});
+    theme.bracket_match_foreground = marked_text;
+    // Comparing: red and green deep enough for light text on a dark well, pale enough for dark text on a light one.
+    theme.diff_removed_background = marked({240, 190, 180}, {120, 40, 40});
+    theme.diff_removed_foreground = marked_text;
+    theme.diff_added_background = marked({190, 226, 180}, {40, 105, 50});
+    theme.diff_added_foreground = marked_text;
+    theme.diff_changed_background = marked({200, 215, 235}, {50, 62, 86});
+    theme.diff_changed_foreground = marked_text;
+    theme.diff_filler_background = marked(mix(style.well, {0, 0, 0}, 30), {24, 24, 22});
     theme.scrollbar_background = style.shadow;
     theme.scrollbar_foreground = style.face;
     theme.editor_background = style.well;
@@ -291,26 +324,26 @@ Theme theme_for(const GraphicalStyle& style)
     theme.reading_background = style.well;
     theme.reading_foreground = style.well_text;
     theme.side_panel_background = style.well;
-    theme.syntax_keyword = {232, 184, 72};
-    theme.syntax_type = {120, 196, 208};
-    theme.syntax_function = {226, 222, 206};
-    theme.syntax_string = {148, 204, 112};
-    theme.syntax_number = {220, 140, 100};
-    theme.syntax_comment = {124, 124, 116};
-    theme.syntax_preprocessor = {196, 150, 210};
-    theme.syntax_operator = {180, 180, 170};
-    theme.heading_foreground = {232, 184, 72};
-    theme.code_foreground = {120, 196, 208};
-    theme.code_background = mix(style.well, {0, 0, 0}, 80);
-    theme.link_foreground = {148, 204, 112};
+    theme.syntax_keyword = style.syntax.keyword;
+    theme.syntax_type = style.syntax.type;
+    theme.syntax_function = style.syntax.function;
+    theme.syntax_string = style.syntax.string;
+    theme.syntax_number = style.syntax.number;
+    theme.syntax_comment = style.syntax.comment;
+    theme.syntax_preprocessor = style.syntax.preprocessor;
+    theme.syntax_operator = style.syntax.operator_;
+    theme.heading_foreground = style.syntax.keyword;
+    theme.code_foreground = style.syntax.type;
+    theme.code_background = mix(style.well, {0, 0, 0}, light_well ? 20 : 80);
+    theme.link_foreground = style.syntax.string;
     theme.input_background = style.well;
     theme.input_foreground = style.well_text;
     theme.disabled_foreground = mix(style.face, text, 110);
     theme.line_number_foreground = theme.disabled_foreground;
     theme.hotkey_foreground = text;
-    theme.error_foreground = {220, 80, 60};
-    theme.warning_foreground = {232, 184, 72};
-    theme.info_foreground = {120, 196, 208};
+    theme.error_foreground = marked({180, 30, 30}, {220, 80, 60});
+    theme.warning_foreground = marked({150, 90, 0}, {232, 184, 72});
+    theme.info_foreground = marked({0, 100, 150}, {120, 196, 208});
     return theme;
 }
 

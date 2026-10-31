@@ -3,6 +3,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <set>
 #include <string>
@@ -116,4 +117,26 @@ TEST(TerminalThemesTests, EveryTextReadsOnWhatItIsPaintedOn)
             EXPECT_GE(contrast(colours.first, colours.second), needed) << id << ": " << what;
         }
     }
+}
+
+TEST(TerminalThemesTests, SomeAreSoftOnTheEyesWithTheirTextClearOnTheEditor)
+{
+    // Beyond the sixteen colours of a console: a dark slate, a page of paper, a midnight blue, and the most contrast
+    // there is, each with the editor's text at least at WCAG's AAA, 7.
+    const auto themes{oui::terminal_themes()};
+    for(const std::string_view wanted : {"slate", "paper", "midnight", "contrast"})
+    {
+        const auto found{
+            std::find_if(themes.begin(), themes.end(), [wanted](const auto& theme) { return theme.id == wanted; })};
+        ASSERT_NE(found, themes.end()) << wanted;
+        EXPECT_GE(contrast(found->theme.editor_foreground, found->theme.editor_background), 7.0) << wanted;
+        for(const auto colour : {found->theme.syntax_keyword, found->theme.syntax_type, found->theme.syntax_string,
+                                 found->theme.syntax_number, found->theme.syntax_function})
+        {
+            EXPECT_GE(contrast(colour, found->theme.editor_background), 4.5) << wanted;
+        }
+    }
+    const auto contrasted{
+        std::find_if(themes.begin(), themes.end(), [](const auto& theme) { return theme.id == "contrast"; })};
+    EXPECT_GE(contrast(contrasted->theme.editor_foreground, contrasted->theme.editor_background), 18.0);
 }

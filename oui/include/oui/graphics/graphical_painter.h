@@ -27,6 +27,20 @@ struct GraphicalStyle
     // Sunken surfaces, such as lists and text fields, and their text.
     Color well{34, 34, 32};
     Color well_text{208, 208, 200};
+    // The colours of code in the editor, on the well; a heading, code and a link in Markdown take the keyword's, the
+    // type's and the string's.
+    struct Syntax
+    {
+        Color keyword{232, 184, 72};
+        Color type{120, 196, 208};
+        Color function{226, 222, 206};
+        Color string{148, 204, 112};
+        Color number{220, 140, 100};
+        Color comment{124, 124, 116};
+        Color preprocessor{196, 150, 210};
+        Color operator_{180, 180, 170};
+    };
+    Syntax syntax;
     // What has the keyboard focus, and a window placed from the keyboard.
     Color focus{228, 168, 44};
     // Text on raised surfaces, plain and quieter, and what is selected in a list.

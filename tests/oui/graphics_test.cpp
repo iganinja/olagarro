@@ -36,6 +36,7 @@
 #include <string>
 #include <thread>
 #include <tuple>
+#include <utility>
 
 namespace
 {
@@ -1041,6 +1042,44 @@ TEST(OuiGraphicsTests, TheDarkLookIsFlatInNotoSansWithOneAccentAndItsTextReads)
     ASSERT_NE(dark, themes.end());
     EXPECT_EQ(dark->name, "Dark");
     EXPECT_TRUE(dark->style.flat);
+}
+
+TEST(OuiGraphicsTests, EachLookHasAnEditorOfItsOwnWhoseTextReads)
+{
+    // Choosing another look changes the editor's background, its text and its colours, not only the controls.
+    const auto themes{graphical_themes()};
+    for(std::size_t first{}; first < themes.size(); ++ first)
+    {
+        const auto theme{theme_for(themes[first].style)};
+        for(const auto& [what, colour] :
+            std::vector<std::pair<std::string, Color>>{{"text", theme.editor_foreground},
+                                                       {"keyword", theme.syntax_keyword},
+                                                       {"type", theme.syntax_type},
+                                                       {"function", theme.syntax_function},
+                                                       {"string", theme.syntax_string},
+                                                       {"number", theme.syntax_number},
+                                                       {"comment", theme.syntax_comment},
+                                                       {"preprocessor", theme.syntax_preprocessor},
+                                                       {"operator", theme.syntax_operator},
+                                                       {"heading", theme.heading_foreground},
+                                                       {"link", theme.link_foreground}})
+        {
+            // A comment may be quieter than the rest, as line numbers are.
+            EXPECT_GE(contrast(colour, theme.editor_background), what == "comment" ? 3.0 : 4.5)
+                << themes[first].id << ": " << what;
+        }
+        EXPECT_GE(contrast(theme.editor_foreground, theme.editor_background), 7.0) << themes[first].id;
+        for(auto second{first + 1}; second < themes.size(); ++ second)
+        {
+            const auto other{theme_for(themes[second].style)};
+            const auto id{themes[first].id + " and " + themes[second].id};
+            EXPECT_FALSE(same(theme.editor_background, other.editor_background)) << id;
+            EXPECT_FALSE(same(theme.syntax_keyword, other.syntax_keyword)) << id;
+        }
+    }
+    // And one is light, for a bright room.
+    EXPECT_TRUE(std::any_of(themes.begin(), themes.end(),
+                            [](const auto& theme) { return contrast(theme.style.well, {0, 0, 0}) > 10.0; }));
 }
 
 TEST(OuiGraphicsTests, AFlatButtonHasAThinEdgeAllRoundAndHeldDownIsFilledLighter)

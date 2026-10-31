@@ -182,7 +182,8 @@
       "Classic": "Clásico",
       "Dark": "Oscuro",
       "Night": "Noche",
-      "Ocean": "Océano"
+      "Ocean": "Océano",
+      "Paper": "Papel"
     },
     "Highlighter": {
       "{0}: unknown kind \"{1}\"": "{0}: kind desconocido \"{1}\"",
@@ -245,10 +246,14 @@
     "TerminalTheme": {
       "Amber": "Ámbar",
       "Commander": "Commander",
+      "High Contrast": "Alto contraste",
       "Light": "Claro",
+      "Midnight": "Medianoche",
       "Monochrome": "Monocromo",
       "Night": "Noche",
+      "Paper": "Papel",
       "Phosphor": "Fósforo",
+      "Slate": "Pizarra",
       "Turbo C++": "Turbo C++"
     },
     "TerminalView": {

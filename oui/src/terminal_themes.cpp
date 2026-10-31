@@ -653,6 +653,258 @@ Theme commander()
     return theme;
 }
 
+// The few colours a look softer on the eyes is made of, in any colour a terminal of 24 bits shows; one of 256 or 16
+// shows the nearest it has.
+struct Palette
+{
+    // The editor, lists and fields, their text, and what is quieter: line numbers, comments, what cannot be chosen.
+    Color editor;
+    Color text;
+    Color muted;
+    // Menus, dialogs, the status bar and the side panel, and their text.
+    Color surface;
+    Color surface_text;
+    // What has the focus or is selected, and its text.
+    Color accent;
+    Color accent_text;
+    // Shortcut letters, headings and the default button.
+    Color highlight;
+    Color keyword;
+    Color type;
+    Color string;
+    Color number;
+    Color preprocessor;
+    Color operator_;
+    // A search's match, and lines added, removed and changed in a comparison, with the text on them.
+    Color match;
+    Color match_text;
+    Color added;
+    Color removed;
+    Color changed;
+    Color difference_text;
+    Color error;
+    Color shadow;
+};
+
+Theme from_palette(const Palette& p)
+{
+    Theme theme{TurboCTheme::make()};
+    theme.button_shortcut_foreground = p.highlight;
+    theme.label_shortcut_foreground = p.highlight;
+    theme.button_default_foreground = p.highlight;
+    theme.shadow_foreground = p.muted;
+    theme.dialog_icon_foreground = p.string;
+    theme.list_background = p.editor;
+    theme.list_foreground = p.text;
+    theme.item_selected_background = p.accent;
+    theme.item_selected_foreground = p.accent_text;
+    theme.cluster_background = p.surface;
+    theme.cluster_foreground = p.surface_text;
+    theme.cluster_focused_foreground = p.highlight;
+    theme.cluster_shortcut_foreground = p.highlight;
+    theme.background = p.editor;
+    theme.text = p.text;
+    theme.muted_text = p.muted;
+    theme.control_background = p.editor;
+    theme.panel_background = p.editor;
+    theme.panel_foreground = p.text;
+    theme.side_panel_background = p.surface;
+    theme.shadow = p.shadow;
+    theme.focus_background = p.accent;
+    theme.focus_text = p.accent_text;
+
+    theme.dialog_background = p.surface;
+    theme.dialog_foreground = p.surface_text;
+    theme.dialog_border = p.muted;
+    theme.dialog_border_placing = p.highlight;
+    theme.dialog_heading_foreground = p.highlight;
+    theme.table_header_background = p.surface;
+    theme.table_header_foreground = p.surface_text;
+    theme.table_background = p.editor;
+    theme.table_foreground = p.text;
+
+    theme.menu_background = p.surface;
+    theme.menu_foreground = p.surface_text;
+    theme.menu_border = p.muted;
+    theme.menu_selected_background = p.accent;
+    theme.menu_selected_foreground = p.accent_text;
+    theme.status_background = p.surface;
+    theme.status_foreground = p.surface_text;
+
+    theme.button_background = p.editor;
+    theme.button_foreground = p.text;
+    theme.button_focused_background = p.accent;
+    theme.button_focused_foreground = p.accent_text;
+    theme.button_pressed_background = p.accent;
+    theme.button_pressed_foreground = p.accent_text;
+
+    theme.tab_active_background = p.editor;
+    theme.tab_active_foreground = p.text;
+    theme.tab_inactive_background = p.surface;
+    theme.tab_inactive_foreground = p.muted;
+
+    theme.selection_background = p.accent;
+    theme.selection_foreground = p.accent_text;
+    theme.search_match_background = p.match;
+    theme.search_match_foreground = p.match_text;
+    theme.occurrence_background = p.surface;
+    theme.occurrence_foreground = p.text;
+    theme.bracket_match_background = p.added;
+    theme.bracket_match_foreground = p.difference_text;
+    theme.diff_removed_background = p.removed;
+    theme.diff_removed_foreground = p.difference_text;
+    theme.diff_added_background = p.added;
+    theme.diff_added_foreground = p.difference_text;
+    theme.diff_changed_background = p.changed;
+    theme.diff_changed_foreground = p.difference_text;
+    theme.diff_filler_background = p.shadow;
+    theme.scrollbar_background = p.surface;
+    theme.scrollbar_foreground = p.muted;
+
+    theme.editor_background = p.editor;
+    theme.editor_foreground = p.text;
+    theme.line_number_foreground = p.muted;
+    theme.reading_background = p.editor;
+    theme.reading_foreground = p.text;
+    theme.syntax_keyword = p.keyword;
+    theme.syntax_type = p.type;
+    theme.syntax_function = p.text;
+    theme.syntax_string = p.string;
+    theme.syntax_number = p.number;
+    theme.syntax_comment = p.muted;
+    theme.syntax_preprocessor = p.preprocessor;
+    theme.syntax_operator = p.operator_;
+    theme.heading_foreground = p.highlight;
+    theme.code_foreground = p.type;
+    theme.code_background = p.surface;
+    theme.link_foreground = p.keyword;
+
+    theme.input_background = p.editor;
+    theme.input_foreground = p.text;
+    theme.disabled_foreground = p.muted;
+    theme.hotkey_foreground = p.highlight;
+    theme.error_foreground = p.error;
+    theme.warning_foreground = p.number;
+    theme.info_foreground = p.keyword;
+    return theme;
+}
+
+// Light text on a blue-grey slate, the surfaces a shade lighter: a dark look without black's glare.
+Theme slate()
+{
+    Palette p;
+    p.editor = {38, 42, 50};
+    p.text = {222, 226, 232};
+    p.muted = {128, 136, 150};
+    p.surface = {54, 60, 72};
+    p.surface_text = {230, 232, 238};
+    p.accent = {62, 110, 180};
+    p.accent_text = {255, 255, 255};
+    p.highlight = {240, 200, 110};
+    p.keyword = {130, 170, 255};
+    p.type = {110, 210, 200};
+    p.string = {160, 210, 130};
+    p.number = {230, 160, 120};
+    p.preprocessor = {200, 150, 230};
+    p.operator_ = {190, 196, 206};
+    p.match = {150, 110, 30};
+    p.match_text = {255, 255, 255};
+    p.added = {40, 100, 60};
+    p.removed = {130, 44, 44};
+    p.changed = {50, 70, 100};
+    p.difference_text = {255, 255, 255};
+    p.error = {240, 110, 110};
+    p.shadow = {20, 22, 26};
+    return from_palette(p);
+}
+
+// Dark ink on a warm page: a light look without white's glare.
+Theme paper()
+{
+    Palette p;
+    p.editor = {250, 247, 238};
+    p.text = {36, 36, 40};
+    p.muted = {110, 108, 100};
+    p.surface = {226, 220, 206};
+    p.surface_text = {30, 30, 34};
+    p.accent = {40, 90, 170};
+    p.accent_text = {255, 255, 255};
+    p.highlight = {170, 60, 20};
+    p.keyword = {20, 80, 170};
+    p.type = {0, 110, 120};
+    p.string = {40, 110, 30};
+    p.number = {160, 70, 10};
+    p.preprocessor = {120, 40, 140};
+    p.operator_ = {70, 70, 74};
+    p.match = {240, 200, 90};
+    p.match_text = {30, 30, 34};
+    p.added = {190, 226, 180};
+    p.removed = {240, 190, 180};
+    p.changed = {200, 215, 235};
+    p.difference_text = {30, 30, 34};
+    p.error = {180, 30, 30};
+    p.shadow = {196, 190, 176};
+    return from_palette(p);
+}
+
+// Pale text on a deep night blue: Turbo's blue, darkened to rest the eyes.
+Theme midnight()
+{
+    Palette p;
+    p.editor = {16, 24, 44};
+    p.text = {214, 222, 240};
+    p.muted = {120, 134, 166};
+    p.surface = {30, 42, 72};
+    p.surface_text = {226, 232, 246};
+    p.accent = {60, 100, 190};
+    p.accent_text = {255, 255, 255};
+    p.highlight = {255, 210, 110};
+    p.keyword = {120, 170, 255};
+    p.type = {100, 210, 230};
+    p.string = {170, 220, 140};
+    p.number = {240, 170, 120};
+    p.preprocessor = {210, 160, 240};
+    p.operator_ = {180, 190, 215};
+    p.match = {160, 110, 30};
+    p.match_text = {255, 255, 255};
+    p.added = {30, 100, 70};
+    p.removed = {130, 40, 60};
+    p.changed = {44, 64, 110};
+    p.difference_text = {255, 255, 255};
+    p.error = {250, 120, 130};
+    p.shadow = {6, 10, 20};
+    return from_palette(p);
+}
+
+// White on black and bright colours, what is chosen in yellow: the most contrast there is, for eyes that need it.
+Theme contrast()
+{
+    Palette p;
+    p.editor = {0, 0, 0};
+    p.text = {255, 255, 255};
+    p.muted = {170, 170, 170};
+    p.surface = {24, 24, 24};
+    p.surface_text = {255, 255, 255};
+    p.accent = {255, 230, 0};
+    p.accent_text = {0, 0, 0};
+    p.highlight = {255, 230, 0};
+    p.keyword = {120, 200, 255};
+    p.type = {0, 255, 255};
+    p.string = {120, 255, 120};
+    p.number = {255, 180, 80};
+    p.preprocessor = {255, 140, 255};
+    p.operator_ = {255, 255, 255};
+    p.match = {255, 230, 0};
+    p.match_text = {0, 0, 0};
+    p.added = {0, 110, 0};
+    p.removed = {170, 0, 0};
+    p.changed = {0, 60, 140};
+    p.difference_text = {255, 255, 255};
+    p.error = {255, 90, 90};
+    p.shadow = {0, 0, 0};
+    return from_palette(p);
+}
+
 } // namespace
 
 std::vector<TerminalTheme> terminal_themes()
@@ -663,7 +915,11 @@ std::vector<TerminalTheme> terminal_themes()
             {"monochrome", translate("TerminalTheme", "Monochrome"), monochrome()},
             {"amber", translate("TerminalTheme", "Amber"), amber()},
             {"phosphor", translate("TerminalTheme", "Phosphor"), phosphor()},
-            {"commander", translate("TerminalTheme", "Commander"), commander()}};
+            {"commander", translate("TerminalTheme", "Commander"), commander()},
+            {"slate", translate("TerminalTheme", "Slate"), slate()},
+            {"paper", translate("TerminalTheme", "Paper"), paper()},
+            {"midnight", translate("TerminalTheme", "Midnight"), midnight()},
+            {"contrast", translate("TerminalTheme", "High Contrast"), contrast()}};
 }
 
 } // namespace olagarro::oui
