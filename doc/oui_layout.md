@@ -1,7 +1,8 @@
 # OUI for C++ programs
 
-OUI is the toolkit under OUI Code, oui_run, oui_calc and the desktop: widgets laid out in cells, the same whether
-they show in a terminal, in a desktop window or on the whole screen. This document is for a C++ program that uses
+OUI is the toolkit under OUI Code, oui_run, oui_calc and the desktop: widgets laid out in cells, whole ones in a
+terminal and to the pixel in a window, the same program whether they show in a terminal, in a desktop window or on the
+whole screen. This document is for a C++ program that uses
 it: how the application runs, how widgets are held and laid out, how keys and the mouse reach them, and what
 ready-made widgets there are. How they are drawn is in [rendering](oui_rendering.md), their colours in
 [themes](themes.md), and windows written as text rather than code in [descriptions](oui_descriptions.md).

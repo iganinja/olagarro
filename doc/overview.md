@@ -116,12 +116,15 @@ programs.
 
 ### Cells are the unit of layout
 
-Every widget is laid out in cells: a position and a size are whole columns and rows, in a terminal and in pixels
-alike. A graphical backend measures a cell by its cell font (`PixelBackend::cell_size`) and gives the application as
-many cells as fit, so layout never knows whether it shows in characters or in pixels. What changes in pixels is how
-things are drawn inside their cells: interface text in a proportional font, frames as bevelled shapes. Where a widget
-has to place something by the width of that text, as a text field's cursor, it measures through `TextMetrics`, which
-counts columns in a terminal and pixels in a graphical backend. OUI's desktop keeps the same rule between programs:
+Every widget is laid out in cells, columns and rows, held as `double`s. How fine a position may be is the backend's
+step (`TextMetrics::column_step()` and `row_step()`): a whole cell in a terminal, which lays out as it always did, and
+a pixel in a graphical backend, which measures a cell by its cell font (`PixelBackend::cell_size`) and gives the
+application every pixel it has, in cells. Containers snap the edges they compute to that step, and a position becomes a
+row, a column or a character through `oui::whole`. So the same code lays out whole cells in a terminal and pixels in a
+window: a widget as wide as its text is as wide as the text's pixels there, and gaps given as `Length::pixels` are
+thin. Interface text shows in a proportional font, frames as bevelled shapes; where a widget places something by the
+width of that text, as a text field's cursor, it measures through `TextMetrics`, which counts columns in a terminal and
+pixels in a graphical backend. OUI's desktop keeps the same rule between programs:
 each window is a whole number of cells of the same size, so what each program draws lines up with the desktop's cells.
 [Layout](oui_layout.md) and [rendering](oui_rendering.md) go into this.
 

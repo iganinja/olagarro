@@ -3,7 +3,8 @@
 ![Olagarro](doc/logo.png)
 
 Olagarro is a small, portable C++17 utility library for games and applications.
-Its documentation is in [doc](doc/README.md), in Markdown: OUI Code shows it, its links followed.
+Its documentation is in [doc](doc/README.md), in Markdown: OUI Code shows it, its links followed. [Olagarro for an
+AI](doc/ai_guide.md) is all of it in one short document, for an AI that is to use it, or anyone in a hurry.
 
 ![OUI Code with its File menu open, in a terminal on the left and in its own window on the right](doc/images/oui_code_terminal_and_window.png)
 
@@ -76,7 +77,7 @@ executor.update(1.0f);
 ## OUI
 
 OUI builds text-mode applications that run in any terminal, locally or over SSH,
-on Linux and Windows. It is event driven and uses no CPU while idle.
+on Linux, macOS and Windows. It is event driven and uses no CPU while idle.
 
 - Widgets: labels, buttons, check buttons, line and multi-line text editors,
   combo boxes, lists, tables, tree views, tabs, scroll views and a status bar.
@@ -112,7 +113,8 @@ on Linux and Windows. It is event driven and uses no CPU while idle.
   look: a terminal with characters, a graphical style with bevelled shapes,
   interface text in a proportional font and cells in a monospace one, both
   built in. The default look is inspired by Transport Tycoon; themes change at
-  run time. Layout stays in cells, so nothing else changes.
+  run time. Layout is in cells, which a window places to the pixel and a
+  terminal keeps whole, so the program does not change.
 - A desktop window (`olagarro::OUIWindow`, with `OLAGARRO_OUI_WINDOW=ON`):
   SDL3 opens it and brings the keyboard and the mouse; OUI draws everything
   inside it, its frame and title bar too, and the desktop still moves and

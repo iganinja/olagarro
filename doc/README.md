@@ -6,6 +6,8 @@ opens its document in the same view, and Alt+Left goes back.
 
 ## Start here
 
+- [Olagarro for an AI](ai_guide.md): all of it, top to bottom and short, for an AI or anyone in a hurry: what there
+  is, how to bring it into a project, how an OUI program is made, the rules and the mistakes easy to make.
 - [Overview](overview.md): every library and program, what each is for, how they depend on each other, and where
   everything is in the repository.
 - [Building](building.md): CMake, its options, the terminal and window builds, static binaries, Windows, and the

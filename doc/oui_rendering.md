@@ -24,10 +24,11 @@ cells, in [layout](oui_layout.md).
 
 ## The frame
 
-Everything in OUI is laid out and painted in **cells**: a grid of columns and rows, as a terminal has. A backend says
-how many cells there are (`Backend::size()`); widgets are arranged in them and paint in them, whatever the backend
-shows them with. That is why one program runs unchanged in a terminal and in a window: only the backend and the
-painter change, and layout stays in cells.
+Everything in OUI is laid out and painted in **cells**: columns and rows, as a terminal has. A backend says how many
+cells there are (`Backend::size()`); widgets are arranged in them and paint in them, whatever the backend shows them
+with. In a terminal they are whole cells; in a window a position may fall to any pixel, the window's size being its
+pixels in cells (see [measure and arrange](oui_layout.md#measure-and-arrange)). That is why one program runs unchanged
+in a terminal and in a window: only the backend, the painter and how fine a position may be change.
 
 `Application::run_frame` ([application.cpp](../oui/src/application.cpp)) runs timers and posted work, hands the
 backend's events to the widgets, and paints only when something asked for it (`m_needs_render`); with nothing to do
@@ -295,7 +296,8 @@ third-party code.
 
 ## Text metrics and proportional text
 
-Layout works in cells, but interface text in a proportional font takes fewer pixels than its characters' cells. A
+Layout works in cells, but interface text in a proportional font takes fewer pixels than its characters' cells, and in
+a window a widget is laid out to the pixel of what it takes. A
 text field must also put its cursor between the right two letters. `TextMetrics`
 ([text_metrics.h](../oui/include/oui/text_metrics.h)) answers such questions for whatever shows the application:
 
