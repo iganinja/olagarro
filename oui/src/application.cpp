@@ -1426,11 +1426,18 @@ template <typename Field> bool edit_field(Field& field, char32_t letter, Clipboa
 
 } // namespace
 
-// Ctrl+A, Ctrl+C, Ctrl+X and Ctrl+V in a text field or text nobody else took, as in a dialog, where the
-// application's shortcuts wait, or in a program that binds no edit commands, as a script's read-only log in oui_run:
-// they select, copy, cut and paste through the clipboard, as everywhere. Read-only text copies but changes not.
+// Ctrl+A, Ctrl+C, Ctrl+X and Ctrl+V (or Shift+Insert) in a text field or text nobody else took, as in a dialog, where
+// the application's shortcuts wait, or in a program that binds no edit commands, as a script's read-only log in
+// oui_run: they select, copy, cut and paste through the clipboard, as everywhere. Read-only text copies but changes
+// not.
 bool Application::edit_focused_field(const Event& event)
 {
+    // Shift+Insert pastes as Ctrl+V does.
+    if(const auto* const key{std::get_if<KeyEvent>(&event)};
+       key != nullptr && key->key == Key::insert_ && key->shift && !key->control && !key->alt)
+    {
+        return edit_focused_field(Event{TextEvent{U'v', true}});
+    }
     const auto* const text{std::get_if<TextEvent>(&event)};
     if(text == nullptr || !text->control || text->alt || text->shift)
     {

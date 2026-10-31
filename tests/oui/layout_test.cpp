@@ -4337,6 +4337,30 @@ TEST(OuiApplicationTests, ATextEditCopiesThroughTheClipboardWhereNoCommandDoes)
     EXPECT_EQ(log_reference->text(), "pasted");
 }
 
+TEST(OuiApplicationTests, ShiftInsertPastesWhereCtrlVDoesAndNoCommandIsBound)
+{
+    // As a dialog's field, where the application's shortcuts wait, or any field in oui_run.
+    auto backend{std::make_unique<ClipboardKeepingBackend>()};
+    const auto clipboard{backend->m_clipboard};
+    oui::Application application{std::move(backend)};
+    auto content{oui::column()};
+    auto& field{content->add(oui::line_edit())};
+    auto& edit{content->add(oui::text_edit())};
+    application.set_content(std::move(content));
+    application.focus(field);
+    application.render();
+
+    *clipboard = "pegado";
+    application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::insert_, false, false, true}});
+    EXPECT_EQ(field.text(), "pegado");
+
+    application.focus(edit);
+    application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::insert_, false, false, true}});
+    EXPECT_EQ(edit.text(), "pegado");
+    application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::insert_}});
+    EXPECT_EQ(edit.text(), "pegado") << "Insert alone pastes nothing";
+}
+
 TEST(OuiApplicationTests, TheClipboardFollowsTheBackendToTheOneThatReplacedIt)
 {
     // As oui_run's, which starts in one backend and opens its window in another: the first is gone by the copy.
