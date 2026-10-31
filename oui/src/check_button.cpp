@@ -77,7 +77,7 @@ bool CheckButton::handle_event(const Event& event)
 
     if(const auto* const mouse{std::get_if<MouseEvent>(&event)})
     {
-        if(mouse->y != bounds().y || mouse->x < bounds().x || mouse->x >= bounds().x + bounds().width)
+        if(whole(mouse->y - bounds().y) != 0 || mouse->x < bounds().x || mouse->x >= bounds().x + bounds().width)
         {
             return false;
         }

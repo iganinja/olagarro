@@ -3,6 +3,7 @@
 
 #include <oui/utf8.h>
 #include <algorithm>
+#include <cmath>
 
 #include "unicode_composition.h"
 #include "word_boundary.h"
@@ -141,18 +142,19 @@ bool LineEdit::handle_event(const Event& event)
             return result;
         }
         if((!mouse->pressed && (!mouse->dragging || !m_mouse_selecting)) || mouse->x < bounds().x ||
-           mouse->x >= bounds().x + bounds().width || mouse->y != bounds().y)
+           mouse->x >= bounds().x + bounds().width || whole(mouse->y - bounds().y) != 0)
         {
             return false;
         }
-        // A drag takes in the character under the pointer.
+        // A drag takes in the character under the pointer: how far it is from the field's start is the pointer's
+        // cell and its place in it, as the field may start between cells.
         const auto& metrics{text_metrics()};
         const auto shown{shown_text()};
         const auto first{shown_offset(std::min(m_first_shown, m_text.size()))};
+        const auto from_start{static_cast<int>(std::lround((whole(mouse->x) - bounds().x) * metrics.cell_width())) +
+                              mouse->cell_offset};
         m_cursor = text_offset(first + metrics.byte_at(std::string_view{shown}.substr(first),
-                                                       whole(mouse->x - bounds().x) * metrics.cell_width() +
-                                                           mouse->cell_offset - metrics.field_padding(),
-                                                       !mouse->pressed));
+                                                       from_start - metrics.field_padding(), !mouse->pressed));
         if(mouse->pressed)
         {
             m_anchor = m_cursor;

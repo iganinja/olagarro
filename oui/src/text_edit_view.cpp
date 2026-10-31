@@ -354,7 +354,7 @@ bool TextEdit::handle_horizontal_scrollbar(const MouseEvent& mouse)
         return true;
     }
     const auto track_left{bounds().x + gutter_width()};
-    if(horizontal_scrollbar_height() == 0 || mouse.y != bounds().y + text_rows() || mouse.x < bounds().x ||
+    if(horizontal_scrollbar_height() == 0 || whole(mouse.y - (bounds().y + text_rows())) != 0 || mouse.x < bounds().x ||
        mouse.x >= bounds().x + bounds().width)
     {
         return false;
@@ -417,7 +417,8 @@ bool TextEdit::handle_scrollbar(const MouseEvent& mouse)
         return true;
     }
     const auto track_x{bounds().x + bounds().width - 1};
-    if(scrollbar_width() == 0 || mouse.x != track_x || mouse.y < bounds().y || mouse.y >= bounds().y + text_rows())
+    if(scrollbar_width() == 0 || whole(mouse.x - track_x) != 0 || mouse.y < bounds().y ||
+       mouse.y >= bounds().y + text_rows())
     {
         return false;
     }

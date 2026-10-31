@@ -1,6 +1,7 @@
 #include <oui/split_view.h>
 
 #include <oui/painter.h>
+#include <oui/text_metrics.h>
 #include <oui/theme.h>
 
 #include <algorithm>
@@ -70,9 +71,9 @@ std::optional<double> SplitView::divider() const
     const auto horizontal{m_orientation == Orientation::horizontal};
     const auto start{horizontal ? bounds().x : bounds().y};
     const auto length{horizontal ? bounds().width : bounds().height};
-    // Each side keeps at least one cell, and the line one more.
-    const auto first{
-        std::clamp(static_cast<double>(std::lround(m_ratio * (length - 1))), 1.0, std::max(1.0, length - 2))};
+    // Each side keeps at least one cell, and the line one more; it lies at the step nearest the ratio.
+    const auto step{horizontal ? text_metrics().column_step() : text_metrics().row_step()};
+    const auto first{std::clamp(snap(m_ratio * (length - 1) + step / 2, step), 1.0, std::max(1.0, length - 2))};
     return start + first;
 }
 
@@ -133,9 +134,10 @@ bool SplitView::handle_event(const Event& event)
     }
     const auto horizontal{m_orientation == Orientation::horizontal};
     const auto position{horizontal ? mouse->x : mouse->y};
-    if(mouse->pressed && !mouse->right && position == *line)
+    if(mouse->pressed && !mouse->right && whole(position - *line) == 0)
     {
         m_dragging = true;
+        m_grab = position - *line;
         return true;
     }
     if(!m_dragging)
@@ -148,7 +150,8 @@ bool SplitView::handle_event(const Event& event)
         const auto length{horizontal ? bounds().width : bounds().height};
         if(length > 1)
         {
-            set_ratio((position - start) / (length - 1));
+            // To the step, which divider() keeps it at.
+            set_ratio((position - m_grab - start) / (length - 1));
         }
     }
     if(mouse->released)
@@ -162,7 +165,7 @@ Pointer SplitView::pointer_at(Point point) const
 {
     const auto line{divider()};
     const auto horizontal{m_orientation == Orientation::horizontal};
-    if(m_dragging || (line && (horizontal ? point.x : point.y) == *line))
+    if(m_dragging || (line && whole((horizontal ? point.x : point.y) - *line) == 0))
     {
         return horizontal ? Pointer::resize_columns : Pointer::resize_rows;
     }

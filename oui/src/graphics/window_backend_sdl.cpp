@@ -530,7 +530,7 @@ class WindowBackend final : public DesktopWindow
         return SDL_HITTEST_NORMAL;
     }
 
-    // A pixel in the content area as a cell; none outside it.
+    // A pixel in the content area in cells, between them as the pixel is; none outside it.
     [[nodiscard]] std::optional<Point> cell_at(float window_x, float window_y) const
     {
         const auto scale{pixel_scale()};
@@ -541,9 +541,7 @@ class WindowBackend final : public DesktopWindow
         {
             return std::nullopt;
         }
-        return Point{
-            std::floor((x - content.x) / cell_size().width),
-            static_cast<double>(GraphicalPainter::row_at(y - content.y, content.height, whole(cell_size().height)))};
+        return PixelBackend::cell_at({static_cast<double>(x - content.x), static_cast<double>(y - content.y)});
     }
 
     // A pixel in the window, in the content area's pixels: negative or past its size outside it.
@@ -555,19 +553,8 @@ class WindowBackend final : public DesktopWindow
                 static_cast<double>(static_cast<int>(std::floor(window_y * scale)) - content.y)};
     }
 
-    // The cell a pixel would be in, as if the cells went on past the content area: where a drag that left it is.
-    [[nodiscard]] Point cell_beyond(Point pixel) const
-    {
-        const auto& content{content_area()};
-        const auto floor_divide{[](int value, int by) { return value >= 0 ? value / by : -((-value + by - 1) / by); }};
-        const auto x{whole(pixel.x)};
-        const auto y{whole(pixel.y)};
-        const auto cell_width{whole(cell_size().width)};
-        const auto cell_height{whole(cell_size().height)};
-        const auto row{y >= 0 && y < content.height ? GraphicalPainter::row_at(y, content.height, cell_height)
-                                                    : floor_divide(y, cell_height)};
-        return {static_cast<double>(floor_divide(x, cell_width)), static_cast<double>(row)};
-    }
+    // Where a pixel would be in cells, as if the cells went on past the content area: where a drag that left it is.
+    [[nodiscard]] Point cell_beyond(Point pixel) const { return PixelBackend::cell_at(pixel); }
 
     // How far into its cell a pixel lies, from the cell's left.
     [[nodiscard]] int offset_in_cell(float window_x) const

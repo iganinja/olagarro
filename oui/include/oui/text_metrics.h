@@ -21,6 +21,12 @@ class TextMetrics
 
     // How many units a cell is wide.
     [[nodiscard]] virtual int cell_width() const;
+    // How fine a position may be, in cells across and down: a whole cell in a terminal, a pixel in a window.
+    // Containers snap every edge they compute to it.
+    [[nodiscard]] virtual double column_step() const;
+    [[nodiscard]] virtual double row_step() const;
+    // The size of a cell in pixels where the backend draws pixels; none in a terminal.
+    [[nodiscard]] virtual std::optional<Size> cell_pixels() const;
     [[nodiscard]] virtual int width(std::string_view text) const;
     // How far from the left edge of a text field its text starts.
     [[nodiscard]] virtual int field_padding() const;
@@ -61,5 +67,14 @@ void set_drag_image(std::optional<DragImage> image);
 [[nodiscard]] const TextMetrics& text_metrics();
 // Sets them, or puts back the terminal's with nullptr; a backend sets its own while it lives.
 void set_text_metrics(const TextMetrics* metrics);
+
+// `value` down to a whole number of `step`s; the tolerance takes a 2.9999999 that means 3 as 3. With a step of 1 it is
+// what an int division gave, which keeps a terminal as it was.
+[[nodiscard]] double snap(double value, double step);
+// `value` up to a whole number of `step`s.
+[[nodiscard]] double snap_up(double value, double step);
+// `value` down to text_metrics()'s step across, and down.
+[[nodiscard]] double snap_x(double value);
+[[nodiscard]] double snap_y(double value);
 
 } // namespace olagarro::oui

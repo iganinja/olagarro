@@ -253,7 +253,7 @@ Size Window::measure(const Constraints& constraints) const
                                         std::min(constraints.max_height, m_maximum_size.height)};
     const auto child{children().empty() ? Size{0, 3} : children().front()->measure(modal_constraints)};
     const auto height{m_height_share
-                          ? std::floor(modal_constraints.max_height * *m_height_share)
+                          ? snap_y(modal_constraints.max_height * *m_height_share)
                           : std::max(child.height + text_metrics().window_top_rows() + 1, m_preferred_size.height)};
     const auto measured{modal_constraints.constrain(
         {std::max({static_cast<double>(m_title.size()) + 6, child.width + 2 * text_metrics().window_side_columns(),
@@ -276,9 +276,8 @@ void Window::arrange(const Rect& bounds)
     }
     m_area = bounds;
     const auto size{measure({bounds.width, bounds.height})};
-    const Rect centered{bounds.x + std::max(0.0, std::floor((bounds.width - size.width) / 2)),
-                        bounds.y + std::max(0.0, std::floor((bounds.height - size.height) / 2)), size.width,
-                        size.height};
+    const Rect centered{bounds.x + std::max(0.0, snap_x((bounds.width - size.width) / 2)),
+                        bounds.y + std::max(0.0, snap_y((bounds.height - size.height) / 2)), size.width, size.height};
     if(m_restored_position)
     {
         m_drag_offset_x = m_restored_position->x - centered.x;
@@ -329,12 +328,16 @@ bool Window::handle_event(const Event& event)
 {
     if(const auto* const mouse_event{std::get_if<MouseEvent>(&event)})
     {
-        const auto right{bounds().x + bounds().width - 1};
-        const auto bottom{bounds().y + bounds().height - 1};
+        // The pointer by the cell it is in, from the window's top left and from its last column and row: in a window
+        // it may be anywhere in its cell, and the window may start between cells.
+        const auto column{whole(mouse_event->x - bounds().x)};
+        const auto row{whole(mouse_event->y - bounds().y)};
+        const auto from_right{whole(mouse_event->x - (bounds().x + bounds().width - 1))};
+        const auto from_bottom{whole(mouse_event->y - (bounds().y + bounds().height - 1))};
         if(m_resizable && mouse_event->pressed && !mouse_event->right)
         {
-            const auto on_right{mouse_event->x == right && mouse_event->y > bounds().y && mouse_event->y <= bottom};
-            const auto on_bottom{mouse_event->y == bottom && mouse_event->x > bounds().x && mouse_event->x <= right};
+            const auto on_right{from_right == 0 && row > 0 && from_bottom <= 0};
+            const auto on_bottom{from_bottom == 0 && column > 0 && from_right <= 0};
             if(on_right || on_bottom)
             {
                 m_resizing_width = on_right;
@@ -360,8 +363,7 @@ bool Window::handle_event(const Event& event)
             return true;
         }
         // The close button: pressed and let go on it, the window closes as Escape closes it.
-        const auto on_close{has_close_button() && mouse_event->y == bounds().y && mouse_event->x >= right - 2 &&
-                            mouse_event->x <= right};
+        const auto on_close{has_close_button() && row == 0 && from_right >= -2 && from_right <= 0};
         if(mouse_event->pressed && on_close)
         {
             m_close_pressed = true;
@@ -379,8 +381,7 @@ bool Window::handle_event(const Event& event)
             }
             return true;
         }
-        if(mouse_event->pressed && mouse_event->y == bounds().y && mouse_event->x > bounds().x &&
-           mouse_event->x < bounds().x + bounds().width - 1)
+        if(mouse_event->pressed && row == 0 && column > 0 && from_right < 0)
         {
             m_dragging = true;
             m_drag_start_x = mouse_event->x;
@@ -440,8 +441,8 @@ void Window::resize_to(Size requested)
     const Size size{std::clamp(requested.width, std::min(m_minimum_size.width, room_width), room_width),
                     std::clamp(requested.height, std::min(m_minimum_size.height, room_height), room_height)};
     m_user_size = size;
-    m_drag_offset_x = left - (m_area.x + std::max(0.0, std::floor((m_area.width - size.width) / 2)));
-    m_drag_offset_y = top - (m_area.y + std::max(0.0, std::floor((m_area.height - size.height) / 2)));
+    m_drag_offset_x = left - (m_area.x + std::max(0.0, snap_x((m_area.width - size.width) / 2)));
+    m_drag_offset_y = top - (m_area.y + std::max(0.0, snap_y((m_area.height - size.height) / 2)));
 }
 
 std::unique_ptr<Window> window(std::string_view title)

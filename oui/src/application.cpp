@@ -750,9 +750,11 @@ bool Application::is_wanted(const Event& event)
     {
         return raw;
     }
-    // A terminal reports a move only from one cell to another; a drag goes by its place in the cell too, as it may be
-    // selecting text set in a proportional font.
-    if(!raw && m_last_motion && m_last_motion->cell.x == mouse->x && m_last_motion->cell.y == mouse->y &&
+    // A terminal reports a move only from one cell to another, and a window's pointer between cells goes the same way
+    // to who does not take the raw pointer; a drag goes by its place in the cell too, as it may be selecting text set
+    // in a proportional font.
+    if(!raw && m_last_motion && whole(m_last_motion->cell.x) == whole(mouse->x) &&
+       whole(m_last_motion->cell.y) == whole(mouse->y) &&
        (!mouse->dragging || m_last_motion->offset == mouse->cell_offset))
     {
         return false;
@@ -870,8 +872,8 @@ void Application::deliver_event(const Event& event)
         {
             constexpr std::chrono::milliseconds multi_click_interval{500};
             const auto now{std::chrono::steady_clock::now()};
-            const auto repeated{counted.x == m_last_press.x && counted.y == m_last_press.y &&
-                                counted.right == m_last_press.right &&
+            const auto repeated{whole(counted.x) == whole(m_last_press.x) &&
+                                whole(counted.y) == whole(m_last_press.y) && counted.right == m_last_press.right &&
                                 now - m_last_press.time <= multi_click_interval && m_last_press.clicks < 3};
             counted.clicks = repeated ? m_last_press.clicks + 1 : 1;
             m_last_press = {counted.x, counted.y, counted.right, counted.clicks, now};
@@ -1339,13 +1341,14 @@ void Application::paint_tooltip(Painter& painter, Size size) const
     {
         std::tie(lines, width) = lines_in(whole(std::max(after, before)));
     }
-    const auto x{width <= after ? at.x + m_tooltip->pointer_columns : std::max(0.0, at.x - width)};
+    // The pointer, and so the tooltip, may be between cells in a window: it starts at the step.
+    const auto x{snap_x(width <= after ? at.x + m_tooltip->pointer_columns : std::max(0.0, at.x - width))};
     if(lines.size() > static_cast<std::size_t>(whole(size.height)))
     {
         lines.resize(static_cast<std::size_t>(whole(size.height)));
     }
     const auto height{static_cast<double>(lines.size())};
-    const auto y{at.y + 1 + height <= size.height ? at.y + 1 : std::max(0.0, at.y - height)};
+    const auto y{snap_y(at.y + 1 + height <= size.height ? at.y + 1 : std::max(0.0, at.y - height))};
     painter.draw_tooltip({x, y, static_cast<double>(width), height}, lines, m_theme);
 }
 // During a key mode the bottom line says what the keys do; a hint too wide for it takes the lines above too,

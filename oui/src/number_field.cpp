@@ -143,7 +143,8 @@ bool NumberField::drag_with(const MouseEvent& mouse)
         }
         return true;
     }
-    if(!mouse.dragging || mouse.x == m_drag->last_x)
+    // It goes by the cell, wherever in it the pointer is.
+    if(!mouse.dragging || whole(mouse.x) == whole(m_drag->last_x))
     {
         return true;
     }
@@ -155,7 +156,8 @@ bool NumberField::drag_with(const MouseEvent& mouse)
     }
     const auto step{m_step > 0.0 ? m_step : 1.0};
     const auto factor{mouse.control ? 10.0 : mouse.shift ? 0.1 : 1.0};
-    m_drag->value = std::clamp(m_drag->value + (mouse.x - m_drag->last_x) * step * factor, m_minimum, m_maximum);
+    m_drag->value =
+        std::clamp(m_drag->value + (whole(mouse.x) - whole(m_drag->last_x)) * step * factor, m_minimum, m_maximum);
     m_drag->last_x = mouse.x;
     m_drag->fine = m_drag->fine || mouse.shift;
     keep(fitted(m_drag->value, m_drag->fine ? m_step / 10.0 : m_step));
@@ -323,12 +325,12 @@ bool NumberField::handle_event(const Event& event)
         step_by(mouse->pixel->y < m_stacked_arrows->y + std::floor(m_stacked_arrows->height / 2) ? 1 : -1);
         return true;
     }
-    if(mouse->x == right - 2)
+    if(whole(mouse->x - (right - 2)) == 0)
     {
         step_by(-1);
         return true;
     }
-    if(mouse->x == right - 1)
+    if(whole(mouse->x - (right - 1)) == 0)
     {
         step_by(1);
         return true;

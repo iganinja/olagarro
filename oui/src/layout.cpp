@@ -1,4 +1,5 @@
 #include <oui/layout.h>
+#include <oui/text_metrics.h>
 
 #include <algorithm>
 #include <cmath>
@@ -42,7 +43,7 @@ void Row::arrange(const Rect& bounds)
     const auto gap{spacing_cells(m_gap)};
     if(m_centered)
     {
-        x += std::max(0.0, std::floor((bounds.width - measure({bounds.width, bounds.height}).width) / 2));
+        x += std::max(0.0, snap_x((bounds.width - measure({bounds.width, bounds.height}).width) / 2));
     }
     for(const auto& child : children())
     {

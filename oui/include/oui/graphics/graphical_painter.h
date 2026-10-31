@@ -85,12 +85,6 @@ class GraphicalPainter final : public Painter
 
     // The size of a cell in pixels, from the cell font.
     [[nodiscard]] static Size cell_size(Font& cell_font);
-    // Where a row of cells starts, in pixels from the top of an area `height` pixels tall that has rows of
-    // `cell_height` pixels, as many as fit. The pixels left over are shared among the rows, a pixel to some, so the
-    // last row ends at the area's bottom: in a window, the status line at its edge rather than over a strip.
-    [[nodiscard]] static int row_offset(int row, int height, int cell_height);
-    // The row of cells a pixel `y` pixels from the top of such an area lies in.
-    [[nodiscard]] static int row_at(int y, int height, int cell_height);
     // How far from its left edge a text field's text starts.
     [[nodiscard]] static int field_padding(Size cell);
 

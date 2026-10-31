@@ -34,6 +34,9 @@ class PixelBackend : public Backend
     [[nodiscard]] const GraphicalStyle& style() const;
     // The size of a cell in pixels.
     [[nodiscard]] Size cell_size() const;
+    // Where a pixel of the content area is, in cells from its top left, between cells as the pixel is: what a
+    // pointer there gives as MouseEvent::x and y. Outside the content area it goes on past it.
+    [[nodiscard]] Point cell_at(Point pixel) const;
     // How big text and cells are, from 0, the smallest, to zoom_levels() - 1; default_zoom() unless set. The
     // application lays itself out again in the cells the new size gives on its next frame.
     void set_zoom(int level);

@@ -128,10 +128,13 @@ bool TabView::handle_event(const Event& event)
         // A tab pressed by its title can be dragged: off its own title it moves, and letting go says where.
         if(m_pressed_tab && mouse->dragging)
         {
-            m_dragging_tab = m_dragging_tab || mouse->y != bounds().y || tab_at(mouse->x) != m_pressed_tab;
+            m_dragging_tab = m_dragging_tab || whole(mouse->y - bounds().y) != 0 || tab_at(mouse->x) != m_pressed_tab;
             if(m_dragging_tab && *m_pressed_tab < m_titles.size())
             {
-                set_drag_image(DragImage{m_titles[*m_pressed_tab], {mouse->x, mouse->y}, mouse->cell_offset});
+                // The image is placed by the pointer's cell and how far into it the pointer is.
+                set_drag_image(DragImage{m_titles[*m_pressed_tab],
+                                         {static_cast<double>(whole(mouse->x)), static_cast<double>(whole(mouse->y))},
+                                         mouse->cell_offset});
             }
             return true;
         }
@@ -148,7 +151,7 @@ bool TabView::handle_event(const Event& event)
             }
             return true;
         }
-        if(!mouse->pressed || mouse->y != bounds().y || mouse->x < bounds().x ||
+        if(!mouse->pressed || whole(mouse->y - bounds().y) != 0 || mouse->x < bounds().x ||
            mouse->x >= bounds().x + bounds().width)
             return false;
         auto x{bounds().x - m_header_scroll};
@@ -159,7 +162,7 @@ bool TabView::handle_event(const Event& event)
             if(mouse->x < x + width)
             {
                 const auto close_x{x + title_len + 2};
-                if(m_closable && ((mouse->right && m_close_on_right_click) || mouse->x == close_x))
+                if(m_closable && ((mouse->right && m_close_on_right_click) || whole(mouse->x - close_x) == 0))
                 {
                     select(index);
                     m_close_requested.fire(index);
@@ -341,7 +344,7 @@ void TabView::set_tooltip_provider(std::function<std::optional<std::string>(std:
 }
 std::optional<std::string> TabView::tooltip_at(Point point) const
 {
-    if(point.y == bounds().y && m_tooltip_provider)
+    if(whole(point.y - bounds().y) == 0 && m_tooltip_provider)
     {
         if(const auto index{tab_at(point.x)})
         {

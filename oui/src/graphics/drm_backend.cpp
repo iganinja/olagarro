@@ -765,9 +765,7 @@ class DrmBackend final : public PixelBackend
         {
             return std::nullopt;
         }
-        return Point{std::floor((m_pointer_x - content.x) / cell_size().width),
-                     static_cast<double>(
-                         GraphicalPainter::row_at(m_pointer_y - content.y, content.height, whole(cell_size().height)))};
+        return cell_at({static_cast<double>(m_pointer_x - content.x), static_cast<double>(m_pointer_y - content.y)});
     }
 
     [[nodiscard]] int offset_in_cell() const

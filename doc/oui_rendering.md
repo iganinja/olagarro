@@ -160,7 +160,9 @@ make a `CellBuffer` of `size()`, paint it with a `CellBufferPainter`, and `prese
 The graphical backends live in the `olagarro::OUIGraphics` library, the SDL window in `olagarro::OUIWindow`
 (`OLAGARRO_OUI_WINDOW=ON`) and the DRM screen with `OLAGARRO_OUI_DRM=ON`; see [building](building.md).
 
-`PixelBackend` does the common work. Its `size()` is how many whole cells of the cell font fit in its content area;
+`PixelBackend` does the common work. Its `size()` is its content area in cells of the cell font, fractional, so the
+root reaches its last pixel; `cell_at(pixel)` is where a pixel of the content area is in cells, which is what the
+SDL window and the DRM screen give as the pointer's `x` and `y`;
 `render` fills the canvas with the style's `desktop` colour, paints the frame with a `GraphicalPainter` limited to the
 content area, then calls `decorate` (what the backend draws around it, as the SDL window's frame and title bar) and
 `show`, which each backend implements: SDL uploads the canvas as a texture, DRM copies it into a dumb buffer, draws
@@ -251,8 +253,11 @@ So a colour from the sixteen of a text console (`TurboCTheme`'s constants, or th
 `0x00RRGGBB`, with a clip rectangle that every operation respects, and fills, blends, antialiased polygons and lines,
 copies, and glyphs drawn from coverage bitmaps.
 
-A cell is as wide as the cell font's `M` and as high as its line (`GraphicalPainter::cell_size`), so a cell's
-rectangle in pixels is its column and row times that size, from the top left of the area the painter was given.
+A cell is as wide as the cell font's `M` and as high as its line (`GraphicalPainter::cell_size`), and every row is
+that high, so a rectangle in pixels is its cells times that size, from the top left of the area the painter was
+given. Each edge is rounded to the nearest pixel on its own, so rectangles that meet in cells meet in pixels, with no
+gap and no overlap, wherever between cells they fall. A scrollbar's thumb, in whole cells from the whole cell its
+track starts in as a terminal shows it, is drawn as far from the track's own start.
 
 - **Cells.** `draw_text` fills each cell with the background and draws the character centred in it from the cell
   font, combining accents composed as in the cell buffer. Bold draws the glyph twice a pixel apart, underline is a
@@ -296,6 +301,8 @@ text field must also put its cursor between the right two letters. `TextMetrics`
 | Method | Terminal | Graphical style |
 |--------|----------|-----------------|
 | `cell_width()` | 1 | the cell's width in pixels |
+| `column_step()`, `row_step()` | 1: a whole cell | a pixel: 1 / the cell's width, 1 / its height |
+| `cell_pixels()` | none | the cell's size in pixels |
 | `width(text)` | columns | pixels of the interface font |
 | `field_padding()` | 0 | half a cell |
 | `popup_frame_rows()` | 1: a frame line above and below | 0: a thin edge inside the entries' rows |

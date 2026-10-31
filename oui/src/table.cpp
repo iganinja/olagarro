@@ -7,6 +7,7 @@
 #include <oui/utf8.h>
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 namespace olagarro::oui
@@ -482,7 +483,8 @@ bool Table::handle_event(const Event& event)
                 return true;
             }
         }
-        if((m_pressed_header || m_column_drag || (mouse->pressed && mouse->y == bounds().y && header_height() == 1)) &&
+        if((m_pressed_header || m_column_drag ||
+            (mouse->pressed && whole(mouse->y - bounds().y) == 0 && header_height() == 1)) &&
            !mouse->right)
         {
             if(handle_header_mouse(*mouse))
@@ -496,13 +498,13 @@ bool Table::handle_event(const Event& event)
         }
         // The horizontal scrollbar's track.
         if(m_horizontal_scroll_enabled && m_total_width > m_viewport_width && bounds().width > 0 &&
-           mouse->y == bounds().y + bounds().height - 1)
+           whole(mouse->y - (bounds().y + bounds().height - 1)) == 0)
         {
             const auto ratio{(mouse->x - bounds().x) / static_cast<double>(bounds().width)};
             scroll_to_x(static_cast<int>(ratio * max_scroll_offset_x()));
             return true;
         }
-        if(header_height() == 1 && mouse->y == bounds().y)
+        if(header_height() == 1 && whole(mouse->y - bounds().y) == 0)
         {
             return false;
         }
@@ -774,8 +776,11 @@ std::optional<std::size_t> Table::edge_at(double x, int cell_offset) const
     const auto grab{std::max(1, cell / 3)};
     for(std::size_t col{}; col < column_count(); ++ col)
     {
+        // How far the pointer is past the edge, in those units: by its cell and its place in it, as the table may
+        // start between cells.
         const auto right{header_pixel_x(col) + column_pixel_width(col)};
-        if((x == right - 1 && cell_offset >= cell - grab) || (x == right && cell_offset < grab))
+        const auto past{static_cast<int>(std::lround((whole(x) - right) * cell)) + cell_offset};
+        if(past >= -grab && past < grab)
         {
             return col;
         }
@@ -816,7 +821,7 @@ bool Table::handle_header_mouse(const MouseEvent& mouse)
         }
         return m_pressed_header || m_column_drag;
     }
-    if(m_column_drag && mouse.dragging && (m_column_drag->moved || mouse.x != m_column_drag->start_x))
+    if(m_column_drag && mouse.dragging && (m_column_drag->moved || whole(mouse.x) != whole(m_column_drag->start_x)))
     {
         // Moved, it is a resize and no longer a click.
         m_column_drag->moved = true;
@@ -840,7 +845,7 @@ bool Table::handle_header_mouse(const MouseEvent& mouse)
     {
         const auto col{*m_pressed_header};
         const auto left{header_pixel_x(col)};
-        if(mouse.y == bounds().y && mouse.x >= left && mouse.x < left + column_pixel_width(col))
+        if(whole(mouse.y - bounds().y) == 0 && mouse.x >= left && mouse.x < left + column_pixel_width(col))
         {
             click_header(col);
         }

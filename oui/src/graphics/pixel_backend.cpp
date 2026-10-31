@@ -23,6 +23,9 @@ class PixelTextMetrics final : public TextMetrics
     PixelTextMetrics(FontSet fonts, Size cell) : m_fonts{fonts}, m_cell{cell} {}
 
     int cell_width() const override { return whole(m_cell.width); }
+    double column_step() const override { return 1.0 / m_cell.width; }
+    double row_step() const override { return 1.0 / m_cell.height; }
+    std::optional<Size> cell_pixels() const override { return m_cell; }
     int width(std::string_view text) const override { return m_fonts.interface_width(text); }
     int field_padding() const override { return GraphicalPainter::field_padding(m_cell); }
     int popup_frame_rows() const override { return 0; }
@@ -171,8 +174,13 @@ PixelBackend::~PixelBackend()
 
 Size PixelBackend::size() const
 {
-    return {std::max(0.0, std::floor(m_content.width / m_cell.width)),
-            std::max(0.0, std::floor(m_content.height / m_cell.height))};
+    // Every pixel of the content area, so what ends at the bottom ends at its last pixel.
+    return {std::max(0.0, m_content.width / m_cell.width), std::max(0.0, m_content.height / m_cell.height)};
+}
+
+Point PixelBackend::cell_at(Point pixel) const
+{
+    return {pixel.x / m_cell.width, pixel.y / m_cell.height};
 }
 
 void PixelBackend::render(const std::function<void(Painter&)>& paint)

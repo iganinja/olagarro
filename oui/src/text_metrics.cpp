@@ -3,6 +3,7 @@
 #include <oui/utf8.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace olagarro::oui
 {
@@ -18,6 +19,21 @@ const TextMetrics* current_metrics{&terminal_metrics};
 int TextMetrics::cell_width() const
 {
     return 1;
+}
+
+double TextMetrics::column_step() const
+{
+    return 1.0;
+}
+
+double TextMetrics::row_step() const
+{
+    return 1.0;
+}
+
+std::optional<Size> TextMetrics::cell_pixels() const
+{
+    return std::nullopt;
 }
 
 int TextMetrics::width(std::string_view text) const
@@ -94,6 +110,26 @@ const TextMetrics& text_metrics()
 void set_text_metrics(const TextMetrics* metrics)
 {
     current_metrics = metrics != nullptr ? metrics : &terminal_metrics;
+}
+
+double snap(double value, double step)
+{
+    return std::floor(value / step + 1e-6) * step;
+}
+
+double snap_up(double value, double step)
+{
+    return std::ceil(value / step - 1e-6) * step;
+}
+
+double snap_x(double value)
+{
+    return snap(value, text_metrics().column_step());
+}
+
+double snap_y(double value)
+{
+    return snap(value, text_metrics().row_step());
 }
 
 } // namespace olagarro::oui

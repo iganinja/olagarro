@@ -195,7 +195,7 @@ bool TreeView::handle_event_as_is(const Event& event)
             {
                 return true;
             }
-            if(std::abs(mouse->y - m_press_y) <= 1)
+            if(std::abs(whole(mouse->y) - m_press_y) <= 1)
             {
                 if(mouse->y >= bounds().y + m_top_padding && mouse->y < bounds().y + bounds().height)
                 {
@@ -220,7 +220,7 @@ bool TreeView::handle_event_as_is(const Event& event)
             m_dragging_scrollbar = false;
             const auto total_height{scrollable_visual_height(visible)};
             const auto viewport{visible_height()};
-            if(total_height > viewport && mouse->x == bounds().x + bounds().width - 1 &&
+            if(total_height > viewport && whole(mouse->x - (bounds().x + bounds().width - 1)) == 0 &&
                mouse->y >= bounds().y + m_top_padding && mouse->y < bounds().y + bounds().height)
             {
                 const auto maximum{maximum_scroll_offset(total_height)};
@@ -231,7 +231,7 @@ bool TreeView::handle_event_as_is(const Event& event)
                 const int thumb_top{
                     track_top +
                     (maximum == 0 ? 0 : static_cast<int>(m_scroll_offset) * thumb_range / static_cast<int>(maximum))};
-                if(mouse->y >= thumb_top && mouse->y < thumb_top + thumb_height)
+                if(whole(mouse->y) >= thumb_top && whole(mouse->y) < thumb_top + thumb_height)
                 {
                     m_dragging_scrollbar = true;
                     m_scroll_grab = whole(mouse->y) - thumb_top;

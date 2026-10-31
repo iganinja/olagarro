@@ -221,7 +221,8 @@ double MenuBar::menu_top() const
     }
     // Under the pointer, or as high as it must go to fit above the bottom of the screen.
     const auto height{static_cast<int>(m_context_items.size()) + 2 * text_metrics().popup_frame_rows()};
-    return std::max(0.0, std::min(m_context_at.y, screen_bottom() - height));
+    // The pointer, in a window, may be between cells: the menu starts at the step.
+    return std::max(0.0, snap_y(std::min(m_context_at.y, screen_bottom() - height)));
 }
 
 double MenuBar::context_x() const
@@ -232,7 +233,7 @@ double MenuBar::context_x() const
         top = top->parent();
     }
     const auto right{top->bounds().x + top->bounds().width};
-    return std::max(top->bounds().x, std::min(m_context_at.x, right - list_width(m_context_items) - 1));
+    return std::max(top->bounds().x, snap_x(std::min(m_context_at.x, right - list_width(m_context_items) - 1)));
 }
 
 void MenuBar::close_menu()
@@ -700,7 +701,7 @@ bool MenuBar::handle_mouse(const MouseEvent& mouse)
     {
         return false;
     }
-    if(mouse.y == bounds().y && mouse.x >= bounds().x && mouse.x < bounds().x + bounds().width)
+    if(whole(mouse.y - bounds().y) == 0 && mouse.x >= bounds().x && mouse.x < bounds().x + bounds().width)
     {
         for(std::size_t index{}; index < m_menus.size(); ++ index)
         {
@@ -738,8 +739,9 @@ bool MenuBar::handle_mouse(const MouseEvent& mouse)
                                                 std::size_t count) -> std::optional<std::size_t>
                       {
                           const auto frame{text_metrics().popup_frame_rows()};
-                          if(mouse.x <= area.x || mouse.x >= area.x + area.width - 1 || mouse.y < area.y + frame ||
-                             mouse.y >= area.y + area.height - frame)
+                          // Not on the columns of its edges, wherever in them the pointer is.
+                          if(whole(mouse.x - area.x) <= 0 || whole(mouse.x - (area.x + area.width - 1)) >= 0 ||
+                             mouse.y < area.y + frame || mouse.y >= area.y + area.height - frame)
                           {
                               return std::nullopt;
                           }

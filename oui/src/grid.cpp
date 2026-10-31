@@ -1,4 +1,5 @@
 #include <oui/grid.h>
+#include <oui/text_metrics.h>
 
 #include <algorithm>
 #include <cmath>
@@ -32,9 +33,10 @@ namespace
 
 // The sizes of the columns, or of the rows, from their lengths: a line without one is as big as its content, `fill`
 // and `flex` share what the others leave when `distribute` says so, and are as big as their content when not, as a
-// grid measured does. A line not shown takes no room, nor a gap.
+// grid measured does. A line not shown takes no room, nor a gap. What a share gives is snapped to `step`.
 [[nodiscard]] std::vector<double> line_sizes(const std::vector<Length>& lengths, const std::vector<double>& content,
-                                             const std::vector<bool>& shown, double available, int gap, bool distribute)
+                                             const std::vector<bool>& shown, double available, int gap, bool distribute,
+                                             double step)
 {
     std::vector<double> sizes(content.size(), 0.0);
     auto used{0.0};
@@ -54,8 +56,8 @@ namespace
             sizes[line] = std::max(0, static_cast<int>(length.value()));
             break;
         case Length::Kind::percent:
-            sizes[line] =
-                std::max(0.0, std::floor(static_cast<double>(static_cast<float>(available) * length.value() / 100.0f)));
+            // In doubles: a float loses the pixel a window's step is.
+            sizes[line] = std::max(0.0, snap(available * static_cast<double>(length.value()) / 100.0, step));
             break;
         case Length::Kind::fill:
         case Length::Kind::flex:
@@ -83,7 +85,7 @@ namespace
         const auto length{line < lengths.size() ? lengths[line] : Length::content()};
         if(shown[line] && (length.kind() == Length::Kind::fill || length.kind() == Length::Kind::flex))
         {
-            sizes[line] = std::floor(static_cast<double>(static_cast<float>(remaining) * length.value() / factor));
+            sizes[line] = snap(remaining * static_cast<double>(length.value()) / static_cast<double>(factor), step);
         }
     }
     return sizes;
@@ -139,7 +141,8 @@ std::vector<double> Grid::column_widths(double available, bool distribute_flexib
             widest = std::max(widest, children()[child]->measure({available, available}).width);
         }
     }
-    return line_sizes(m_columns, content, shown_columns(), available, spacing_cells(m_gap), distribute_flexible);
+    return line_sizes(m_columns, content, shown_columns(), available, spacing_cells(m_gap), distribute_flexible,
+                      text_metrics().column_step());
 }
 
 std::vector<double> Grid::row_heights(const Constraints& constraints, bool distribute_flexible) const
@@ -154,7 +157,8 @@ std::vector<double> Grid::row_heights(const Constraints& constraints, bool distr
             tallest = std::max(tallest, children()[child]->measure(constraints).height);
         }
     }
-    return line_sizes(m_rows, content, shown, constraints.max_height, spacing_cells(m_gap), distribute_flexible);
+    return line_sizes(m_rows, content, shown, constraints.max_height, spacing_cells(m_gap), distribute_flexible,
+                      text_metrics().row_step());
 }
 
 Size Grid::measure(const Constraints& constraints) const

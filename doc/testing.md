@@ -136,7 +136,10 @@ play their events through it.
 
 Other backends serve other tests. `oui::RasterBackend` (`oui/include/oui/raster_backend.h`) draws cells into pixels
 a test reads with `pixel_at`; `oui::image_backend` (`oui/include/oui/graphics/pixel_backend.h`) draws through the
-graphical painter into an image, for `tests/oui/graphics_test.cpp`. Many test files also define a small backend of
+graphical painter into an image, for `tests/oui/graphics_test.cpp`; there a layout is laid out by the pixel, as in a
+window, so a test of where things fall between cells uses it, and the same layout on a scripted backend shows the
+whole cells a terminal keeps. A `MouseEvent` a test makes for it may give `x` and `y` between cells, as the window's
+pointer does (`ImageBackend::cell_at(pixel)`), or the whole cell and `cell_offset`. Many test files also define a small backend of
 their own, often called `MemoryBackend`, with a fixed size and a queue of events, when they need something the
 scripted one does not do.
 

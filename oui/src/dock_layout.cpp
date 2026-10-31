@@ -112,9 +112,14 @@ void DockLayout::paint(Painter& painter, const Theme& theme) const
 
 const DockLayout::Divider* DockLayout::divider_at(double x, double y) const
 {
-    const auto found{std::find_if(
-        m_dividers.begin(), m_dividers.end(), [x, y](const Divider& divider)
-        { return x == divider.line.x && y >= divider.line.y && y < divider.line.y + divider.line.height; })};
+    const auto found{std::find_if(m_dividers.begin(), m_dividers.end(),
+                                  [x, y](const Divider& divider)
+                                  {
+                                      // The pointer may be anywhere in the line's column, which in a window may start
+                                      // between cells.
+                                      return whole(x - divider.line.x) == 0 && y >= divider.line.y &&
+                                             y < divider.line.y + divider.line.height;
+                                  })};
     return found == m_dividers.end() ? nullptr : &*found;
 }
 

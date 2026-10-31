@@ -3,6 +3,7 @@
 #include <oui/fuzzy.h>
 #include <oui/painter.h>
 #include <oui/text_layout.h>
+#include <oui/text_metrics.h>
 #include <oui/theme.h>
 #include <oui/translation.h>
 #include <oui/utf8.h>
@@ -168,8 +169,9 @@ Size PopupList::measure(const Constraints& constraints) const
 void PopupList::arrange(const Rect& screen)
 {
     const auto size{measure({screen.width, screen.height})};
-    const auto right{screen.x + std::max(0.0, screen.width - size.width)};
-    const auto bottom{screen.y + std::max(0.0, screen.height - size.height)};
+    // Kept on the screen to the step; the anchor, which may be between cells, is where it starts otherwise.
+    const auto right{screen.x + snap_x(std::max(0.0, screen.width - size.width))};
+    const auto bottom{screen.y + snap_y(std::max(0.0, screen.height - size.height))};
     if(m_placement == PopupPlacement::at_anchor)
     {
         auto y{m_anchor.y};

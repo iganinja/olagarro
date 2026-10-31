@@ -124,10 +124,20 @@ needs: `measure` (required), `arrange`, `paint`, `handle_event`, `is_focusable`,
 Layout runs before every paint, from the top: the application arranges its content in the whole screen, and each
 container arranges its children inside its own bounds. Everything is in cells, columns and rows, also when a
 graphical backend draws them in pixels. `Point`, `Size`, `Rect`, `Insets` and `Constraints` hold `double`s, and so do
-a `MouseEvent`'s and a `DropEvent`'s `x` and `y`, so a position may one day fall between cells; today every backend
-keeps them whole. Where a position becomes a row, a column, a character or a cell of a buffer it goes through
-`oui::whole(value)` (geometry.h), the cell it falls in, which takes a 2.9999999 that means 3 as 3; a container that
-shares out space takes `std::floor` of its divisions, as an `int` division gave.
+a `MouseEvent`'s and a `DropEvent`'s `x` and `y`, so a position may fall between cells. How fine it may be is the
+backend's *step* (`TextMetrics::column_step()` and `row_step()`, [text_metrics.h](../oui/include/oui/text_metrics.h)):
+a whole cell in a terminal, a pixel in a window, whose size is every pixel it has in cells (1000 pixels of cells 12
+wide are 83.33 columns) and whose pointer is where its pixel is (pixel 125 is 125 / 12 columns in). Where a position
+becomes a row, a column, a character or a cell of a buffer it goes through `oui::whole(value)` (geometry.h), the cell
+it falls in, which takes a 2.9999999 that means 3 as 3; a container that shares out or places space snaps every edge
+it computes to the step with `snap_x(value)` and `snap_y(value)` (`snap(value, step)` and `snap_up(value, step)` for a
+step of one's own), which with a step of 1 gives what an `int` division gave: a terminal lays out as it always did,
+and a window gets every pixel. `Grid`'s shares and percentages, `Row`'s centring, a `SplitView`'s divider (at the step
+nearest its ratio, dragged by the pointer to the step, moved a cell by a key), a `Window` centred, a context menu and
+a `PopupList` at their anchor and a tooltip by the pointer are snapped so. Widgets that are rows of text keep their
+rows a cell apart from wherever they start, and find the row under the pointer with `whole(mouse.y - bounds.y)`; one
+that asks whether the pointer is on a column or a row of its own, as its edge or its title, does so by
+`whole(mouse.x - column) == 0`, since the pointer may be anywhere in that cell.
 
 - `Size measure(const Constraints& constraints) const` says how big the widget would like to be. `Constraints`
   ([geometry.h](../oui/include/oui/geometry.h)) has only maximums, `max_width` and `max_height`; a measure returns

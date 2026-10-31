@@ -10,8 +10,11 @@
 #include <oui/graphics/icon.h>
 #include <oui/graphics/pixel_backend.h>
 #include <oui/graphics/svg.h>
+#include <oui/grid.h>
 #include <oui/label.h>
 #include <oui/layout.h>
+#include <oui/popup_list.h>
+#include <oui/split_view.h>
 #include <oui/text_layout.h>
 #include <oui/text_metrics.h>
 #include <oui/scripted_backend.h>
@@ -118,10 +121,10 @@ TEST(OuiGraphicsTests, PaintsCellsInPixelsOfTheCellFont)
     EXPECT_FALSE(same(canvas.pixel_at(23, 24), {10, 20, 30}));
 }
 
-TEST(OuiGraphicsTests, TheLastRowEndsAtTheBottomWhenTheRowsDoNotFillTheHeight)
+TEST(OuiGraphicsTests, RowsAreAllOneHeightAndWhatEndsAtTheBottomEndsAtItsLastPixel)
 {
-    // Three rows of 24 in 80 pixels: the 8 left over go among the rows, not in a strip under the last one, which in
-    // a window is the status line.
+    // 80 pixels are three rows of 24 and a third of one: what reaches the bottom, as a window's status line, ends at
+    // its last pixel, with no strip under it, and every row above is 24 tall.
     auto cell{default_cell_font()};
     auto interface{default_interface_font()};
     auto symbols{symbol_font(12, 24, cell->ascent())};
@@ -130,21 +133,14 @@ TEST(OuiGraphicsTests, TheLastRowEndsAtTheBottomWhenTheRowsDoNotFillTheHeight)
     const auto style{classic_style()};
     GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
     painter.fill_rect({0, 0, 10, 2}, {200, 0, 0});
-    painter.fill_rect({0, 2, 10, 1}, {0, 0, 200});
+    painter.fill_rect({0, 2, 10, 80.0 / 24 - 2}, {0, 0, 200});
     for(int y{}; y < 80; ++ y)
     {
         EXPECT_FALSE(same(canvas.pixel_at(5, y), {1, 2, 3})) << "a strip nothing paints at " << y;
     }
     EXPECT_TRUE(same(canvas.pixel_at(5, 79), {0, 0, 200}));
-    const auto last_row_top{GraphicalPainter::row_offset(2, 80, 24)};
-    EXPECT_TRUE(same(canvas.pixel_at(5, last_row_top - 1), {200, 0, 0}));
-    // Shared evenly: no row more than a pixel taller than another.
-    std::vector<int> heights;
-    for(int row{}; row < 3; ++ row)
-    {
-        heights.push_back(GraphicalPainter::row_offset(row + 1, 80, 24) - GraphicalPainter::row_offset(row, 80, 24));
-    }
-    EXPECT_LE(*std::max_element(heights.begin(), heights.end()) - *std::min_element(heights.begin(), heights.end()), 1);
+    EXPECT_TRUE(same(canvas.pixel_at(5, 47), {200, 0, 0}));
+    EXPECT_TRUE(same(canvas.pixel_at(5, 48), {0, 0, 200}));
 }
 
 TEST(OuiGraphicsTests, CellsAreInPixelsWherePainted)
@@ -206,18 +202,171 @@ TEST(OuiGraphicsTests, AnImageWithAlphaIsMixedOverWhatIsUnderIt)
     EXPECT_TRUE(same(canvas.pixel_at(2, 0), {0, 0, 255}));
 }
 
-TEST(OuiGraphicsTests, APixelIsInTheRowThatIsPaintedThere)
+TEST(OuiGraphicsTests, APixelIsInTheCellThatIsPaintedThere)
 {
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    const auto style{classic_style()};
     for(const auto height : {72, 80, 95, 1000})
     {
-        const auto rows{height / 24};
+        auto backend{image_backend({36, static_cast<double>(height)})};
+        Canvas canvas{36, height};
+        GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
         for(int y{}; y < height; ++ y)
         {
-            const auto row{GraphicalPainter::row_at(y, height, 24)};
-            ASSERT_LT(row, rows) << y << " of " << height;
-            EXPECT_LE(GraphicalPainter::row_offset(row, height, 24), y) << y << " of " << height;
-            EXPECT_GT(GraphicalPainter::row_offset(row + 1, height, 24), y) << y << " of " << height;
+            for(int x{}; x < 36; ++ x)
+            {
+                const auto at{backend->cell_at({static_cast<double>(x), static_cast<double>(y)})};
+                const auto area{
+                    painter.pixel_bounds({static_cast<double>(whole(at.x)), static_cast<double>(whole(at.y)), 1, 1})};
+                ASSERT_TRUE(area.has_value());
+                EXPECT_TRUE(x >= area->x && x < area->x + area->width && y >= area->y && y < area->y + area->height)
+                    << x << ", " << y << " of " << height;
+            }
         }
+    }
+}
+
+TEST(OuiGraphicsTests, APointerIsWhereItsPixelIsBetweenCells)
+{
+    // Cells of 12 by 24: pixel 125 across is 125 / 12 columns in, not the column it falls in.
+    auto backend{image_backend({480, 240})};
+    ASSERT_EQ(backend->cell_size().width, 12);
+    const auto at{backend->cell_at({125, 30})};
+    EXPECT_DOUBLE_EQ(at.x, 125.0 / 12);
+    EXPECT_DOUBLE_EQ(at.y, 30.0 / 24);
+}
+
+// The cells' pixels as GraphicalPainter paints them, each edge rounded on its own.
+[[nodiscard]] long pixel_of(double cells, double cell_pixels)
+{
+    return std::lround(cells * cell_pixels);
+}
+
+TEST(OuiGraphicsTests, AWindowIsLaidOutInWholeCellsOfItsPixels)
+{
+    auto backend{image_backend({1000, 700})};
+    auto& image{*backend};
+    Application application{std::move(backend)};
+    // Its size is every pixel it has, in cells.
+    EXPECT_DOUBLE_EQ(image.size().width, 1000.0 / 12);
+    EXPECT_DOUBLE_EQ(image.size().height, 700.0 / 24);
+    EXPECT_DOUBLE_EQ(text_metrics().column_step(), 1.0 / 12);
+    EXPECT_DOUBLE_EQ(text_metrics().row_step(), 1.0 / 24);
+    ASSERT_TRUE(text_metrics().cell_pixels().has_value());
+    EXPECT_DOUBLE_EQ(text_metrics().cell_pixels()->width, 12);
+}
+
+TEST(OuiGraphicsTests, ASplitViewPutsItsDividerWithinAPixelOfItsRatio)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    auto split{split_view(SplitView::Orientation::horizontal)};
+    auto& left{split->add(label("Left"))};
+    auto& right{split->add(label("Right"))};
+    split->set_ratio(0.37);
+    application.set_content(std::move(split));
+    application.run_frame();
+    // The two sides share the width but for the divider's column, 12 pixels, which starts where the first ends.
+    const auto first{pixel_of(left.bounds().x + left.bounds().width, 12)};
+    EXPECT_NEAR(static_cast<double>(first), 0.37 * (1000 - 12), 1.0);
+    EXPECT_EQ(pixel_of(right.bounds().x, 12), first + 12);
+    EXPECT_EQ(pixel_of(right.bounds().x + right.bounds().width, 12), 1000);
+}
+
+TEST(OuiGraphicsTests, FlexibleColumnsShareAWindowByThePixel)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    auto columns{grid()};
+    columns->set_columns({Length::flex(), Length::flex(), Length::flex()});
+    std::vector<Label*> children;
+    for(const auto* const text : {"One", "Two", "Three"})
+    {
+        children.push_back(&columns->add(label(text)));
+    }
+    application.set_content(std::move(columns));
+    application.run_frame();
+    std::vector<long> widths;
+    for(std::size_t index{}; index < children.size(); ++ index)
+    {
+        const auto& bounds{children[index]->bounds()};
+        const auto left{pixel_of(bounds.x, 12)};
+        const auto end{pixel_of(bounds.x + bounds.width, 12)};
+        widths.push_back(end - left);
+        if(index + 1 < children.size())
+        {
+            EXPECT_EQ(end, pixel_of(children[index + 1]->bounds().x, 12)) << "no gap and no overlap after " << index;
+        }
+    }
+    EXPECT_LE(*std::max_element(widths.begin(), widths.end()) - *std::min_element(widths.begin(), widths.end()), 1);
+    // Less than a pixel each is left over, where whole cells would leave a cell or more.
+    EXPECT_GT(widths[0] + widths[1] + widths[2], 1000 - 3);
+}
+
+TEST(OuiGraphicsTests, APopupAtAnAnchorBetweenCellsStartsAtTheAnchorsPixel)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    application.set_content(label("Under"));
+    auto list{std::make_unique<PopupList>(Point{10.25, 5.5})};
+    list->set_placement(PopupPlacement::at_anchor);
+    list->set_items({PopupItem{"First"}, PopupItem{"Second"}});
+    const auto& popup{*list};
+    application.show_popup(std::move(list));
+    application.run_frame();
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{1000, 700};
+    const auto style{classic_style()};
+    const GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    const auto area{painter.pixel_bounds(popup.bounds())};
+    ASSERT_TRUE(area.has_value());
+    EXPECT_EQ(area->x, 123);
+    EXPECT_EQ(area->y, 132);
+}
+
+TEST(OuiGraphicsTests, TheWindowsLastRowEndsAtItsLastPixel)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    auto rows{grid()};
+    rows->set_columns({Length::fill()});
+    rows->set_rows({Length::fill(), Length::cells(1)});
+    rows->add(label("Content"));
+    const auto& status{rows->add(label("Status"))};
+    application.set_content(std::move(rows));
+    application.run_frame();
+    EXPECT_EQ(pixel_of(status.bounds().y + status.bounds().height, 24), 700);
+    EXPECT_EQ(pixel_of(status.bounds().height, 24), 24);
+}
+
+TEST(OuiGraphicsTests, TheSameLayoutsInATerminalAreInWholeCells)
+{
+    const auto is_whole{[](double value) { return value == std::floor(value); }};
+    auto backend{scripted_backend({}, {40, 12})};
+    Application application{std::move(backend)};
+    auto split{split_view(SplitView::Orientation::horizontal)};
+    auto columns{grid()};
+    columns->set_columns({Length::flex(), Length::flex(), Length::flex()});
+    std::vector<Label*> children;
+    for(const auto* const text : {"One", "Two", "Three"})
+    {
+        children.push_back(&columns->add(label(text)));
+    }
+    split->add(std::move(columns));
+    auto& right{split->add(label("Right"))};
+    split->set_ratio(0.37);
+    application.set_content(std::move(split));
+    application.run_frame();
+    // The divider in column 14, the nearest to 37% of the 39 the sides share.
+    EXPECT_EQ(right.bounds().x, 15);
+    for(const auto* const child : children)
+    {
+        EXPECT_TRUE(is_whole(child->bounds().x)) << child->bounds().x;
+        EXPECT_EQ(child->bounds().width, 4);
     }
 }
 

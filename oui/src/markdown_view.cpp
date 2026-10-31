@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <map>
 #include <cctype>
+#include <cmath>
 #include <numeric>
 #include <optional>
 
@@ -904,7 +905,8 @@ std::optional<int> MarkdownView::link_at(double x, double y, int offset) const
     // Where the pointer is along the line, and where each run is, in the units the line is drawn in, as paint does.
     const auto& metrics{text_metrics()};
     const auto cell{std::max(1, metrics.cell_width())};
-    const auto at{(whole(x - bounds().x) - 1) * cell + offset};
+    // By the pointer's cell and its place in it, as the view may start between cells.
+    const auto at{static_cast<int>(std::lround((whole(x) - bounds().x - 1) * cell)) + offset};
     const auto& line{m_lines[static_cast<std::size_t>(row)]};
     const auto on_grid{std::any_of(line.begin(), line.end(), [](const Run& run) { return on_the_grid(run); })};
     auto start{0};

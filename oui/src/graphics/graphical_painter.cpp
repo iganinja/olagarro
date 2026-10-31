@@ -327,33 +327,14 @@ Size GraphicalPainter::cell_size(Font& cell_font)
     return {static_cast<double>(cell_font.glyph(U'M').advance), static_cast<double>(cell_font.line_height())};
 }
 
-int GraphicalPainter::row_offset(int row, int height, int cell_height)
-{
-    const auto rows{height / cell_height};
-    if(rows <= 0)
-    {
-        return row * cell_height;
-    }
-    const auto left_over{height - rows * cell_height};
-    return row * cell_height + std::min(row, rows) * left_over / rows;
-}
-
-int GraphicalPainter::row_at(int y, int height, int cell_height)
-{
-    // Rows are a cell tall or more, so the row is the one a cell's height gives or one before it.
-    auto row{y / cell_height};
-    while(row > 0 && row_offset(row, height, cell_height) > y)
-    {
-        -- row;
-    }
-    return row;
-}
-
 PixelRect GraphicalPainter::pixels(const Rect& cells) const
 {
-    const auto top{row_offset(whole(cells.y), m_area.height, m_cell.height)};
-    const auto bottom{row_offset(whole(cells.y + cells.height), m_area.height, m_cell.height)};
-    return {m_area.x + whole(cells.x) * m_cell.width, m_area.y + top, whole(cells.width) * m_cell.width, bottom - top};
+    // Each edge rounded on its own, so rectangles that meet in cells meet in pixels, with no gap and no overlap.
+    const auto left{static_cast<int>(std::lround(cells.x * m_cell.width))};
+    const auto right{static_cast<int>(std::lround((cells.x + cells.width) * m_cell.width))};
+    const auto top{static_cast<int>(std::lround(cells.y * m_cell.height))};
+    const auto bottom{static_cast<int>(std::lround((cells.y + cells.height) * m_cell.height))};
+    return {m_area.x + left, m_area.y + top, right - left, bottom - top};
 }
 
 void GraphicalPainter::fill_rect(const Rect& rect, Color color)
@@ -365,13 +346,13 @@ void GraphicalPainter::draw_text(Point position, std::string_view text, const Te
 {
     struct Placed
     {
-        int column;
+        double column;
         int width;
         char32_t glyph;
     };
     // Combining accents merge into the character before them, as the terminal's cells do.
     std::vector<Placed> placed;
-    auto x{whole(position.x)};
+    auto x{position.x};
     for(std::size_t index{}; index < text.size();)
     {
         const char32_t glyph{decode_utf8(text, index)};
@@ -394,7 +375,7 @@ void GraphicalPainter::draw_text(Point position, std::string_view text, const Te
                                                              : style.foreground};
     for(const auto& cell : placed)
     {
-        const auto area{pixels({static_cast<double>(cell.column), position.y, static_cast<double>(cell.width), 1.0})};
+        const auto area{pixels({cell.column, position.y, static_cast<double>(cell.width), 1.0})};
         m_canvas.fill(area, style.background);
         if(cell.glyph == U' ')
         {
@@ -772,10 +753,12 @@ void GraphicalPainter::draw_scrollbar(const Rect& track, const ScrollbarLook& lo
 {
     const auto area{pixels(track)};
     bevel(area, true, m_style.shadow);
+    // The thumb is in whole cells from the whole cell the track starts in, as a terminal shows it: here it starts as
+    // far from the track's own start, which may fall between cells.
     if(track.width == 1)
     {
-        const auto thumb{
-            pixels({track.x, static_cast<double>(look.thumb_start), 1.0, static_cast<double>(look.thumb_length)})};
+        const auto thumb{pixels(
+            {track.x, track.y + (look.thumb_start - whole(track.y)), 1.0, static_cast<double>(look.thumb_length)})};
         bevel({area.x, thumb.y, area.width, thumb.height}, false, m_style.face);
         return;
     }
@@ -783,7 +766,7 @@ void GraphicalPainter::draw_scrollbar(const Rect& track, const ScrollbarLook& lo
     const PixelRect bar{area.x, area.y + area.height / 4, area.width, area.height / 2};
     bevel(bar, true, m_style.shadow);
     const auto thumb{
-        pixels({static_cast<double>(look.thumb_start), track.y, static_cast<double>(look.thumb_length), 1.0})};
+        pixels({track.x + (look.thumb_start - whole(track.x)), track.y, static_cast<double>(look.thumb_length), 1.0})};
     bevel({thumb.x, bar.y, thumb.width, bar.height}, false, m_style.face);
 }
 

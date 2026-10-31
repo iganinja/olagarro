@@ -52,6 +52,8 @@ class SplitView final : public Container
     Orientation m_orientation;
     double m_ratio{0.5};
     bool m_dragging{false};
+    // How far into the line the pointer took it, which in a window may be part of a cell: the line keeps it there.
+    double m_grab{0.0};
 };
 
 [[nodiscard]] std::unique_ptr<SplitView>
