@@ -163,12 +163,22 @@ const std::vector<TextEdit::VisualLine>& TextEdit::visual_lines() const
                     last_space_byte = segment_start;
                 }
             }
-            m_visual_lines.push_back({i, segment_start, line_last});
             // A last row as wide as the editor leaves no room after it for the cursor at its end, which would
-            // be under the scrollbar or past the edge: it goes to a row of its own, as at any wrap.
-            if(column >= width)
+            // be under the scrollbar or past the edge: its last word goes down with the cursor, as at any wrap,
+            // and a row that is one word alone leaves the cursor a row of its own.
+            const auto full{column >= width};
+            if(full && last_space_byte > segment_start)
             {
-                m_visual_lines.push_back({i, line_last, line_last});
+                m_visual_lines.push_back({i, segment_start, last_space_byte});
+                m_visual_lines.push_back({i, last_space_byte, line_last});
+            }
+            else
+            {
+                m_visual_lines.push_back({i, segment_start, line_last});
+                if(full)
+                {
+                    m_visual_lines.push_back({i, line_last, line_last});
+                }
             }
         }
     }

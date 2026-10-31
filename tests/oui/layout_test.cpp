@@ -2240,6 +2240,31 @@ TEST(OuiWidgetTests, TextEditCursorTypingAtTheEndOfWrappedTextIsNeverUnderTheScr
     }
 }
 
+TEST(OuiWidgetTests, TextEditLastWordOfALineAsWideAsTheEditorGoesToTheNextRowWithTheCursor)
+{
+    // Rather than the cursor at the line's end alone on a row, the last word goes down with it, as at any wrap.
+    auto backend{std::make_unique<MemoryBackend>()};
+    auto* const backend_reference{backend.get()};
+    oui::Application application{std::move(backend)};
+    auto editor{oui::text_edit()};
+    auto* const editor_reference{editor.get()};
+    editor->set_word_wrap(true);
+    application.set_content(std::move(editor));
+    application.render();
+    const auto width{static_cast<std::size_t>(backend_reference->last_frame()->width() - 1)};
+    editor_reference->set_text(std::string(width - 4, 'a') + " ddf\nb");
+    // The end of the first row, then of the line.
+    application.dispatch_event(oui::KeyEvent{oui::Key::end});
+    application.dispatch_event(oui::KeyEvent{oui::Key::end});
+    application.render();
+
+    const auto& frame{*backend_reference->last_frame()};
+    const oui::Theme theme;
+    EXPECT_EQ(frame.cell_at(0, 1).glyph, U'd') << "the last word, on the second row";
+    EXPECT_EQ(frame.cell_at(3, 1).background, theme.editor_foreground) << "the cursor after it";
+    EXPECT_EQ(frame.cell_at(0, 2).glyph, U'b') << "the next line right below";
+}
+
 TEST(OuiWidgetTests, TextEditCursorOnTheSpaceARowWrapsAtShowsLeftOfTheScrollbar)
 {
     // A row as wide as the editor wraps at the space after it; the cursor on that space, by End on the row or Left
