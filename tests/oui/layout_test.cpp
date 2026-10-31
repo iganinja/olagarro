@@ -5062,6 +5062,27 @@ TEST(OuiLayoutTests, AnOpenComboBoxMarksTheOptionUnderThePointer)
     EXPECT_EQ(combo.selected(), 2u);
 }
 
+TEST(OuiLayoutTests, ADisabledComboBoxOrMenuBarIsNotThereForThePointer)
+{
+    // As every other widget: a click on one disabled does not open it.
+    auto content{oui::column()};
+    auto& combo{oui::combo_box({"First", "Second"}, 0, *content)};
+    content->arrange({0, 0, 20, 3});
+    const auto x{combo.bounds().x + 1};
+    const auto y{combo.bounds().y};
+    EXPECT_EQ(content->hit_test(x, y), &combo);
+    combo.set_enabled(false);
+    EXPECT_NE(content->hit_test(x, y), &combo);
+
+    oui::CommandRegistry commands;
+    oui::MenuBar bar{commands};
+    bar.add_menu("&File", {});
+    bar.arrange({0, 0, 20, 1});
+    EXPECT_EQ(bar.hit_test(1, 0), &bar);
+    bar.set_enabled(false);
+    EXPECT_EQ(bar.hit_test(1, 0), nullptr);
+}
+
 TEST(OuiLayoutTests, AControlDisabledWithTheFocusShowsItNoMore)
 {
     // As a program that disables what was just used to start a long task: its text would be dark grey on the

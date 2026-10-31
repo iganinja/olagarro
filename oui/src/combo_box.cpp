@@ -152,6 +152,11 @@ Rect ComboBox::paint_bounds() const
 
 Widget* ComboBox::hit_test(double x, double y)
 {
+    // Disabled, it is not there for the pointer, as no widget is.
+    if(!is_enabled())
+    {
+        return nullptr;
+    }
     const auto area{paint_bounds()};
     return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height ? this : nullptr;
 }

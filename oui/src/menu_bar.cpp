@@ -506,6 +506,11 @@ void MenuBar::dismiss_overlays_at(double x, double y)
 
 Widget* MenuBar::hit_test(double x, double y)
 {
+    // Disabled, it is not there for the pointer, as no widget is.
+    if(!is_enabled())
+    {
+        return nullptr;
+    }
     const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && y == bounds().y};
     const auto on_menu{m_active != no_menu && inside(menu_bounds(), x, y)};
     const auto on_sub{m_submenu_open && inside(submenu_bounds(), x, y)};
