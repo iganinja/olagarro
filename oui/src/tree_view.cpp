@@ -166,8 +166,8 @@ bool TreeView::handle_event_as_is(const Event& event)
                 const int thumb_height{std::max(1, static_cast<int>(viewport) * static_cast<int>(viewport) /
                                                        static_cast<int>(total_height))};
                 const int thumb_range{std::max(0, static_cast<int>(viewport) - thumb_height)};
-                const int track_top{bounds().y + m_top_padding};
-                const int thumb_top{std::clamp(mouse->y - m_scroll_grab, track_top, track_top + thumb_range)};
+                const int track_top{whole(bounds().y) + m_top_padding};
+                const int thumb_top{std::clamp(whole(mouse->y) - m_scroll_grab, track_top, track_top + thumb_range)};
                 if(thumb_range > 0 && maximum > 0)
                 {
                     m_scroll_offset =
@@ -176,13 +176,13 @@ bool TreeView::handle_event_as_is(const Event& event)
                 select_first_visible(visible);
                 return true;
             }
-            const auto dy{mouse->y - m_drag_y};
+            const auto dy{whole(mouse->y) - m_drag_y};
             if(dy != 0)
             {
                 const auto maximum{maximum_scroll_offset(scrollable_visual_height(visible))};
                 m_scroll_offset = static_cast<std::size_t>(
                     std::clamp(static_cast<int>(m_scroll_offset) + dy, 0, static_cast<int>(maximum)));
-                m_drag_y = mouse->y;
+                m_drag_y = whole(mouse->y);
                 select_first_visible(visible);
             }
             return true;
@@ -200,7 +200,8 @@ bool TreeView::handle_event_as_is(const Event& event)
                 if(mouse->y >= bounds().y + m_top_padding && mouse->y < bounds().y + bounds().height)
                 {
                     const auto index{entry_at_visual_row(
-                        visible, m_scroll_offset + static_cast<std::size_t>(mouse->y - bounds().y - m_top_padding),
+                        visible,
+                        m_scroll_offset + static_cast<std::size_t>(whole(mouse->y - bounds().y) - m_top_padding),
                         content_view_width(visible))};
                     if(index)
                     {
@@ -214,8 +215,8 @@ bool TreeView::handle_event_as_is(const Event& event)
         }
         if(mouse->pressed)
         {
-            m_press_y = mouse->y;
-            m_drag_y = mouse->y;
+            m_press_y = whole(mouse->y);
+            m_drag_y = whole(mouse->y);
             m_dragging_scrollbar = false;
             const auto total_height{scrollable_visual_height(visible)};
             const auto viewport{visible_height()};
@@ -226,18 +227,19 @@ bool TreeView::handle_event_as_is(const Event& event)
                 const int thumb_height{std::max(1, static_cast<int>(viewport) * static_cast<int>(viewport) /
                                                        static_cast<int>(total_height))};
                 const int thumb_range{std::max(0, static_cast<int>(viewport) - thumb_height)};
-                const int track_top{bounds().y + m_top_padding};
+                const int track_top{whole(bounds().y) + m_top_padding};
                 const int thumb_top{
                     track_top +
                     (maximum == 0 ? 0 : static_cast<int>(m_scroll_offset) * thumb_range / static_cast<int>(maximum))};
                 if(mouse->y >= thumb_top && mouse->y < thumb_top + thumb_height)
                 {
                     m_dragging_scrollbar = true;
-                    m_scroll_grab = mouse->y - thumb_top;
+                    m_scroll_grab = whole(mouse->y) - thumb_top;
                 }
                 else if(thumb_range > 0 && maximum > 0)
                 {
-                    const int desired_top{std::clamp(mouse->y - thumb_height / 2, track_top, track_top + thumb_range)};
+                    const int desired_top{
+                        std::clamp(whole(mouse->y) - thumb_height / 2, track_top, track_top + thumb_range)};
                     m_scroll_offset =
                         static_cast<std::size_t>((desired_top - track_top) * static_cast<int>(maximum) / thumb_range);
                     select_first_visible(visible);
@@ -247,7 +249,7 @@ bool TreeView::handle_event_as_is(const Event& event)
             if(mouse->y >= bounds().y + m_top_padding && mouse->y < bounds().y + bounds().height)
             {
                 const auto index{entry_at_visual_row(
-                    visible, m_scroll_offset + static_cast<std::size_t>(mouse->y - bounds().y - m_top_padding),
+                    visible, m_scroll_offset + static_cast<std::size_t>(whole(mouse->y - bounds().y) - m_top_padding),
                     content_view_width(visible))};
                 if(index)
                 {
@@ -321,9 +323,10 @@ Size TreeView::measure(const Constraints& constraints) const
         const int marker_width{m_show_expanders ? 2 : 0};
         width = std::max(width, entry.depth * m_indentation + marker_width + static_cast<int>(entry.node->text.size()));
     }
-    const auto constrained_width{std::max(1, std::min(width, constraints.max_width))};
+    const auto constrained_width{std::max(1, std::min(width, whole(constraints.max_width)))};
     return constraints.constrain(
-        {constrained_width, m_top_padding + static_cast<int>(visual_height(nodes, constrained_width))});
+        {static_cast<double>(constrained_width),
+         static_cast<double>(m_top_padding + static_cast<int>(visual_height(nodes, constrained_width)))});
 }
 
 void TreeView::arrange(const Rect& bounds)
@@ -347,8 +350,9 @@ void TreeView::paint(Painter& painter, const Theme& theme) const
     const auto nodes{visible_nodes_const()};
     if(nodes.empty() && !m_empty_message.empty())
     {
-        const auto msg_x{bounds().x + std::max(0, (bounds().width - static_cast<int>(m_empty_message.size())) / 2)};
-        const auto msg_y{bounds().y + std::max(0, bounds().height / 2 - 1)};
+        const auto msg_x{bounds().x +
+                         std::max(0, (whole(bounds().width) - static_cast<int>(m_empty_message.size())) / 2)};
+        const auto msg_y{bounds().y + std::max(0, whole(bounds().height) / 2 - 1)};
         painter.draw_label({msg_x, msg_y}, m_empty_message, {theme.panel_foreground, background}, Align::center);
         return;
     }
@@ -383,7 +387,8 @@ void TreeView::paint(Painter& painter, const Theme& theme) const
                                   active ? theme.item_selected_background : background};
             if(active)
             {
-                painter.fill_rect({bounds().x, y, content_width, 1}, theme.item_selected_background);
+                painter.fill_rect({bounds().x, y, static_cast<double>(content_width), 1.0},
+                                  theme.item_selected_background);
             }
             painter.draw_text({bounds().x + indentation, y}, line == 0 ? prefix : "", style);
             painter.draw_label({bounds().x + indentation + marker_width, y}, lines.at(line), style);
@@ -397,9 +402,9 @@ void TreeView::paint(Painter& painter, const Theme& theme) const
             std::max(1, static_cast<int>(viewport) * static_cast<int>(viewport) / static_cast<int>(total_height))};
         const auto thumb_range{std::max(0, static_cast<int>(viewport) - thumb_height)};
         const auto content_range{static_cast<int>(maximum_scroll_offset(total_height))};
-        const auto thumb_y{bounds().y + m_top_padding +
+        const auto thumb_y{whole(bounds().y) + m_top_padding +
                            (content_range == 0 ? 0 : static_cast<int>(m_scroll_offset) * thumb_range / content_range)};
-        painter.draw_scrollbar({track_x, bounds().y + m_top_padding, 1, static_cast<int>(viewport)},
+        painter.draw_scrollbar({track_x, bounds().y + m_top_padding, 1, static_cast<double>(viewport)},
                                {thumb_y, thumb_height, theme.scrollbar_background, theme.scrollbar_foreground}, theme);
     }
 }
@@ -467,7 +472,7 @@ std::size_t TreeView::visual_height(const std::vector<ConstEntry>& entries, int 
 
 int TreeView::content_view_width(const std::vector<ConstEntry>& entries) const
 {
-    const int full_width{std::max(1, bounds().width)};
+    const int full_width{std::max(1, whole(bounds().width))};
     if(visual_height(entries, full_width) <= visible_height())
     {
         return full_width;
@@ -517,7 +522,7 @@ void TreeView::select_first_visible(const std::vector<ConstEntry>& entries)
 
 std::size_t TreeView::visible_height() const
 {
-    return static_cast<std::size_t>(std::max(1, bounds().height - m_top_padding));
+    return static_cast<std::size_t>(std::max(1, whole(bounds().height) - m_top_padding));
 }
 
 std::size_t TreeView::maximum_scroll_offset(std::size_t visual_row_count) const

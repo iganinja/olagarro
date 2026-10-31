@@ -15,9 +15,10 @@ namespace olagarro::oui
 namespace
 {
 
-std::string repeated(std::string_view text, int count)
+std::string repeated(std::string_view text, double cells)
 {
     std::string result;
+    const auto count{whole(cells)};
     for(int index{}; index < count; ++ index)
     {
         result += text;
@@ -32,7 +33,7 @@ void clear_rect(Painter& painter, const Rect& rect, Color background)
     {
         return;
     }
-    const std::string spaces(static_cast<std::size_t>(rect.width), ' ');
+    const std::string spaces(static_cast<std::size_t>(whole(rect.width)), ' ');
     const TextStyle style{background, background};
     for(auto y{rect.y}; y < rect.y + rect.height; ++ y)
     {
@@ -109,7 +110,7 @@ void Painter::draw_window(const Rect& bounds, const WindowLook& look, const Them
         draw_text({right - 1, bottom}, "─", {border, bg});
     }
     // A mark on the top edge, between brackets of the frame's colour.
-    const auto mark{[&](int x, std::string_view icon)
+    const auto mark{[&](double x, std::string_view icon)
                     {
                         draw_text({x, bounds.y}, "[", {border, bg});
                         draw_text({x + 1, bounds.y}, icon, {theme.dialog_icon_foreground, bg});
@@ -153,9 +154,9 @@ void Painter::draw_window(const Rect& bounds, const WindowLook& look, const Them
     // The title in the middle of the room left, a space at each side.
     if(const auto room{title_end - title_start - 2}; room > 2 && !look.title.empty())
     {
-        const auto title{" " + fit_text(look.title, room - 2) + " "};
+        const auto title{" " + fit_text(look.title, whole(room - 2)) + " "};
         const auto width{text_width(title)};
-        const auto centred{bounds.x + (bounds.width - width) / 2};
+        const auto centred{bounds.x + std::floor((bounds.width - width) / 2)};
         draw_text({std::clamp(centred, title_start, std::max(title_start, title_end - width)), bounds.y}, title,
                   {border, bg});
     }
@@ -172,9 +173,9 @@ void Painter::draw_button(const Rect& bounds, const ButtonLook& look, const Them
                                     : theme.button_foreground};
     const auto x{bounds.x + (look.pressed ? 1 : 0)};
     const auto y{bounds.y};
-    const auto w{std::max(1, bounds.width - (look.shadow ? 1 : 0))};
+    const auto w{std::max(1.0, bounds.width - (look.shadow ? 1 : 0))};
     fill_rect({x, y, w, 1}, bg);
-    const auto text_x{x + std::max(0, (w - text_width(look.text)) / 2)};
+    const auto text_x{x + std::max(0.0, std::floor((w - text_width(look.text)) / 2))};
     draw_text({text_x, y}, look.text, {fg, bg});
     if(look.enabled && look.mnemonic && *look.mnemonic < look.text.size())
     {
@@ -237,11 +238,11 @@ void Painter::draw_header(const Rect& cell, const HeaderLook& look, const Theme&
     const std::string text{look.text};
     if(!look.sort)
     {
-        draw_label({cell.x, cell.y}, fit_text(text, cell.width), style);
+        draw_label({cell.x, cell.y}, fit_text(text, whole(cell.width)), style);
         return;
     }
     style.attributes |= text_bold;
-    const auto fitted{fit_text(text + " ▲", cell.width)};
+    const auto fitted{fit_text(text + " ▲", whole(cell.width))};
     if(fitted != text + " ▲")
     {
         draw_label({cell.x, cell.y}, fitted, style);
@@ -271,7 +272,8 @@ void Painter::draw_scrollbar(const Rect& track, const ScrollbarLook& look, const
     // As Turbo Vision's, without its arrows: a shaded track and on it a one-cell indicator of where the view is,
     // however much of it shows.
     const auto vertical{track.width == 1};
-    const auto length{vertical ? track.height : track.width};
+    // The thumb is in whole cells.
+    const auto length{whole(vertical ? track.height : track.width)};
     const TextStyle style{look.thumb, look.track};
     const auto at{[&](int offset)
                   { return vertical ? Point{track.x, track.y + offset} : Point{track.x + offset, track.y}; }};
@@ -284,7 +286,7 @@ void Painter::draw_scrollbar(const Rect& track, const ScrollbarLook& look, const
         return;
     }
     // Where the thumb is along what it can travel, as a place on the track.
-    const auto start{look.thumb_start - (vertical ? track.y : track.x)};
+    const auto start{look.thumb_start - whole(vertical ? track.y : track.x)};
     const auto travel{length - look.thumb_length};
     const auto place{travel <= 0 ? 0 : (start * (length - 1) + travel / 2) / travel};
     draw_text(at(std::clamp(place, 0, length - 1)), "■", style);
@@ -303,7 +305,7 @@ void Painter::draw_slider(const Rect& bounds, const SliderLook& look, const Them
         return;
     }
     const auto thumb{
-        static_cast<int>(std::lround(std::clamp(look.position, 0.0, 1.0) * std::max(0, bounds.width - 1)))};
+        static_cast<int>(std::lround(std::clamp(look.position, 0.0, 1.0) * std::max(0.0, bounds.width - 1)))};
     const TextStyle track{look.enabled ? theme.scrollbar_foreground : theme.disabled_foreground,
                           theme.scrollbar_background};
     const TextStyle knob{look.focused ? theme.focus_text : theme.item_selected_foreground,
@@ -320,7 +322,7 @@ void Painter::draw_progress(const Rect& bounds, const ProgressLook& look, const 
     // goes.
     static constexpr std::string_view eighths[]{"", "▏", "▎", "▍", "▌", "▋", "▊", "▉"};
     const auto words{look.text.empty() ? 0 : shown_width(look.text) + 1};
-    const auto length{std::max(0, bounds.width - words)};
+    const auto length{std::max(0.0, bounds.width - words)};
     const auto done{static_cast<int>(std::lround(std::clamp(look.done, 0.0, 1.0) * length * 8))};
     for(int cell{}; cell < length; ++ cell)
     {
@@ -488,10 +490,11 @@ void Painter::draw_tooltip(const Rect& bounds, const std::vector<std::string>& l
     for(int row{}; row < bounds.height && row < static_cast<int>(lines.size()); ++ row)
     {
         const auto& line{lines[static_cast<std::size_t>(row)]};
-        draw_label({bounds.x, bounds.y + row},
-                   " " + line +
-                       std::string(static_cast<std::size_t>(std::max(0, bounds.width - 1 - text_width(line))), ' '),
-                   {theme.menu_foreground, theme.menu_background});
+        draw_label(
+            {bounds.x, bounds.y + row},
+            " " + line +
+                std::string(static_cast<std::size_t>(std::max(0, whole(bounds.width) - 1 - text_width(line))), ' '),
+            {theme.menu_foreground, theme.menu_background});
     }
 }
 

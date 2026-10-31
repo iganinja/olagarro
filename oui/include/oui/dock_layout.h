@@ -53,7 +53,7 @@ class DockLayout final : public Container
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     void arrange(const Rect& bounds) override;
     void paint(Painter& painter, const Theme& theme) const override;
-    [[nodiscard]] Widget* hit_test(int x, int y) override;
+    [[nodiscard]] Widget* hit_test(double x, double y) override;
     bool handle_event(const Event& event) override;
     [[nodiscard]] Pointer pointer_at(Point point) const override;
 
@@ -70,10 +70,10 @@ class DockLayout final : public Container
     {
         const Widget* child{};
         Rect line;
-        int edge{};
-        int room{};
+        double edge{};
+        double room{};
     };
-    [[nodiscard]] const Divider* divider_at(int x, int y) const;
+    [[nodiscard]] const Divider* divider_at(double x, double y) const;
 
     std::map<const Widget*, Placement> m_docks;
     std::vector<Divider> m_dividers;

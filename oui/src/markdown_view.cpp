@@ -727,12 +727,12 @@ void MarkdownView::scroll_to(const int line)
 int MarkdownView::text_width_available() const
 {
     // A column of margin on the left and one for the scrollbar on the right.
-    return std::max(1, bounds().width - 2);
+    return std::max(1, whole(bounds().width) - 2);
 }
 
 int MarkdownView::max_scroll() const
 {
-    return std::max(0, static_cast<int>(m_lines.size()) - bounds().height);
+    return std::max(0, static_cast<int>(m_lines.size()) - whole(bounds().height));
 }
 
 bool MarkdownView::is_focusable() const
@@ -751,8 +751,8 @@ bool MarkdownView::handle_event(const Event& event)
        mouse != nullptr && static_cast<int>(m_lines.size()) > bounds().height)
     {
         if(const auto to{m_scrollbar.handle(*mouse, {bounds().x + bounds().width - 1, bounds().y, 1, bounds().height},
-                                            bounds().height, static_cast<int>(m_lines.size()), m_scroll, max_scroll(),
-                                            std::max(1, bounds().height - 1))})
+                                            whole(bounds().height), static_cast<int>(m_lines.size()), m_scroll,
+                                            max_scroll(), std::max(1, whole(bounds().height) - 1))})
         {
             scroll_to(*to);
             return true;
@@ -775,7 +775,7 @@ bool MarkdownView::handle_event(const Event& event)
     {
         return false;
     }
-    const auto page{std::max(1, bounds().height - 1)};
+    const auto page{std::max(1, whole(bounds().height) - 1)};
     switch(key->key)
     {
     // From link to link; past the last, or before the first, Tab is left unused, for the next field.
@@ -800,7 +800,7 @@ bool MarkdownView::handle_event(const Event& event)
         m_chosen_link = next;
         if(const auto line{line_of_link(next)}; line && (*line < m_scroll || *line >= m_scroll + bounds().height))
         {
-            scroll_to(*line - bounds().height / 2);
+            scroll_to(*line - whole(bounds().height) / 2);
         }
         return true;
     }
@@ -894,9 +894,9 @@ void MarkdownView::follow(int link)
     }
 }
 
-std::optional<int> MarkdownView::link_at(int x, int y, int offset) const
+std::optional<int> MarkdownView::link_at(double x, double y, int offset) const
 {
-    const auto row{m_scroll + y - bounds().y};
+    const auto row{m_scroll + whole(y - bounds().y)};
     if(row < 0 || row >= static_cast<int>(m_lines.size()) || y >= bounds().y + bounds().height)
     {
         return std::nullopt;
@@ -904,7 +904,7 @@ std::optional<int> MarkdownView::link_at(int x, int y, int offset) const
     // Where the pointer is along the line, and where each run is, in the units the line is drawn in, as paint does.
     const auto& metrics{text_metrics()};
     const auto cell{std::max(1, metrics.cell_width())};
-    const auto at{(x - bounds().x - 1) * cell + offset};
+    const auto at{(whole(x - bounds().x) - 1) * cell + offset};
     const auto& line{m_lines[static_cast<std::size_t>(row)]};
     const auto on_grid{std::any_of(line.begin(), line.end(), [](const Run& run) { return on_the_grid(run); })};
     auto start{0};
@@ -925,13 +925,13 @@ std::optional<int> MarkdownView::link_at(int x, int y, int offset) const
 
 Size MarkdownView::measure(const Constraints& constraints) const
 {
-    const auto lines{layout(std::max(1, constraints.max_width - 2))};
+    const auto lines{layout(std::max(1, whole(constraints.max_width) - 2))};
     auto width{0};
     for(const auto& line : lines)
     {
         width = std::max(width, line_width(line) + 2);
     }
-    return constraints.constrain({width, static_cast<int>(lines.size())});
+    return constraints.constrain({static_cast<double>(width), static_cast<double>(lines.size())});
 }
 
 void MarkdownView::arrange(const Rect& bounds)
@@ -989,7 +989,8 @@ void MarkdownView::paint(Painter& painter, const Theme& theme) const
         const auto y{bounds().y + row};
         if(!line.empty() && line.front().role == Role::code_block)
         {
-            painter.fill_rect({bounds().x + 1, y, text_width_available(), 1}, theme.code_background);
+            painter.fill_rect({bounds().x + 1, y, static_cast<double>(text_width_available()), 1.0},
+                              theme.code_background);
         }
         // Prose flows as interface text; tables, rules and code keep to the grid, so their columns line up.
         const auto on_grid{std::any_of(line.begin(), line.end(), [](const Run& run) { return on_the_grid(run); })};
@@ -1019,11 +1020,12 @@ void MarkdownView::paint(Painter& painter, const Theme& theme) const
     if(static_cast<int>(m_lines.size()) > bounds().height && bounds().height > 0)
     {
         const auto track_x{bounds().x + bounds().width - 1};
-        const auto thumb{scrollbar_thumb(bounds().height, bounds().height, static_cast<int>(m_lines.size()), m_scroll,
-                                         max_scroll())};
+        const auto thumb{scrollbar_thumb(whole(bounds().height), whole(bounds().height),
+                                         static_cast<int>(m_lines.size()), m_scroll, max_scroll())};
         painter.draw_scrollbar(
             {track_x, bounds().y, 1, bounds().height},
-            {bounds().y + thumb.start, thumb.length, theme.scrollbar_background, theme.scrollbar_foreground}, theme);
+            {whole(bounds().y) + thumb.start, thumb.length, theme.scrollbar_background, theme.scrollbar_foreground},
+            theme);
     }
 }
 

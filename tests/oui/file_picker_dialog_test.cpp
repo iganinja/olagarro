@@ -310,7 +310,7 @@ oui::Event click_header(const oui::CellBuffer& frame, std::u32string_view title,
         const auto row{row_text(frame, y)};
         if(row.find(U"Name") != std::u32string::npos && row.find(U"Type") != std::u32string::npos)
         {
-            oui::MouseEvent mouse{static_cast<int>(row.find(title)), y, !release};
+            oui::MouseEvent mouse{static_cast<double>(row.find(title)), static_cast<double>(y), !release};
             mouse.released = release;
             return mouse;
         }
@@ -351,7 +351,7 @@ oui::Point grip(const oui::CellBuffer& frame)
         const auto corner{row.find(U"─┘")};
         if(corner != std::u32string::npos)
         {
-            return {static_cast<int>(corner) + 1, y};
+            return {static_cast<double>(corner) + 1.0, static_cast<double>(y)};
         }
     }
     return {-1, -1};
@@ -489,7 +489,7 @@ oui::Event click_on(const oui::CellBuffer& frame, std::u32string_view text)
         const auto column{row_text(frame, y).find(text)};
         if(column != std::u32string::npos)
         {
-            return oui::MouseEvent{static_cast<int>(column), y, true};
+            return oui::MouseEvent{static_cast<double>(column), static_cast<double>(y), true};
         }
     }
     return oui::KeyEvent{oui::Key::escape};

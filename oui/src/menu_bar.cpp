@@ -39,7 +39,7 @@ void draw_with_mnemonic(Painter& painter, Point position, std::string_view title
     painter.draw_label(position, shown, style, align);
 }
 
-[[nodiscard]] bool inside(const Rect& area, int x, int y)
+[[nodiscard]] bool inside(const Rect& area, double x, double y)
 {
     return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height;
 }
@@ -213,7 +213,7 @@ const std::vector<MenuItem>& MenuBar::menu_items() const
     return m_active == context_menu ? m_context_items : m_menus.at(m_active).items;
 }
 
-int MenuBar::menu_top() const
+double MenuBar::menu_top() const
 {
     if(m_active != context_menu)
     {
@@ -221,10 +221,10 @@ int MenuBar::menu_top() const
     }
     // Under the pointer, or as high as it must go to fit above the bottom of the screen.
     const auto height{static_cast<int>(m_context_items.size()) + 2 * text_metrics().popup_frame_rows()};
-    return std::max(0, std::min(m_context_at.y, screen_bottom() - height));
+    return std::max(0.0, std::min(m_context_at.y, screen_bottom() - height));
 }
 
-int MenuBar::context_x() const
+double MenuBar::context_x() const
 {
     const Widget* top{this};
     while(top->parent() != nullptr)
@@ -309,7 +309,7 @@ int MenuBar::list_width(const std::vector<MenuItem>& items) const
     return width;
 }
 
-int MenuBar::menu_x(std::size_t index) const
+double MenuBar::menu_x(std::size_t index) const
 {
     auto x{bounds().x};
     for(std::size_t current{}; current < index; ++ current)
@@ -326,11 +326,12 @@ Rect MenuBar::menu_bounds() const
         return {};
     }
     const auto& items{menu_items()};
-    return {m_active == context_menu ? context_x() : menu_x(m_active), menu_top(), list_width(items),
-            menu_layout().rows + 2 * text_metrics().popup_frame_rows()};
+    return {m_active == context_menu ? context_x() : menu_x(m_active), menu_top(),
+            static_cast<double>(list_width(items)),
+            static_cast<double>(menu_layout().rows + 2 * text_metrics().popup_frame_rows())};
 }
 
-int MenuBar::screen_bottom() const
+double MenuBar::screen_bottom() const
 {
     const Widget* top{this};
     while(top->parent() != nullptr)
@@ -340,9 +341,9 @@ int MenuBar::screen_bottom() const
     return top->bounds().y + top->bounds().height;
 }
 
-MenuBar::PopupLayout MenuBar::layout_of(std::size_t count, int top, std::size_t first) const
+MenuBar::PopupLayout MenuBar::layout_of(std::size_t count, double top, std::size_t first) const
 {
-    const auto available{std::max(3, screen_bottom() - top - 2 * text_metrics().popup_frame_rows())};
+    const auto available{std::max(3, whole(screen_bottom() - top) - 2 * text_metrics().popup_frame_rows())};
     PopupLayout layout;
     if(static_cast<int>(count) <= available)
     {
@@ -362,7 +363,7 @@ MenuBar::PopupLayout MenuBar::menu_layout() const
     return layout_of(menu_items().size(), menu_top(), m_menu_first);
 }
 
-int MenuBar::submenu_top() const
+double MenuBar::submenu_top() const
 {
     // The first entry of the submenu lines up with the entry that opened it.
     const auto menu{menu_layout()};
@@ -431,8 +432,9 @@ Rect MenuBar::submenu_bounds() const
         top = top->parent();
     }
     const auto right_edge{top->bounds().x + top->bounds().width};
-    const auto x{menu.x + menu.width + width < right_edge ? menu.x + menu.width : std::max(0, menu.x - width)};
-    return {x, submenu_top(), width, submenu_layout().rows + 2 * text_metrics().popup_frame_rows()};
+    const auto x{menu.x + menu.width + width < right_edge ? menu.x + menu.width : std::max(0.0, menu.x - width)};
+    return {x, submenu_top(), static_cast<double>(width),
+            static_cast<double>(submenu_layout().rows + 2 * text_metrics().popup_frame_rows())};
 }
 
 std::optional<std::string> MenuBar::open_tooltip() const
@@ -476,7 +478,7 @@ bool MenuBar::is_overlay() const
     return true;
 }
 
-void MenuBar::dismiss_overlays_at(int x, int y)
+void MenuBar::dismiss_overlays_at(double x, double y)
 {
     if(m_active == no_menu)
     {
@@ -489,7 +491,7 @@ void MenuBar::dismiss_overlays_at(int x, int y)
     }
 }
 
-Widget* MenuBar::hit_test(int x, int y)
+Widget* MenuBar::hit_test(double x, double y)
 {
     const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && y == bounds().y};
     const auto on_menu{m_active != no_menu && inside(menu_bounds(), x, y)};
@@ -511,7 +513,7 @@ void MenuBar::clear()
 Size MenuBar::measure(const Constraints& constraints) const
 {
     // With no menus there is nothing on it to show; it is there for the menus a right click opens.
-    return constraints.constrain({constraints.max_width, m_menus.empty() ? 0 : 1});
+    return constraints.constrain({constraints.max_width, m_menus.empty() ? 0.0 : 1.0});
 }
 
 void MenuBar::move_selection(int step)
@@ -741,7 +743,7 @@ bool MenuBar::handle_mouse(const MouseEvent& mouse)
                           {
                               return std::nullopt;
                           }
-                          const auto row{mouse.y - area.y - frame};
+                          const auto row{whole(mouse.y - area.y) - frame};
                           if(layout.arrows && (row == 0 || row == layout.rows - 1))
                           {
                               if(mouse.pressed)
@@ -809,7 +811,7 @@ void MenuBar::paint_list(Painter& painter, const Theme& theme, const std::vector
         // The arrows that scroll it, dimmed at either end.
         const auto at_start{layout.first == 0};
         const auto at_end{layout.first + layout.shown >= items.size()};
-        const Point middle{area.x + area.width / 2, top};
+        const Point middle{area.x + std::floor(area.width / 2), top};
         painter.draw_icon(middle, Icon::sorted_up,
                           {at_start ? theme.disabled_foreground : theme.menu_foreground, theme.menu_background});
         painter.draw_icon({middle.x, top + layout.rows - 1}, Icon::sorted_down,
@@ -866,7 +868,8 @@ void MenuBar::paint(Painter& painter, const Theme& theme) const
                               selected ? theme.menu_selected_background : theme.menu_background};
         const auto x{menu_x(index)};
         const auto& title{m_menus.at(index).title};
-        painter.fill_rect({x, bounds().y, shown_width(strip_mnemonic(title)) + 2, 1}, style.background);
+        painter.fill_rect({x, bounds().y, static_cast<double>(shown_width(strip_mnemonic(title)) + 2), 1},
+                          style.background);
         draw_with_mnemonic(painter, {x + 1, bounds().y}, title, style,
                            selected ? std::nullopt : std::optional<Color>{theme.hotkey_foreground}, Align::center);
     }

@@ -85,7 +85,7 @@ class MarkdownView final : public Widget
     [[nodiscard]] int text_width_available() const;
     [[nodiscard]] int max_scroll() const;
     // The link under the cell at `x`, `y` and `offset` units into it, if any.
-    [[nodiscard]] std::optional<int> link_at(int x, int y, int offset) const;
+    [[nodiscard]] std::optional<int> link_at(double x, double y, int offset) const;
     // Goes where link `link` leads: a section of the text, or out of it, as on_link hears.
     void follow(int link);
     // The first line link `link` shows on.

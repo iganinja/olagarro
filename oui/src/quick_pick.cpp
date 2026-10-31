@@ -150,7 +150,7 @@ std::optional<std::size_t> quick_pick(Application& application, const std::vecto
     {
         width = std::max(width, shown_width(row_text(item)) + 4);
     }
-    dialog->set_preferred_size({width, 0});
+    dialog->set_preferred_size({static_cast<double>(width), 0.0});
     if(!options.fit_to_items)
     {
         dialog->set_height_share(options.height_share);

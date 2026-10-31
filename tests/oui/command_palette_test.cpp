@@ -77,7 +77,8 @@ oui::Size dialog_size(const oui::CellBuffer& frame, std::u32string_view title)
             if(bottom.at(left) == U'└' || bottom.at(left) == U'╚')
             {
                 const auto right{bottom.find_first_of(U"┘╝", left)};
-                return {right == std::u32string::npos ? 0 : static_cast<int>(right - left + 1), bottom_y - y + 1};
+                return {right == std::u32string::npos ? 0.0 : static_cast<double>(right - left + 1),
+                        static_cast<double>(bottom_y - y + 1)};
             }
         }
     }
@@ -194,7 +195,7 @@ oui::Point grip(const oui::CellBuffer& frame)
         const auto corner{row_text(frame, y).find(U"─┘")};
         if(corner != std::u32string::npos)
         {
-            return {static_cast<int>(corner) + 1, y};
+            return {static_cast<double>(corner) + 1.0, static_cast<double>(y)};
         }
     }
     return {-1, -1};

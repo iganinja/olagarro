@@ -7,7 +7,7 @@ namespace olagarro::oui
 
 RasterBackend::RasterBackend(Size cells, int cell_width, int cell_height)
     : m_cells{cells}, m_cell_width{cell_width}, m_cell_height{cell_height},
-      m_pixels(static_cast<std::size_t>(cells.width * cell_width * cells.height * cell_height))
+      m_pixels(static_cast<std::size_t>(whole(cells.width) * cell_width * whole(cells.height) * cell_height))
 {
 }
 
@@ -21,9 +21,9 @@ std::optional<Event> RasterBackend::poll_event()
 }
 void RasterBackend::present(const CellBuffer& buffer)
 {
-    for(int y{}; y < std::min(m_cells.height, buffer.height()); ++ y)
+    for(int y{}; y < std::min(whole(m_cells.height), buffer.height()); ++ y)
     {
-        for(int x{}; x < std::min(m_cells.width, buffer.width()); ++ x)
+        for(int x{}; x < std::min(whole(m_cells.width), buffer.width()); ++ x)
         {
             const auto color{buffer.cell_at(x, y).background};
             for(int pixel_y{}; pixel_y < m_cell_height; ++ pixel_y)
@@ -39,11 +39,11 @@ void RasterBackend::present(const CellBuffer& buffer)
 }
 int RasterBackend::pixel_width() const
 {
-    return m_cells.width * m_cell_width;
+    return whole(m_cells.width) * m_cell_width;
 }
 int RasterBackend::pixel_height() const
 {
-    return m_cells.height * m_cell_height;
+    return whole(m_cells.height) * m_cell_height;
 }
 const Color& RasterBackend::pixel_at(int x, int y) const
 {

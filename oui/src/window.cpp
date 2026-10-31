@@ -3,6 +3,7 @@
 #include <oui/text_metrics.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace olagarro::oui
 {
@@ -252,10 +253,10 @@ Size Window::measure(const Constraints& constraints) const
                                         std::min(constraints.max_height, m_maximum_size.height)};
     const auto child{children().empty() ? Size{0, 3} : children().front()->measure(modal_constraints)};
     const auto height{m_height_share
-                          ? static_cast<int>(static_cast<double>(modal_constraints.max_height) * *m_height_share)
+                          ? std::floor(modal_constraints.max_height * *m_height_share)
                           : std::max(child.height + text_metrics().window_top_rows() + 1, m_preferred_size.height)};
     const auto measured{modal_constraints.constrain(
-        {std::max({static_cast<int>(m_title.size()) + 6, child.width + 2 * text_metrics().window_side_columns(),
+        {std::max({static_cast<double>(m_title.size()) + 6, child.width + 2 * text_metrics().window_side_columns(),
                    m_preferred_size.width}),
          height})};
     return constraints.constrain(
@@ -275,8 +276,9 @@ void Window::arrange(const Rect& bounds)
     }
     m_area = bounds;
     const auto size{measure({bounds.width, bounds.height})};
-    const Rect centered{bounds.x + std::max(0, (bounds.width - size.width) / 2),
-                        bounds.y + std::max(0, (bounds.height - size.height) / 2), size.width, size.height};
+    const Rect centered{bounds.x + std::max(0.0, std::floor((bounds.width - size.width) / 2)),
+                        bounds.y + std::max(0.0, std::floor((bounds.height - size.height) / 2)), size.width,
+                        size.height};
     if(m_restored_position)
     {
         m_drag_offset_x = m_restored_position->x - centered.x;
@@ -284,16 +286,16 @@ void Window::arrange(const Rect& bounds)
         m_restored_position.reset();
     }
     const Rect moved{
-        std::clamp(centered.x + m_drag_offset_x, bounds.x, bounds.x + std::max(0, bounds.width - centered.width)),
-        std::clamp(centered.y + m_drag_offset_y, bounds.y, bounds.y + std::max(0, bounds.height - centered.height)),
+        std::clamp(centered.x + m_drag_offset_x, bounds.x, bounds.x + std::max(0.0, bounds.width - centered.width)),
+        std::clamp(centered.y + m_drag_offset_y, bounds.y, bounds.y + std::max(0.0, bounds.height - centered.height)),
         centered.width, centered.height};
     Widget::arrange(moved);
     const auto top{text_metrics().window_top_rows()};
     const auto side{text_metrics().window_side_columns()};
     if(!children().empty())
     {
-        children().front()->arrange(
-            {moved.x + side, moved.y + top, std::max(0, moved.width - 2 * side), std::max(0, moved.height - top - 1)});
+        children().front()->arrange({moved.x + side, moved.y + top, std::max(0.0, moved.width - 2 * side),
+                                     std::max(0.0, moved.height - top - 1)});
     }
 }
 
@@ -438,8 +440,8 @@ void Window::resize_to(Size requested)
     const Size size{std::clamp(requested.width, std::min(m_minimum_size.width, room_width), room_width),
                     std::clamp(requested.height, std::min(m_minimum_size.height, room_height), room_height)};
     m_user_size = size;
-    m_drag_offset_x = left - (m_area.x + std::max(0, (m_area.width - size.width) / 2));
-    m_drag_offset_y = top - (m_area.y + std::max(0, (m_area.height - size.height) / 2));
+    m_drag_offset_x = left - (m_area.x + std::max(0.0, std::floor((m_area.width - size.width) / 2)));
+    m_drag_offset_y = top - (m_area.y + std::max(0.0, std::floor((m_area.height - size.height) / 2)));
 }
 
 std::unique_ptr<Window> window(std::string_view title)

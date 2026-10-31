@@ -37,9 +37,9 @@ class ComboBox final : public Widget
     [[nodiscard]] bool claims_key(const Event& event) const override;
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     [[nodiscard]] Rect paint_bounds() const override;
-    [[nodiscard]] Widget* hit_test(int x, int y) override;
+    [[nodiscard]] Widget* hit_test(double x, double y) override;
     [[nodiscard]] bool is_overlay() const override;
-    void dismiss_overlays_at(int x, int y) override;
+    void dismiss_overlays_at(double x, double y) override;
     void paint(Painter& painter, const Theme& theme) const override;
 
   private:

@@ -216,7 +216,7 @@ TEST_F(TableTest, DraggingAHeaderEdgeResizesTheColumn)
         table_widget->on_column_resized([&resized](std::size_t column, int width) { resized = {column, width}; })};
     const auto sort_connection{
         table_widget->on_column_click([&sorted](std::size_t, oui::SortOrder) { sorted = true; })};
-    const auto drag{[&table_widget](int from, int to)
+    const auto drag{[&table_widget](double from, double to)
                     {
                         table_widget->handle_event(oui::MouseEvent{from, 0, true});
                         oui::MouseEvent moved{to, 0, false};

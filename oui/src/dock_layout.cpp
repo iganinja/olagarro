@@ -50,7 +50,8 @@ void DockLayout::arrange(const Rect& bounds)
         {
         case Dock::top:
         {
-            const auto height{std::clamp(placement.size > 0 ? placement.size : measured().height, 0, remaining.height)};
+            const auto height{
+                std::clamp(placement.size > 0 ? placement.size : measured().height, 0.0, remaining.height)};
             child.arrange({remaining.x, remaining.y, remaining.width, height});
             remaining.y += height;
             remaining.height -= height;
@@ -58,7 +59,8 @@ void DockLayout::arrange(const Rect& bounds)
         }
         case Dock::bottom:
         {
-            const auto height{std::clamp(placement.size > 0 ? placement.size : measured().height, 0, remaining.height)};
+            const auto height{
+                std::clamp(placement.size > 0 ? placement.size : measured().height, 0.0, remaining.height)};
             child.arrange({remaining.x, remaining.y + remaining.height - height, remaining.width, height});
             remaining.height -= height;
             break;
@@ -66,13 +68,13 @@ void DockLayout::arrange(const Rect& bounds)
         case Dock::left:
         case Dock::right:
         {
-            auto width{std::clamp(placement.size > 0 ? placement.size : measured().width, 0, remaining.width)};
+            auto width{std::clamp(placement.size > 0 ? placement.size : measured().width, 0.0, remaining.width)};
             const auto left{placement.dock == Dock::left};
             const auto x{left ? remaining.x : remaining.x + remaining.width - width};
             // A resizable strip gives its inner column to the line, and keeps room on both sides of it.
             if(placement.minimum > 0 && width > placement.minimum)
             {
-                const auto room{std::max(placement.minimum, remaining.width - placement.minimum)};
+                const auto room{std::max(static_cast<double>(placement.minimum), remaining.width - placement.minimum)};
                 width = std::min(width, room);
                 const auto strip_x{left ? remaining.x : remaining.x + remaining.width - width};
                 m_dividers.push_back({&child,
@@ -108,7 +110,7 @@ void DockLayout::paint(Painter& painter, const Theme& theme) const
     }
 }
 
-const DockLayout::Divider* DockLayout::divider_at(int x, int y) const
+const DockLayout::Divider* DockLayout::divider_at(double x, double y) const
 {
     const auto found{std::find_if(
         m_dividers.begin(), m_dividers.end(), [x, y](const Divider& divider)
@@ -116,7 +118,7 @@ const DockLayout::Divider* DockLayout::divider_at(int x, int y) const
     return found == m_dividers.end() ? nullptr : &*found;
 }
 
-Widget* DockLayout::hit_test(int x, int y)
+Widget* DockLayout::hit_test(double x, double y)
 {
     // The lines come before what they divide, though an open popup of a child still comes first.
     if(auto* const target{Container::hit_test(x, y)}; target != nullptr && target->is_overlay())
@@ -155,7 +157,8 @@ bool DockLayout::handle_event(const Event& event)
         auto& placement{m_docks[divider.child]};
         // The strip reaches from its edge to the pointer, the line included.
         const auto wanted{placement.dock == Dock::left ? mouse->x - divider.edge + 1 : divider.edge - mouse->x};
-        placement.size = std::clamp(wanted, placement.minimum + 1, divider.room);
+        // The sizes it keeps are whole cells.
+        placement.size = whole(std::clamp(wanted, placement.minimum + 1.0, divider.room));
         arrange(bounds());
         if(mouse->released)
         {

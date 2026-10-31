@@ -27,8 +27,8 @@ void Panel::arrange(const Rect& bounds)
     if(!children().empty())
     {
         children().front()->arrange({bounds.x + m_padding.left, bounds.y + m_padding.top,
-                                     std::max(0, bounds.width - m_padding.left - m_padding.right),
-                                     std::max(0, bounds.height - m_padding.top - m_padding.bottom)});
+                                     std::max(0.0, bounds.width - m_padding.left - m_padding.right),
+                                     std::max(0.0, bounds.height - m_padding.top - m_padding.bottom)});
     }
 }
 

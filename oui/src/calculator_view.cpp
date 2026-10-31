@@ -82,7 +82,7 @@ class AngleSwitch final : public Widget
 
     [[nodiscard]] Size measure(const Constraints& constraints) const override
     {
-        return constraints.constrain({shown_width(text()), 1});
+        return constraints.constrain({static_cast<double>(shown_width(text())), 1.0});
     }
 
     void paint(Painter& painter, const Theme& theme) const override
@@ -378,7 +378,7 @@ bool CalculatorView::handle_event(const Event& event)
 
 Size CalculatorView::measure(const Constraints& constraints) const
 {
-    return constraints.constrain({std::max(1, constraints.max_width), std::max(1, constraints.max_height)});
+    return constraints.constrain({std::max(1.0, constraints.max_width), std::max(1.0, constraints.max_height)});
 }
 
 void CalculatorView::arrange(const Rect& bounds)

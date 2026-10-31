@@ -1,6 +1,7 @@
 #include <oui/layout.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace olagarro::oui
 {
@@ -41,7 +42,7 @@ void Row::arrange(const Rect& bounds)
     const auto gap{spacing_cells(m_gap)};
     if(m_centered)
     {
-        x += std::max(0, (bounds.width - measure({bounds.width, bounds.height}).width) / 2);
+        x += std::max(0.0, std::floor((bounds.width - measure({bounds.width, bounds.height}).width) / 2));
     }
     for(const auto& child : children())
     {
@@ -92,7 +93,7 @@ void Column::arrange(const Rect& bounds)
             child->arrange({bounds.x, y, 0, 0});
             continue;
         }
-        const auto remaining_height{std::max(0, bounds.height - (y - bounds.y))};
+        const auto remaining_height{std::max(0.0, bounds.height - (y - bounds.y))};
         const auto child_size{child->measure({bounds.width, remaining_height})};
         child->arrange({bounds.x, y, bounds.width, child_size.height});
         y += child_size.height + gap;

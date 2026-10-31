@@ -29,7 +29,7 @@ class ModalLayer final : public Container
     void arrange(const Rect& bounds) override;
     void paint(Painter& painter, const Theme& theme) const override;
     bool handle_event(const Event& event) override;
-    [[nodiscard]] Widget* hit_test(int x, int y) override;
+    [[nodiscard]] Widget* hit_test(double x, double y) override;
     [[nodiscard]] bool is_overlay() const override;
     [[nodiscard]] Widget* keyboard_target() override;
     void collect_focusable(std::vector<Widget*>& widgets) override;
@@ -275,8 +275,8 @@ class Application
     // The last press, to tell double and triple clicks from separate ones.
     struct LastPress
     {
-        int x{-1};
-        int y{-1};
+        double x{-1.0};
+        double y{-1.0};
         bool right{false};
         int clicks{};
         std::chrono::steady_clock::time_point time{};

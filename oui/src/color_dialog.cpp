@@ -243,8 +243,8 @@ class ColorArea final : public Widget
         }
         else
         {
-            across = static_cast<double>(mouse->x - m_bounds.x) / std::max(1, m_bounds.width - 1);
-            down = static_cast<double>(mouse->y - m_bounds.y) / std::max(1, m_bounds.height - 1);
+            across = (mouse->x - m_bounds.x) / std::max(1.0, m_bounds.width - 1);
+            down = (mouse->y - m_bounds.y) / std::max(1.0, m_bounds.height - 1);
         }
         m_picked(std::clamp(across, 0.0, 1.0), std::clamp(down, 0.0, 1.0));
         return true;
@@ -284,8 +284,9 @@ class ColorArea final : public Widget
 
     void paint_pixels(Painter& painter, const Theme& theme) const
     {
-        const auto width{m_pixels->width};
-        const auto height{m_pixels->height};
+        // Whole pixels.
+        const auto width{whole(m_pixels->width)};
+        const auto height{whole(m_pixels->height)};
         m_buffer.resize(static_cast<std::size_t>(width) * height);
         for(int y{}; y < height; ++ y)
         {
@@ -327,8 +328,8 @@ class ColorArea final : public Widget
                 painter.fill_rect({m_bounds.x + x, m_bounds.y + y, 1, 1}, to_color(m_paint(across_of(x), down_of(y))));
             }
         }
-        const auto x{static_cast<int>(std::lround(m_across * std::max(0, m_bounds.width - 1)))};
-        const auto y{static_cast<int>(std::lround(m_down * std::max(0, m_bounds.height - 1)))};
+        const auto x{static_cast<int>(std::lround(m_across * std::max(0.0, m_bounds.width - 1)))};
+        const auto y{static_cast<int>(std::lround(m_down * std::max(0.0, m_bounds.height - 1)))};
         const auto under{to_color(m_paint(across_of(x), down_of(y)))};
         const auto light{0.299 * under.red + 0.587 * under.green + 0.114 * under.blue > 128.0};
         painter.draw_text({m_bounds.x + x, m_bounds.y + y}, "○",
@@ -355,9 +356,9 @@ class Swatches final : public Widget
 
     void paint(Painter& painter, const Theme&) const override
     {
-        painter.fill_rect({m_bounds.x, m_bounds.y, m_bounds.width / 2, m_bounds.height}, m_before);
-        painter.fill_rect(
-            {m_bounds.x + m_bounds.width / 2, m_bounds.y, m_bounds.width - m_bounds.width / 2, m_bounds.height}, m_now);
+        const auto half{std::floor(m_bounds.width / 2)};
+        painter.fill_rect({m_bounds.x, m_bounds.y, half, m_bounds.height}, m_before);
+        painter.fill_rect({m_bounds.x + half, m_bounds.y, m_bounds.width - half, m_bounds.height}, m_now);
     }
 
     void set_now(Color now) { m_now = now; }

@@ -33,7 +33,7 @@ void paint_descendant_overlays(const Container& container, Painter& painter, con
     }
 }
 
-Widget* overlay_at(Container& container, int x, int y)
+Widget* overlay_at(Container& container, double x, double y)
 {
     for(std::size_t index{container.child_count()}; index > 0; -- index)
     {
@@ -161,7 +161,7 @@ bool Container::contains(const Widget* const target) const
     }
     return false;
 }
-Widget* Container::hit_test(int x, int y)
+Widget* Container::hit_test(double x, double y)
 {
     // An overlay can reach outside this container, so it is asked before the bounds are.
     if(auto* const overlay{overlay_at(*this, x, y)})
@@ -184,7 +184,7 @@ Widget* Container::hit_test(int x, int y)
     }
     return this;
 }
-void Container::dismiss_overlays_at(int x, int y)
+void Container::dismiss_overlays_at(double x, double y)
 {
     for(const auto& child : m_children)
     {

@@ -1,49 +1,60 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace olagarro::oui
 {
 
+// Positions and sizes in cells: a 1 is a column across or a row down. They may fall between cells where a backend
+// places things finer than a cell, as a window does by the pixel; a terminal keeps them whole.
 struct Point
 {
-    int x{0};
-    int y{0};
+    double x{0.0};
+    double y{0.0};
 };
 
 struct Size
 {
-    int width{0};
-    int height{0};
+    double width{0.0};
+    double height{0.0};
 };
 
 struct Rect
 {
-    int x{0};
-    int y{0};
-    int width{0};
-    int height{0};
+    double x{0.0};
+    double y{0.0};
+    double width{0.0};
+    double height{0.0};
 };
 
 struct Insets
 {
-    int left{0};
-    int top{0};
-    int right{0};
-    int bottom{0};
+    double left{0.0};
+    double top{0.0};
+    double right{0.0};
+    double bottom{0.0};
 };
 
 struct Constraints
 {
-    int max_width{std::numeric_limits<int>::max()};
-    int max_height{std::numeric_limits<int>::max()};
+    // As large as an int, so code that takes them as one stays defined.
+    double max_width{static_cast<double>(std::numeric_limits<int>::max())};
+    double max_height{static_cast<double>(std::numeric_limits<int>::max())};
 
     [[nodiscard]] Size constrain(Size size) const
     {
-        return {std::clamp(size.width, 0, max_width), std::clamp(size.height, 0, max_height)};
+        return {std::clamp(size.width, 0.0, max_width), std::clamp(size.height, 0.0, max_height)};
     }
 };
+
+// The whole cell a position falls in, as the row, the column, the character or the cell of a buffer it is: the
+// tolerance takes a 2.9999999 that means 3 as 3.
+[[nodiscard]] inline int whole(double value)
+{
+    return static_cast<int>(std::floor(value + 1e-6));
+}
 
 enum class Spacing
 {

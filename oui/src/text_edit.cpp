@@ -239,7 +239,7 @@ bool TextEdit::redo()
 }
 Size TextEdit::measure(const Constraints& constraints) const
 {
-    return constraints.constrain({std::max(1, constraints.max_width), std::max(1, constraints.max_height)});
+    return constraints.constrain({std::max(1.0, constraints.max_width), std::max(1.0, constraints.max_height)});
 }
 TextEdit::Snapshot TextEdit::snapshot() const
 {

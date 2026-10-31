@@ -323,8 +323,8 @@ void FolderView::paint(Painter& painter, const Theme& theme) const
     List::paint(painter, theme);
     if(m_current.empty())
     {
-        const auto x{bounds().x + std::max(0, (bounds().width - text_width(m_texts.empty)) / 2)};
-        const auto y{bounds().y + std::max(0, bounds().height / 2 - 1)};
+        const auto x{bounds().x + std::max(0, (whole(bounds().width) - text_width(m_texts.empty)) / 2)};
+        const auto y{bounds().y + std::max(0, whole(bounds().height) / 2 - 1)};
         painter.draw_label({x, y}, m_texts.empty, {theme.panel_foreground, background_color(theme)}, Align::center);
         return;
     }
@@ -342,7 +342,7 @@ void FolderView::paint(Painter& painter, const Theme& theme) const
     painter.draw_label({bounds().x, bounds().y}, label, style);
     const auto label_width{shown_width(label)};
     painter.draw_label({bounds().x + label_width, bounds().y},
-                       fit_from_end(header_location(), std::max(0, bounds().width - label_width)), style);
+                       fit_from_end(header_location(), std::max(0, whole(bounds().width) - label_width)), style);
 }
 
 std::unique_ptr<FolderView> folder_view()

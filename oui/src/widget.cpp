@@ -101,7 +101,7 @@ bool Widget::contains(const Widget* const target) const
 {
     return this == target;
 }
-Widget* Widget::hit_test(int x, int y)
+Widget* Widget::hit_test(double x, double y)
 {
     // A disabled widget is not there for the pointer: what is under it is.
     if(!is_enabled())
@@ -128,7 +128,7 @@ bool Widget::is_overlay() const
 {
     return false;
 }
-void Widget::dismiss_overlays_at(int, int)
+void Widget::dismiss_overlays_at(double, double)
 {
 }
 std::weak_ptr<void> Widget::lifetime() const

@@ -112,7 +112,7 @@ bool ComboBox::handle_event(const Event& event)
     {
         return false;
     }
-    const auto row{static_cast<std::size_t>(std::max(0, mouse->y - bounds().y))};
+    const auto row{static_cast<std::size_t>(std::max(0, whole(mouse->y - bounds().y)))};
     if(mouse->hover && m_expanded)
     {
         m_hovered = std::min(row, m_options.size() - 1);
@@ -140,15 +140,16 @@ Size ComboBox::measure(const Constraints& constraints) const
     {
         width = std::max(width, shown_width(option));
     }
-    return constraints.constrain({width + 4, 1});
+    return constraints.constrain({static_cast<double>(width + 4), 1.0});
 }
 
 Rect ComboBox::paint_bounds() const
 {
-    return {bounds().x, bounds().y, bounds().width, m_expanded ? static_cast<int>(m_options.size()) : bounds().height};
+    return {bounds().x, bounds().y, bounds().width,
+            m_expanded ? static_cast<double>(m_options.size()) : bounds().height};
 }
 
-Widget* ComboBox::hit_test(int x, int y)
+Widget* ComboBox::hit_test(double x, double y)
 {
     const auto area{paint_bounds()};
     return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height ? this : nullptr;
@@ -160,7 +161,7 @@ bool ComboBox::is_overlay() const
     return m_expanded;
 }
 
-void ComboBox::dismiss_overlays_at(int x, int y)
+void ComboBox::dismiss_overlays_at(double x, double y)
 {
     if(m_expanded && hit_test(x, y) == nullptr)
     {
@@ -193,7 +194,7 @@ void ComboBox::paint(Painter& painter, const Theme& theme) const
                                          : closed_background};
         const auto foreground{m_expanded ? (selected ? theme.item_selected_foreground : theme.table_foreground)
                                          : closed_foreground};
-        const int y{bounds().y + static_cast<int>(row)};
+        const double y{bounds().y + static_cast<double>(row)};
         painter.fill_rect({bounds().x, y, bounds().width, 1}, background);
         painter.draw_label({bounds().x + 1, y}, m_options.at(option), {foreground, background});
         if(!m_expanded)

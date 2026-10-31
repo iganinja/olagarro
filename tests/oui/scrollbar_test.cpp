@@ -17,19 +17,19 @@ namespace
 {
 
 // A press, a drag to, and a release at the cells given.
-oui::MouseEvent press(int x, int y)
+oui::MouseEvent press(double x, double y)
 {
     return oui::MouseEvent{x, y, true};
 }
 
-oui::MouseEvent drag(int x, int y)
+oui::MouseEvent drag(double x, double y)
 {
     oui::MouseEvent event{x, y, false};
     event.dragging = true;
     return event;
 }
 
-oui::MouseEvent release(int x, int y)
+oui::MouseEvent release(double x, double y)
 {
     oui::MouseEvent event{x, y, false};
     event.released = true;

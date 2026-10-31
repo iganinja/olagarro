@@ -87,7 +87,7 @@ class Widget
 
     [[nodiscard]] virtual bool contains(const Widget* target) const;
 
-    [[nodiscard]] virtual Widget* hit_test(int x, int y);
+    [[nodiscard]] virtual Widget* hit_test(double x, double y);
 
     [[nodiscard]] virtual bool is_selected_child(const Widget&) const;
 
@@ -128,7 +128,7 @@ class Widget
     // Expires when the widget is destroyed: to hold on to it without holding it up, and to tell it from another made
     // later in the same place.
     [[nodiscard]] std::weak_ptr<void> lifetime() const;
-    virtual void dismiss_overlays_at(int, int);
+    virtual void dismiss_overlays_at(double, double);
 
     [[nodiscard]] virtual Widget* keyboard_target();
 

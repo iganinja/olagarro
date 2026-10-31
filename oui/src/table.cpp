@@ -74,10 +74,10 @@ int Table::column_pixel_width(std::size_t col) const
         }
     }
     const auto gaps{spacing_cells(m_gap) * static_cast<int>(columns - 1)};
-    return std::max(1, bounds().width - others - gaps);
+    return std::max(1, whole(bounds().width) - others - gaps);
 }
 
-int Table::header_pixel_x(std::size_t col) const
+double Table::header_pixel_x(std::size_t col) const
 {
     auto x{bounds().x - m_scroll_offset_x};
     for(std::size_t index{}; index < col; ++ index)
@@ -181,13 +181,13 @@ bool Table::is_selected_child(const Widget& child) const
 
 // === Scrolling ===
 
-std::optional<std::size_t> Table::row_at(int y) const
+std::optional<std::size_t> Table::row_at(double y) const
 {
     if(y < bounds().y + header_height())
     {
         return std::nullopt;
     }
-    const auto content_y{y - bounds().y - header_height() + m_scroll_offset};
+    const auto content_y{whole(y - bounds().y) - header_height() + m_scroll_offset};
     for(std::size_t row{}; row < m_row_tops.size(); ++ row)
     {
         if(content_y >= m_row_tops[row] && content_y < m_row_tops[row] + m_row_heights[row])
@@ -475,7 +475,7 @@ bool Table::handle_event(const Event& event)
         if(m_total_height > m_viewport_height)
         {
             if(const auto to{m_scrollbar.handle(
-                   *mouse, {bounds().x + bounds().width - 1, bounds().y, 1, bounds().height}, bounds().height,
+                   *mouse, {bounds().x + bounds().width - 1, bounds().y, 1, bounds().height}, whole(bounds().height),
                    m_total_height, m_scroll_offset, max_scroll_offset(), std::max(1, m_viewport_height - 1))})
             {
                 m_scroll_offset = *to;
@@ -575,14 +575,14 @@ Size Table::measure(const Constraints& constraints) const
 {
     const auto columns{column_count()};
     const auto gap{spacing_cells(m_gap)};
-    auto width{0};
+    auto width{0.0};
     for(std::size_t col{}; col < columns; ++ col)
     {
-        auto column{std::max(column_width(col), 1)};
+        auto column{static_cast<double>(std::max(column_width(col), 1))};
         if(m_stretch_column == col)
         {
             // What the column's cells need, and one more for the scrollbar.
-            column = 1;
+            column = 1.0;
             for(std::size_t index{col}; index < child_count(); index += columns)
             {
                 column = std::max(column, child_at(index).measure(Constraints{}).width + 1);
@@ -590,10 +590,10 @@ Size Table::measure(const Constraints& constraints) const
         }
         width += column + (col + 1 < columns ? gap : 0);
     }
-    auto height{header_height()};
+    auto height{static_cast<double>(header_height())};
     for(std::size_t row{}; row < row_count(); ++ row)
     {
-        auto row_height{0};
+        auto row_height{0.0};
         for(std::size_t col{}; col < columns; ++ col)
         {
             const auto index{row * columns + col};
@@ -633,13 +633,14 @@ void Table::arrange(const Rect& bounds)
             const auto index{row * columns + col};
             if(index < child_count())
             {
-                heights[row] = std::max(heights[row], child_at(index).measure({widths[col], 100}).height);
+                heights[row] = std::max(
+                    heights[row], whole(child_at(index).measure({static_cast<double>(widths[col]), 100.0}).height));
             }
         }
     }
-    m_viewport_width = bounds.width;
+    m_viewport_width = whole(bounds.width);
     // The rows scroll under the header, so the viewport is what is left below it.
-    m_viewport_height = std::max(0, bounds.height - header_height());
+    m_viewport_height = std::max(0, whole(bounds.height) - header_height());
     m_row_heights = heights;
     m_row_tops.assign(rows, 0);
     m_total_height = 0;
@@ -665,7 +666,7 @@ void Table::arrange(const Rect& bounds)
             const auto index{row * columns + col};
             if(index < child_count())
             {
-                child_at(index).arrange({x, y, widths[col], heights[row]});
+                child_at(index).arrange({x, y, static_cast<double>(widths[col]), static_cast<double>(heights[row])});
             }
             x += widths[col] + gap;
         }
@@ -678,7 +679,8 @@ void Table::paint(Painter& painter, const Theme& theme) const
 {
     painter.fill_rect(bounds(), m_background.resolve(theme));
     const auto columns{column_count()};
-    const Rect content{bounds().x, bounds().y + header_height(), bounds().width, m_viewport_height};
+    const Rect content{bounds().x, bounds().y + header_height(), bounds().width,
+                       static_cast<double>(m_viewport_height)};
     const auto background{background_color(theme)};
     const auto foreground{m_foreground.resolve(theme)};
     painter.push_clip(content);
@@ -692,7 +694,8 @@ void Table::paint(Painter& painter, const Theme& theme) const
         const auto selected{highlights_row(row)};
         if(selected)
         {
-            painter.fill_rect({bounds().x, y, bounds().width, m_row_heights[row]}, theme.item_selected_background);
+            painter.fill_rect({bounds().x, y, bounds().width, static_cast<double>(m_row_heights[row])},
+                              theme.item_selected_background);
         }
         for(std::size_t col{}; col < columns; ++ col)
         {
@@ -731,8 +734,8 @@ void Table::paint(Painter& painter, const Theme& theme) const
                     width -= marker->columns;
                 }
                 // Held to its column, as a proportional font may draw past the cells it counts.
-                painter.push_clip({x, y, std::max(0, width), m_row_heights[row]});
-                painter.draw_label({x, y}, fit_text(text->text(), std::max(0, width)), style);
+                painter.push_clip({x, y, std::max(0.0, width), static_cast<double>(m_row_heights[row])});
+                painter.draw_label({x, y}, fit_text(text->text(), std::max(0, whole(width))), style);
                 painter.pop_clip();
             }
             else
@@ -763,7 +766,7 @@ void Table::set_columns_resizable(bool resizable)
     m_columns_resizable = resizable;
 }
 
-std::optional<std::size_t> Table::edge_at(int x, int cell_offset) const
+std::optional<std::size_t> Table::edge_at(double x, int cell_offset) const
 {
     // A cell can be wide, so the edge takes only its last pixels and the first ones of the next; in a terminal a cell
     // is the finest place, and both cells round the edge take it.
@@ -818,9 +821,9 @@ bool Table::handle_header_mouse(const MouseEvent& mouse)
         // Moved, it is a resize and no longer a click.
         m_column_drag->moved = true;
         m_pressed_header.reset();
-        set_column_width(
-            m_column_drag->col,
-            std::max(2, m_column_drag->start_width + m_column_drag->direction * (mouse.x - m_column_drag->start_x)));
+        set_column_width(m_column_drag->col,
+                         std::max(2, m_column_drag->start_width +
+                                         m_column_drag->direction * whole(mouse.x - m_column_drag->start_x)));
         arrange(bounds());
         return true;
     }
@@ -884,7 +887,7 @@ void Table::paint_headers(Painter& painter, const Theme& theme) const
             look.sort = order == SortOrder::ascending ? Icon::sorted_up : Icon::sorted_down;
         }
         look.pressed = m_pressed_header == std::optional<std::size_t>{col};
-        const Rect cell{header_pixel_x(col), bounds().y, column_pixel_width(col), 1};
+        const Rect cell{header_pixel_x(col), bounds().y, static_cast<double>(column_pixel_width(col)), 1.0};
         painter.draw_header(cell, look, theme);
         right = std::max(right, cell.x + cell.width);
     }
@@ -903,11 +906,11 @@ void Table::paint_scrollbar(Painter& painter, const Theme& theme) const
         return;
     }
     const auto track_x{bounds().x + bounds().width - 1};
-    const auto thumb{
-        scrollbar_thumb(bounds().height, bounds().height, m_total_height, m_scroll_offset, max_scroll_offset())};
+    const auto thumb{scrollbar_thumb(whole(bounds().height), whole(bounds().height), m_total_height, m_scroll_offset,
+                                     max_scroll_offset())};
     painter.draw_scrollbar(
         {track_x, bounds().y, 1, bounds().height},
-        {bounds().y + thumb.start, thumb.length, theme.scrollbar_background, theme.scrollbar_foreground}, theme);
+        {whole(bounds().y) + thumb.start, thumb.length, theme.scrollbar_background, theme.scrollbar_foreground}, theme);
 }
 
 void Table::paint_horizontal_scrollbar(Painter& painter, const Theme& theme) const
@@ -917,12 +920,12 @@ void Table::paint_horizontal_scrollbar(Painter& painter, const Theme& theme) con
         return;
     }
     const auto y{bounds().y + bounds().height - 1};
-    const auto track_width{bounds().width};
+    const auto track_width{whole(bounds().width)};
     const auto thumb_width{std::max(1, track_width * track_width / m_total_width)};
     const auto thumb_range{std::max(0, track_width - thumb_width)};
     const auto content_range{max_scroll_offset_x()};
-    const auto thumb_x{bounds().x + (content_range == 0 ? 0 : m_scroll_offset_x * thumb_range / content_range)};
-    painter.draw_scrollbar({bounds().x, y, track_width, 1},
+    const auto thumb_x{whole(bounds().x) + (content_range == 0 ? 0 : m_scroll_offset_x * thumb_range / content_range)};
+    painter.draw_scrollbar({bounds().x, y, static_cast<double>(track_width), 1.0},
                            {thumb_x, thumb_width, theme.scrollbar_background, theme.scrollbar_foreground}, theme);
 }
 

@@ -22,8 +22,8 @@ class Grid final : public Container
     [[nodiscard]] Rect paint_bounds() const override;
 
   private:
-    [[nodiscard]] std::vector<int> column_widths(int available_width, bool distribute_flexible = true) const;
-    [[nodiscard]] std::vector<int> row_heights(const Constraints& constraints, bool distribute_flexible) const;
+    [[nodiscard]] std::vector<double> column_widths(double available_width, bool distribute_flexible = true) const;
+    [[nodiscard]] std::vector<double> row_heights(const Constraints& constraints, bool distribute_flexible) const;
     // The columns, and the rows, with a widget shown in them: the others take no room.
     [[nodiscard]] std::vector<bool> shown_columns() const;
     [[nodiscard]] std::vector<bool> shown_rows() const;

@@ -102,10 +102,10 @@ bool TextEdit::handle_input(const Event& event)
         }
         const auto& vlines{visual_lines()};
         const auto vline_index{
-            std::min(m_scroll_line + static_cast<std::size_t>(mouse->y - bounds().y), vlines.size() - 1)};
+            std::min(m_scroll_line + static_cast<std::size_t>(whole(mouse->y - bounds().y)), vlines.size() - 1)};
         const auto& vl{vlines.at(vline_index)};
         const auto column{m_scroll_column +
-                          static_cast<std::size_t>(std::max(0, mouse->x - bounds().x - gutter_width()))};
+                          static_cast<std::size_t>(std::max(0, whole(mouse->x - bounds().x) - gutter_width()))};
         const auto clicked_column{std::min(column, column_at_byte(vl.start_byte, vl.end_byte))};
         m_cursor = byte_at_column(vl.start_byte, clicked_column);
         if(mouse->pressed && mouse->clicks >= 2)

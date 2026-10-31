@@ -51,7 +51,7 @@ class TabView final : public Container
     // goes back to the document used before.
     [[nodiscard]] std::vector<std::size_t> recent_order() const;
     // The tab whose title covers column `x` of the header, if any.
-    [[nodiscard]] std::optional<std::size_t> tab_at(int x) const;
+    [[nodiscard]] std::optional<std::size_t> tab_at(double x) const;
     // What a pointer resting on a tab's title is told about it, such as the whole path of the file it holds.
     void set_tooltip_provider(std::function<std::optional<std::string>(std::size_t index)> provider);
     [[nodiscard]] std::optional<std::string> tooltip_at(Point point) const override;
@@ -81,7 +81,7 @@ class TabView final : public Container
     void arrange(const Rect& bounds) override;
     void paint(Painter& painter, const Theme& theme) const override;
     void collect_focusable(std::vector<Widget*>& widgets) override;
-    [[nodiscard]] Widget* hit_test(int x, int y) override;
+    [[nodiscard]] Widget* hit_test(double x, double y) override;
 
   private:
     void ensure_selected_visible();
@@ -95,7 +95,7 @@ class TabView final : public Container
     // A tab's title in the header: its text, the spaces round it, and the close mark when there is one.
     [[nodiscard]] int tab_width(std::size_t index) const;
     std::size_t m_selected{};
-    int m_header_scroll{};
+    double m_header_scroll{};
     olagarro::signal_slot::Signal<std::size_t> m_close_requested;
     olagarro::signal_slot::Signal<std::size_t> m_tab_activated;
     olagarro::signal_slot::Signal<std::size_t> m_selection_changed;

@@ -674,8 +674,8 @@ TEST(OuiWidgetTests, ResizableWindowMarksItsGripCorner)
     oui::CellBuffer buffer{30, 10};
     oui::CellBufferPainter painter{buffer};
     window.paint(painter, oui::Theme{});
-    const auto right{window.bounds().x + window.bounds().width - 1};
-    const auto bottom{window.bounds().y + window.bounds().height - 1};
+    const auto right{oui::whole(window.bounds().x + window.bounds().width - 1)};
+    const auto bottom{oui::whole(window.bounds().y + window.bounds().height - 1)};
     EXPECT_EQ(buffer.cell_at(right, bottom).glyph, U'┘');
     EXPECT_EQ(buffer.cell_at(right - 1, bottom).glyph, U'─');
 }
@@ -2091,7 +2091,7 @@ TEST(OuiWidgetTests, TextEditHorizontalScrollbarPagesAndDrags)
     editor->handle_event(oui::MouseEvent{15, 4, false, 0, false, true});
     EXPECT_EQ(painted(*editor).cell_at(0, 0).glyph, U'8') << "one page is 18 columns";
 
-    editor->handle_event(oui::MouseEvent{horizontal_thumb(painted(*editor)).front(), 4, true});
+    editor->handle_event(oui::MouseEvent{static_cast<double>(horizontal_thumb(painted(*editor)).front()), 4, true});
     editor->handle_event(oui::MouseEvent{0, 4, false, 0, true});
     editor->handle_event(oui::MouseEvent{0, 4, false, 0, false, true});
     EXPECT_EQ(painted(*editor).cell_at(0, 0).glyph, U'0');
@@ -3942,7 +3942,7 @@ TEST(OuiApplicationTests, CountsRepeatedClicksOnTheSamePlace)
     auto& probe_reference{*probe};
     application.set_content(std::move(probe));
     application.render();
-    const auto click{[&application](int x)
+    const auto click{[&application](double x)
                      {
                          application.dispatch_event(oui::MouseEvent{x, 1, true});
                          application.dispatch_event(oui::MouseEvent{x, 1, false, 0, false, true});
@@ -4822,7 +4822,7 @@ TEST(OuiTooltipTests, StartAfterThePointerOrEndBeforeItSoThePointerCoversNone)
     auto& told{column->add(oui::label("abcdefghijklmnopqrst"))};
     told.set_tooltip("a tip");
     application.set_content(std::move(column));
-    const auto rest_at{[&](int x)
+    const auto rest_at{[&](double x)
                        {
                            backend_ref->push_event(oui::MouseEvent{x, 0, false, 0, false, false, true});
                            application.run_frame();
@@ -4939,7 +4939,7 @@ TEST(OuiLayoutTests, AnOpenComboBoxCoversTheWidgetsAfterItsContainer)
     oui::CellBuffer buffer{20, 3};
     oui::CellBufferPainter painter{buffer};
     content->paint(painter, {});
-    const auto x{combo.bounds().x};
+    const auto x{oui::whole(combo.bounds().x)};
     EXPECT_EQ(buffer.cell_at(x + 1, 1).glyph, U'S');
     EXPECT_EQ(buffer.cell_at(x + 1, 2).glyph, U'T');
     EXPECT_EQ(content->hit_test(x + 1, 1), &combo);
@@ -4972,7 +4972,7 @@ TEST(OuiLayoutTests, AnOpenComboBoxMarksTheOptionUnderThePointer)
     oui::CellBuffer buffer{20, 3};
     oui::CellBufferPainter painter{buffer};
     content->paint(painter, theme);
-    const auto x{combo.bounds().x + 1};
+    const auto x{oui::whole(combo.bounds().x) + 1};
     EXPECT_EQ(buffer.cell_at(x, 2).background, theme.item_selected_background);
     EXPECT_EQ(buffer.cell_at(x, 0).background, theme.table_background);
     // Nothing is chosen until it is picked, and Enter picks it.
@@ -5026,11 +5026,13 @@ TEST(OuiWidgetTests, TheDefaultButtonShowsInItsColourAndTakesEnterFromTheDialog)
     // As Turbo Vision: the default button's text light cyan, another's black, both on green.
     const auto letter{[&buffer](const oui::Button& button, char32_t glyph)
                       {
-                          for(int x{button.bounds().x}; x < button.bounds().x + button.bounds().width; ++ x)
+                          const auto y{oui::whole(button.bounds().y)};
+                          for(int x{oui::whole(button.bounds().x)};
+                              x < oui::whole(button.bounds().x + button.bounds().width); ++ x)
                           {
-                              if(buffer.cell_at(x, button.bounds().y).glyph == glyph)
+                              if(buffer.cell_at(x, y).glyph == glyph)
                               {
-                                  return buffer.cell_at(x, button.bounds().y);
+                                  return buffer.cell_at(x, y);
                               }
                           }
                           return oui::Cell{};
@@ -5077,14 +5079,16 @@ TEST(OuiWidgetTests, AltAndAShortcutLetterInADialogGoesToWhatALabelNamesOrPresse
             application.focus(other);
             application.render();
             const auto& frame{*screen->last_frame()};
-            letter = frame.cell_at(name_label.bounds().x, name_label.bounds().y);
-            for(int x{name_label.bounds().x}; x < name_label.bounds().x + 5; ++ x)
+            const auto name_x{oui::whole(name_label.bounds().x)};
+            const auto name_y{oui::whole(name_label.bounds().y)};
+            letter = frame.cell_at(name_x, name_y);
+            for(int x{name_x}; x < name_x + 5; ++ x)
             {
-                shown += frame.cell_at(x, name_label.bounds().y).glyph;
+                shown += frame.cell_at(x, name_y).glyph;
             }
-            for(int x{plain.bounds().x}; x < plain.bounds().x + 12; ++ x)
+            for(int x{oui::whole(plain.bounds().x)}; x < oui::whole(plain.bounds().x) + 12; ++ x)
             {
-                plain_shown += frame.cell_at(x, plain.bounds().y).glyph;
+                plain_shown += frame.cell_at(x, oui::whole(plain.bounds().y)).glyph;
             }
             application.dispatch_event(oui::TextEvent{U'n', false, true});
             name_focused = name.is_focused();
@@ -5159,7 +5163,7 @@ TEST(OuiWidgetTests, InADialogTheLetterAloneWorksUnlessAFieldTakesIt)
         [&]
         {
             application.render();
-            letter = screen->last_frame()->cell_at(wrap.bounds().x + 4, wrap.bounds().y);
+            letter = screen->last_frame()->cell_at(oui::whole(wrap.bounds().x) + 4, oui::whole(wrap.bounds().y));
             application.focus(other);
             application.dispatch_event(oui::TextEvent{U'w'});
             checked_by_letter = wrap.is_checked();
@@ -5243,7 +5247,7 @@ TEST(OuiWidgetTests, ThePointerSaysALineCanBeDraggedWhileOverItOrDraggingIt)
     // The line is the column after the first side.
     const auto& first{columns_reference.child_at(0).bounds()};
     const auto across{first.x + first.width};
-    const auto hover{[&application](int x, int y)
+    const auto hover{[&application](double x, double y)
                      { application.dispatch_event(oui::MouseEvent{x, y, false, 0, false, false, true}); }};
     using oui::Pointer;
 

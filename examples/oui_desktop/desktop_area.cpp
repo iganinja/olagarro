@@ -17,7 +17,7 @@ using oui::MouseEvent;
 using oui::Rect;
 using oui::TextEvent;
 
-[[nodiscard]] bool inside(const Rect& area, int x, int y)
+[[nodiscard]] bool inside(const Rect& area, double x, double y)
 {
     return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height;
 }
@@ -25,8 +25,8 @@ using oui::TextEvent;
 // A program's cells, as it drew them, in runs of the same look.
 void paint_cells(oui::Painter& painter, const Rect& area, const oui::DesktopServer::Client& client)
 {
-    const auto rows{std::min(area.height, client.height)};
-    const auto columns{std::min(area.width, client.width)};
+    const auto rows{std::min(oui::whole(area.height), client.height)};
+    const auto columns{std::min(oui::whole(area.width), client.width)};
     for(int row{}; row < rows; ++ row)
     {
         std::string run;
@@ -154,7 +154,7 @@ bool DesktopArea::waiting_for_desktop_key() const
 
 oui::Size DesktopArea::measure(const oui::Constraints& constraints) const
 {
-    return constraints.constrain({std::max(1, constraints.max_width), std::max(1, constraints.max_height)});
+    return constraints.constrain({std::max(1.0, constraints.max_width), std::max(1.0, constraints.max_height)});
 }
 
 void DesktopArea::arrange(const Rect& bounds)
@@ -177,11 +177,11 @@ void DesktopArea::paint(oui::Painter& painter, const oui::Theme& theme) const
     {
         // Turbo Vision's desktop: a light shade, all over.
         std::string row;
-        for(int column{}; column < bounds().width; ++ column)
+        for(int column{}; column < oui::whole(bounds().width); ++ column)
         {
             row += "░";
         }
-        for(int y{bounds().y}; y < bounds().y + bounds().height; ++ y)
+        for(double y{bounds().y}; y < bounds().y + bounds().height; ++ y)
         {
             painter.draw_text({bounds().x, y}, row, {theme.background, theme.text});
         }
@@ -343,15 +343,15 @@ Rect DesktopArea::content(const Rect& frame) const
 {
     if(m_cells)
     {
-        return {frame.x + 1, frame.y + 1, std::max(0, frame.width - 2), std::max(0, frame.height - 2)};
+        return {frame.x + 1, frame.y + 1, std::max(0.0, frame.width - 2), std::max(0.0, frame.height - 2)};
     }
-    return {frame.x, frame.y + 1, frame.width, std::max(0, frame.height - 1)};
+    return {frame.x, frame.y + 1, frame.width, std::max(0.0, frame.height - 1)};
 }
 
-DesktopArea::TitleButton DesktopArea::title_button_at(const Rect& frame, int x) const
+DesktopArea::TitleButton DesktopArea::title_button_at(const Rect& frame, double x) const
 {
     const auto right{frame.x + frame.width - 1};
-    const auto width{m_cells ? 3 : 2};
+    const auto width{m_cells ? 3.0 : 2.0};
     const auto end{m_cells ? right - 2 : right};
     for(const auto button : {TitleButton::close, TitleButton::maximize, TitleButton::minimize})
     {
@@ -381,7 +381,7 @@ template <typename Change> void DesktopArea::telling_focus(Change change)
     }
 }
 
-const DesktopArea::Frame* DesktopArea::frame_at(int x, int y) const
+const DesktopArea::Frame* DesktopArea::frame_at(double x, double y) const
 {
     for(auto frame{m_frames.rbegin()}; frame != m_frames.rend(); ++ frame)
     {
@@ -420,10 +420,10 @@ oui::Pointer DesktopArea::pointer_at(oui::Point point) const
 Rect DesktopArea::keep_inside(Rect frame) const
 {
     const auto& area{bounds()};
-    frame.width = std::clamp(frame.width, std::min(minimum_width, area.width), std::max(1, area.width));
-    frame.height = std::clamp(frame.height, std::min(minimum_height, area.height), std::max(1, area.height));
-    frame.x = std::clamp(frame.x, area.x, area.x + std::max(0, area.width - frame.width));
-    frame.y = std::clamp(frame.y, area.y, area.y + std::max(0, area.height - frame.height));
+    frame.width = std::clamp(frame.width, std::min(minimum_width, area.width), std::max(1.0, area.width));
+    frame.height = std::clamp(frame.height, std::min(minimum_height, area.height), std::max(1.0, area.height));
+    frame.x = std::clamp(frame.x, area.x, area.x + std::max(0.0, area.width - frame.width));
+    frame.y = std::clamp(frame.y, area.y, area.y + std::max(0.0, area.height - frame.height));
     return frame;
 }
 
@@ -432,19 +432,19 @@ void DesktopArea::configure(int id)
     if(const auto found{find(id)}; found != m_frames.end())
     {
         const auto area{content(found->bounds)};
-        m_server.configure(id, area.width, area.height, id == focused());
+        m_server.configure(id, oui::whole(area.width), oui::whole(area.height), id == focused());
     }
 }
 
 void DesktopArea::add(int id)
 {
     const auto& area{bounds()};
-    const auto step{static_cast<int>(m_frames.size() % 8)};
+    const auto step{static_cast<double>(m_frames.size() % 8)};
     telling_focus(
         [&]
         {
             m_frames.push_back({id, keep_inside({area.x + 2 + 4 * step, area.y + 1 + 2 * step,
-                                                 std::min(100, area.width - 8), std::min(32, area.height - 4)})});
+                                                 std::min(100.0, area.width - 8), std::min(32.0, area.height - 4)})});
         });
     configure(id);
 }

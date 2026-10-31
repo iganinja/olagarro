@@ -52,7 +52,7 @@ Size Menu::measure(const Constraints& constraints) const
         const auto marker_width{m_commands.checked(item.command_id).has_value() ? 4 : 0};
         width = std::max(width, static_cast<int>(item.title.size()) + marker_width);
     }
-    return constraints.constrain({width, static_cast<int>(m_items.size())});
+    return constraints.constrain({static_cast<double>(width), static_cast<double>(m_items.size())});
 }
 void Menu::paint(Painter& painter, const Theme& theme) const
 {

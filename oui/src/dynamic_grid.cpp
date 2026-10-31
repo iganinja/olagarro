@@ -26,11 +26,11 @@ Size DynamicGrid::cell_size(const Constraints& constraints) const
     {
         size.width = std::max(1, static_cast<int>(m_column_width.value()));
     }
-    return {std::max(1, size.width), std::max(1, size.height)};
+    return {std::max(1.0, size.width), std::max(1.0, size.height)};
 }
-int DynamicGrid::column_count(int width, int cell_width) const
+int DynamicGrid::column_count(double width, double cell_width) const
 {
-    return std::max(1, (width + spacing_cells(m_gap)) / (cell_width + spacing_cells(m_gap)));
+    return std::max(1, whole((width + spacing_cells(m_gap)) / (cell_width + spacing_cells(m_gap))));
 }
 Size DynamicGrid::measure(const Constraints& constraints) const
 {

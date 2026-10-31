@@ -280,7 +280,7 @@ TEST(OuiGraphicsTests, ZoomsThroughEveryFontSize)
     window->add(label("Hello"));
     application.set_window(std::move(window));
     EXPECT_EQ(image.zoom(), PixelBackend::default_zoom());
-    int previous_columns{1 << 20};
+    double previous_columns{1 << 20};
     for(int level{}; level < PixelBackend::zoom_levels(); ++ level)
     {
         image.set_zoom(level);
@@ -504,7 +504,7 @@ TEST(OuiGraphicsTests, WidgetsWithTextAskForTheCellsItShowsInNotItsCharacters)
     const auto& image{*backend};
     Application application{std::move(backend)};
     const std::string text{"Rename Files"};
-    const auto cell{image.cell_size().width};
+    const auto cell{whole(image.cell_size().width)};
     // Room for the text as drawn, and for the padding interface text keeps.
     const auto at_least{(text_metrics().width(text) + 2 * text_metrics().field_padding() + cell - 1) / cell};
     ASSERT_LT(at_least, text_width(text));

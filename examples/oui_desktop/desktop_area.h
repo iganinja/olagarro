@@ -85,8 +85,8 @@ class DesktopArea final : public olagarro::oui::Widget
         close
     };
 
-    static constexpr int minimum_width{20};
-    static constexpr int minimum_height{5};
+    static constexpr double minimum_width{20.0};
+    static constexpr double minimum_height{5.0};
 
     // The desktop's own keys, which no window gets.
     bool own_key(const olagarro::oui::Event& event);
@@ -94,12 +94,12 @@ class DesktopArea final : public olagarro::oui::Widget
     [[nodiscard]] olagarro::oui::Rect content(const olagarro::oui::Rect& frame) const;
     // The button of the title row a click falls on: from the right, close, maximize and minimize, two cells each in
     // pixels and three ("[■]") before the corner in characters.
-    [[nodiscard]] TitleButton title_button_at(const olagarro::oui::Rect& frame, int x) const;
+    [[nodiscard]] TitleButton title_button_at(const olagarro::oui::Rect& frame, double x) const;
     [[nodiscard]] std::vector<Frame>::iterator find(int id);
     // Runs `change` and, when it changes which window has the keys, tells both.
     template <typename Change> void telling_focus(Change change);
     // The window under a cell, the topmost.
-    [[nodiscard]] const Frame* frame_at(int x, int y) const;
+    [[nodiscard]] const Frame* frame_at(double x, double y) const;
     // Within the desktop, and no bigger: its title row always there to drag it back by.
     [[nodiscard]] olagarro::oui::Rect keep_inside(olagarro::oui::Rect frame) const;
     void configure(int id);
@@ -116,7 +116,7 @@ class DesktopArea final : public olagarro::oui::Widget
     std::vector<Frame> m_frames;
     Drag m_drag{Drag::none};
     int m_drag_id{};
-    int m_grab_x{};
-    int m_grab_y{};
+    double m_grab_x{};
+    double m_grab_y{};
     olagarro::oui::Rect m_start{};
 };

@@ -33,21 +33,21 @@ class ClipboardBackend final : public oui::Backend
     std::shared_ptr<std::string> m_clipboard{std::make_shared<std::string>()};
 };
 
-[[nodiscard]] oui::MouseEvent press(int x, int y, int clicks = 1)
+[[nodiscard]] oui::MouseEvent press(double x, double y, int clicks = 1)
 {
     oui::MouseEvent mouse{x, y, true};
     mouse.clicks = clicks;
     return mouse;
 }
 
-[[nodiscard]] oui::MouseEvent drag(int x, int y)
+[[nodiscard]] oui::MouseEvent drag(double x, double y)
 {
     oui::MouseEvent mouse{x, y, false};
     mouse.dragging = true;
     return mouse;
 }
 
-[[nodiscard]] oui::MouseEvent release(int x, int y)
+[[nodiscard]] oui::MouseEvent release(double x, double y)
 {
     oui::MouseEvent mouse{x, y, false};
     mouse.released = true;

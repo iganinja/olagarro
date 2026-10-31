@@ -759,15 +759,16 @@ class Builder
         auto made{window(own_text(node))};
         if(const auto width{number_of(node, "width", 0)}; width > 0)
         {
-            made->set_preferred_size({width, 0});
+            made->set_preferred_size({static_cast<double>(width), 0});
         }
         if(node.has("max_width"))
         {
-            made->set_maximum_size({number_of(node, "max_width", 0), 1 << 15});
+            made->set_maximum_size({static_cast<double>(number_of(node, "max_width", 0)), 1 << 15});
         }
         if(node.has("min_width") || node.has("min_height"))
         {
-            made->set_minimum_size({number_of(node, "min_width", 0), number_of(node, "min_height", 0)});
+            made->set_minimum_size({static_cast<double>(number_of(node, "min_width", 0)),
+                                    static_cast<double>(number_of(node, "min_height", 0))});
         }
         if(const auto share{share_of(node, "height_share")})
         {

@@ -19,7 +19,9 @@ ScrollbarThumb scrollbar_thumb(int length, int shown, int total, int scroll, int
 std::optional<int> ScrollbarDrag::handle(const MouseEvent& mouse, const Rect& track, int shown, int total, int scroll,
                                          int most, int page)
 {
-    const auto thumb{scrollbar_thumb(track.height, shown, total, scroll, most)};
+    // The thumb is in whole cells.
+    const auto height{whole(track.height)};
+    const auto thumb{scrollbar_thumb(height, shown, total, scroll, most)};
     if(m_grab)
     {
         if(mouse.released)
@@ -32,8 +34,8 @@ std::optional<int> ScrollbarDrag::handle(const MouseEvent& mouse, const Rect& tr
             m_grab.reset();
             return std::nullopt;
         }
-        const auto travel{track.height - thumb.length};
-        const auto start{std::clamp(mouse.y - track.y - *m_grab, 0, std::max(0, travel))};
+        const auto travel{height - thumb.length};
+        const auto start{std::clamp(whole(mouse.y - track.y) - *m_grab, 0, std::max(0, travel))};
         return travel == 0 ? 0 : (start * most + travel / 2) / travel;
     }
     if(!mouse.pressed || mouse.right || mouse.x < track.x || mouse.x >= track.x + track.width || mouse.y < track.y ||
@@ -41,7 +43,7 @@ std::optional<int> ScrollbarDrag::handle(const MouseEvent& mouse, const Rect& tr
     {
         return std::nullopt;
     }
-    const auto at{mouse.y - track.y};
+    const auto at{whole(mouse.y - track.y)};
     if(at < thumb.start)
     {
         return std::max(0, scroll - page);

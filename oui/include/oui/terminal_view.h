@@ -74,7 +74,7 @@ class TerminalView final : public Widget
     };
 
     bool handle_selection(const MouseEvent& mouse);
-    [[nodiscard]] Place place_at(int x, int y) const;
+    [[nodiscard]] Place place_at(double x, double y) const;
     [[nodiscard]] const TerminalCell& cell_at(const Place& place) const;
     [[nodiscard]] bool is_selected(int line, int column) const;
     void select_word(const Place& place);

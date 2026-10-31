@@ -15,7 +15,7 @@ TaskBar::TaskBar(DesktopArea& desktop, oui::DesktopServer& server, std::vector<L
 
 oui::Size TaskBar::measure(const oui::Constraints& constraints) const
 {
-    return constraints.constrain({std::max(1, constraints.max_width), 1});
+    return constraints.constrain({std::max(1.0, constraints.max_width), 1});
 }
 
 void TaskBar::paint(oui::Painter& painter, const oui::Theme& theme) const
@@ -43,8 +43,8 @@ void TaskBar::paint(oui::Painter& painter, const oui::Theme& theme) const
     {
         // What F12 can be followed by, at the right.
         const std::string_view keys{"F12: Tab next  t terminal  x close  m maximize  n minimize  q quit "};
-        const auto width{oui::text_width(keys)};
-        painter.draw_label({bounds().x + std::max(0, bounds().width - width), bounds().y}, keys,
+        const auto width{static_cast<double>(oui::text_width(keys))};
+        painter.draw_label({bounds().x + std::max(0.0, bounds().width - width), bounds().y}, keys,
                            {theme.status_foreground, theme.status_background});
     }
 }
@@ -83,7 +83,7 @@ std::vector<TaskBar::Entry> TaskBar::entries() const
     auto x{bounds().x + 1};
     for(std::size_t index{}; index < m_launchers.size(); ++ index)
     {
-        const auto width{oui::text_width(m_launchers[index].title) + 4};
+        const auto width{static_cast<double>(oui::text_width(m_launchers[index].title) + 4)};
         list.push_back({{x, bounds().y, width, 1}, static_cast<int>(index), 0, {}});
         x += width + 1;
     }
@@ -95,7 +95,7 @@ std::vector<TaskBar::Entry> TaskBar::entries() const
         const auto* const client{m_server.client(id)};
         auto title{client != nullptr && !client->title.empty() ? client->title : std::string{"?"}};
         title = oui::fit_text(title, 24);
-        const auto width{oui::text_width(title) + 4};
+        const auto width{static_cast<double>(oui::text_width(title) + 4)};
         list.push_back({{x, bounds().y, width, 1}, -1, id, std::move(title)});
         x += width;
     }

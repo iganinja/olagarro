@@ -316,7 +316,7 @@ Theme theme_for(const GraphicalStyle& style)
 GraphicalPainter::GraphicalPainter(Canvas& canvas, const GraphicalStyle& style, Font& cell_font, Font& interface_font,
                                    Font& symbols, std::optional<PixelRect> area)
     : m_canvas{canvas}, m_style{style}, m_cell_font{cell_font}, m_interface_font{interface_font},
-      m_fonts{cell_font, interface_font, symbols}, m_cell{cell_size(cell_font)},
+      m_fonts{cell_font, interface_font, symbols}, m_cell{cell_font.glyph(U'M').advance, cell_font.line_height()},
       m_area{area.value_or(PixelRect{0, 0, canvas.width(), canvas.height()})}
 {
     m_canvas.set_clip(m_area);
@@ -324,7 +324,7 @@ GraphicalPainter::GraphicalPainter(Canvas& canvas, const GraphicalStyle& style, 
 
 Size GraphicalPainter::cell_size(Font& cell_font)
 {
-    return {cell_font.glyph(U'M').advance, cell_font.line_height()};
+    return {static_cast<double>(cell_font.glyph(U'M').advance), static_cast<double>(cell_font.line_height())};
 }
 
 int GraphicalPainter::row_offset(int row, int height, int cell_height)
@@ -351,9 +351,9 @@ int GraphicalPainter::row_at(int y, int height, int cell_height)
 
 PixelRect GraphicalPainter::pixels(const Rect& cells) const
 {
-    const auto top{row_offset(cells.y, m_area.height, m_cell.height)};
-    const auto bottom{row_offset(cells.y + cells.height, m_area.height, m_cell.height)};
-    return {m_area.x + cells.x * m_cell.width, m_area.y + top, cells.width * m_cell.width, bottom - top};
+    const auto top{row_offset(whole(cells.y), m_area.height, m_cell.height)};
+    const auto bottom{row_offset(whole(cells.y + cells.height), m_area.height, m_cell.height)};
+    return {m_area.x + whole(cells.x) * m_cell.width, m_area.y + top, whole(cells.width) * m_cell.width, bottom - top};
 }
 
 void GraphicalPainter::fill_rect(const Rect& rect, Color color)
@@ -371,7 +371,7 @@ void GraphicalPainter::draw_text(Point position, std::string_view text, const Te
     };
     // Combining accents merge into the character before them, as the terminal's cells do.
     std::vector<Placed> placed;
-    auto x{position.x};
+    auto x{whole(position.x)};
     for(std::size_t index{}; index < text.size();)
     {
         const char32_t glyph{decode_utf8(text, index)};
@@ -394,7 +394,7 @@ void GraphicalPainter::draw_text(Point position, std::string_view text, const Te
                                                              : style.foreground};
     for(const auto& cell : placed)
     {
-        const auto area{pixels({cell.column, position.y, cell.width, 1})};
+        const auto area{pixels({static_cast<double>(cell.column), position.y, static_cast<double>(cell.width), 1.0})};
         m_canvas.fill(area, style.background);
         if(cell.glyph == U' ')
         {
@@ -501,7 +501,7 @@ int GraphicalPainter::label(const PixelRect& area, std::string_view text, Color 
 
 void GraphicalPainter::draw_label(Point position, std::string_view text, const TextStyle& style, Align align)
 {
-    const auto area{pixels({position.x, position.y, shown_width(text), 1})};
+    const auto area{pixels({position.x, position.y, static_cast<double>(shown_width(text)), 1.0})};
     m_canvas.fill(area, style.background);
     const auto foreground{(style.attributes & text_dim) != 0 ? mix(style.foreground, style.background, 110)
                                                              : style.foreground};
@@ -520,7 +520,7 @@ void GraphicalPainter::draw_label_runs(Point position, const std::vector<LabelRu
     {
         columns += text_width(run.text);
     }
-    const auto area{pixels({position.x, position.y, columns, 1})};
+    const auto area{pixels({position.x, position.y, static_cast<double>(columns), 1.0})};
     m_canvas.fill(area, background);
     const auto top{area.y + (area.height - m_interface_font.line_height()) / 2};
     auto pen{area.x};
@@ -548,7 +548,7 @@ void GraphicalPainter::draw_label_runs(Point position, const std::vector<LabelRu
 void GraphicalPainter::draw_mnemonic_label(Point position, std::string_view text, std::size_t mnemonic,
                                            const TextStyle& style, Color mnemonic_color, Align align)
 {
-    const auto area{pixels({position.x, position.y, shown_width(text), 1})};
+    const auto area{pixels({position.x, position.y, static_cast<double>(shown_width(text)), 1.0})};
     m_canvas.fill(area, style.background);
     const auto x{label(with_margin(area, align), text, style.foreground, align, (style.attributes & text_bold) != 0)};
     auto end{mnemonic};
@@ -774,14 +774,16 @@ void GraphicalPainter::draw_scrollbar(const Rect& track, const ScrollbarLook& lo
     bevel(area, true, m_style.shadow);
     if(track.width == 1)
     {
-        const auto thumb{pixels({track.x, look.thumb_start, 1, look.thumb_length})};
+        const auto thumb{
+            pixels({track.x, static_cast<double>(look.thumb_start), 1.0, static_cast<double>(look.thumb_length)})};
         bevel({area.x, thumb.y, area.width, thumb.height}, false, m_style.face);
         return;
     }
     // Across, a row is twice as tall as a column is wide: the bar takes the middle half of it.
     const PixelRect bar{area.x, area.y + area.height / 4, area.width, area.height / 2};
     bevel(bar, true, m_style.shadow);
-    const auto thumb{pixels({look.thumb_start, track.y, look.thumb_length, 1})};
+    const auto thumb{
+        pixels({static_cast<double>(look.thumb_start), track.y, static_cast<double>(look.thumb_length), 1.0})};
     bevel({thumb.x, bar.y, thumb.width, bar.height}, false, m_style.face);
 }
 
@@ -980,7 +982,7 @@ void GraphicalPainter::draw_text_field(const Rect& bounds, const TextFieldLook& 
     m_canvas.fill(area, look.style.background);
     const auto previous{m_canvas.clip()};
     m_canvas.set_clip(intersect(previous, area));
-    const auto start{area.x + field_padding(m_cell)};
+    const auto start{area.x + m_cell.width / 2};
     const auto x_at{[&](std::size_t byte) { return start + interface_width(look.text.substr(0, byte)); }};
     const auto first{std::min(look.selection_start, look.text.size())};
     const auto last{std::min(std::max(look.selection_end, first), look.text.size())};
@@ -1029,12 +1031,13 @@ void GraphicalPainter::draw_image(const Rect& bounds, const PixelImage& image, c
 std::optional<Rect> GraphicalPainter::pixel_bounds(const Rect& cells) const
 {
     const auto area{pixels(cells)};
-    return Rect{area.x - m_area.x, area.y - m_area.y, area.width, area.height};
+    return Rect{static_cast<double>(area.x - m_area.x), static_cast<double>(area.y - m_area.y),
+                static_cast<double>(area.width), static_cast<double>(area.height)};
 }
 
 int GraphicalPainter::field_padding(Size cell)
 {
-    return cell.width / 2;
+    return whole(cell.width) / 2;
 }
 
 float GraphicalPainter::unit() const
@@ -1059,7 +1062,7 @@ PixelRect GraphicalPainter::with_margin(const PixelRect& area, Align align) cons
 
 void GraphicalPainter::draw_marker(Point position, const Marker& marker, const TextStyle& style)
 {
-    const auto area{pixels({position.x, position.y, marker.columns, 1})};
+    const auto area{pixels({position.x, position.y, static_cast<double>(marker.columns), 1.0})};
     m_canvas.fill(area, style.background);
     if(!marker.icon)
     {
@@ -1148,7 +1151,7 @@ void GraphicalPainter::draw_progress(const Rect& bounds, const ProgressLook& loo
     // it in the interface font.
     const auto area{pixels(bounds)};
     const auto words{look.text.empty() ? 0 : (interface_width(look.text) + m_cell.width - 1) / m_cell.width + 1};
-    const auto length{std::max(0, bounds.width - words) * m_cell.width};
+    const auto length{std::max(0, whole(bounds.width) - words) * m_cell.width};
     const PixelRect track{area.x, area.y + area.height / 5, length, area.height - 2 * (area.height / 5)};
     bevel(track, true, m_style.well);
     const auto inside{PixelRect{track.x + m_style.line, track.y + m_style.line, track.width - 2 * m_style.line,

@@ -81,8 +81,8 @@ class DiffView final : public Widget
     void move_to(std::size_t row);
     // The row a difference starts on, chosen and shown near the top.
     void show_difference(std::size_t row);
-    void paint_side(Painter& painter, const Theme& theme, const DiffRow& row, DiffSide side, int x, int y, int width,
-                    bool current) const;
+    void paint_side(Painter& painter, const Theme& theme, const DiffRow& row, DiffSide side, double x, double y,
+                    int width, bool current) const;
     [[nodiscard]] int line_columns(std::string_view line) const;
 
     std::string m_left_text;

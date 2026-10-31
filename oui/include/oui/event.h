@@ -52,8 +52,8 @@ struct KeyEvent
 
 struct ResizeEvent
 {
-    int width;
-    int height;
+    double width;
+    double height;
 };
 
 struct TextEvent
@@ -88,8 +88,9 @@ enum class Pointer
 
 struct MouseEvent
 {
-    int x;
-    int y;
+    // In cells, as a widget's bounds.
+    double x;
+    double y;
     bool pressed;
     int wheel_delta{0};
     bool dragging{false};
@@ -163,8 +164,8 @@ struct DropEvent
         left
     };
     Phase phase;
-    int x{};
-    int y{};
+    double x{};
+    double y{};
     // When dropped, the files' and folders' absolute paths, in UTF-8; otherwise empty.
     std::vector<std::string> paths{};
     std::optional<Point> pixel{};

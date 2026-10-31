@@ -10,7 +10,7 @@ using namespace olagarro;
 namespace
 {
 
-oui::MouseEvent press(int x, int y)
+oui::MouseEvent press(double x, double y)
 {
     return oui::MouseEvent{x, y, true};
 }

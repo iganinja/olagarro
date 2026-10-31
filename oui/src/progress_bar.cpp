@@ -36,7 +36,7 @@ Size ProgressBar::measure(const Constraints& constraints) const
     const auto& metrics{text_metrics()};
     const auto cell{std::max(1, metrics.cell_width())};
     const auto words{m_text.empty() ? 0 : (metrics.width(m_text) + cell - 1) / cell + 1};
-    return constraints.constrain({10 + words, 1});
+    return constraints.constrain({static_cast<double>(10 + words), 1.0});
 }
 
 void ProgressBar::paint(Painter& painter, const Theme& theme) const

@@ -187,7 +187,7 @@ class FileListWidget final : public Table
 
     [[nodiscard]] bool is_focusable() const override { return true; }
 
-    [[nodiscard]] Widget* hit_test(int x, int y) override
+    [[nodiscard]] Widget* hit_test(double x, double y) override
     {
         return x >= bounds().x && x < bounds().x + bounds().width && y >= bounds().y && y < bounds().y + bounds().height
                    ? this
@@ -213,7 +213,7 @@ class FileListWidget final : public Table
 
     [[nodiscard]] Size measure(const Constraints& constraints) const override
     {
-        const int h{std::max(VISIBLE_FILE_ROWS, std::min(constraints.max_height, 22))};
+        const double h{std::max(static_cast<double>(VISIBLE_FILE_ROWS), std::min(constraints.max_height, 22.0))};
         return constraints.constrain({constraints.max_width, h});
     }
 

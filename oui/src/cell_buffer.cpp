@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 
 #include "unicode_composition.h"
 
@@ -46,15 +47,15 @@ std::size_t CellBuffer::index_of(int x, int y) const
     return static_cast<std::size_t>(y * m_width + x);
 }
 CellBufferPainter::CellBufferPainter(CellBuffer& buffer)
-    : m_buffer{buffer}, m_clip{0, 0, buffer.width(), buffer.height()}
+    : m_buffer{buffer}, m_clip{0.0, 0.0, static_cast<double>(buffer.width()), static_cast<double>(buffer.height())}
 {
 }
 void CellBufferPainter::fill_rect(const Rect& rect, Color color)
 {
     const auto clipped{intersect(rect, m_clip)};
-    for(auto y{clipped.y}; y < clipped.y + clipped.height; ++ y)
+    for(auto y{whole(clipped.y)}; y < whole(clipped.y + clipped.height); ++ y)
     {
-        for(auto x{clipped.x}; x < clipped.x + clipped.width; ++ x)
+        for(auto x{whole(clipped.x)}; x < whole(clipped.x + clipped.width); ++ x)
         {
             auto cell{m_buffer.cell_at(x, y)};
             // Blank: a shadow cast over it later shows what is there.
@@ -69,9 +70,9 @@ void CellBufferPainter::fill_rect(const Rect& rect, Color color)
 void CellBufferPainter::shade(const Rect& rect, Color foreground, Color background)
 {
     const auto clipped{intersect(rect, m_clip)};
-    for(auto y{clipped.y}; y < clipped.y + clipped.height; ++ y)
+    for(auto y{whole(clipped.y)}; y < whole(clipped.y + clipped.height); ++ y)
     {
-        for(auto x{clipped.x}; x < clipped.x + clipped.width; ++ x)
+        for(auto x{whole(clipped.x)}; x < whole(clipped.x + clipped.width); ++ x)
         {
             auto cell{m_buffer.cell_at(x, y)};
             cell.foreground = foreground;
@@ -84,9 +85,10 @@ void CellBufferPainter::shade(const Rect& rect, Color foreground, Color backgrou
 
 void CellBufferPainter::draw_text(Point position, std::string_view text, const TextStyle& style)
 {
-    auto x{position.x};
+    auto x{whole(position.x)};
+    const auto y{whole(position.y)};
     // The last cell written, so a combining accent that follows (NFD text) can merge into it.
-    std::optional<Point> previous_cell;
+    std::optional<std::pair<int, int>> previous_cell;
     char32_t previous_glyph{};
     for(std::size_t index{}; index < text.size();)
     {
@@ -97,21 +99,21 @@ void CellBufferPainter::draw_text(Point position, std::string_view text, const T
             if(const auto composed{compose(previous_glyph, glyph)})
             {
                 previous_glyph = *composed;
-                m_buffer.set_cell(previous_cell->x, previous_cell->y,
+                m_buffer.set_cell(previous_cell->first, previous_cell->second,
                                   {previous_glyph, style.foreground, style.background, style.attributes, false});
             }
             continue;
         }
         previous_cell.reset();
-        if(width != 0 && contains(m_clip, {x, position.y}))
+        if(width != 0 && contains(m_clip, {static_cast<double>(x), static_cast<double>(y)}))
         {
-            previous_cell = Point{x, position.y};
+            previous_cell = std::pair{x, y};
             previous_glyph = glyph;
-            m_buffer.set_cell(x, position.y, {glyph, style.foreground, style.background, style.attributes, false});
-            if(width == 2 && x + 1 < m_buffer.width() && contains(m_clip, {x + 1, position.y}))
+            m_buffer.set_cell(x, y, {glyph, style.foreground, style.background, style.attributes, false});
+            if(width == 2 && x + 1 < m_buffer.width() &&
+               contains(m_clip, {static_cast<double>(x + 1), static_cast<double>(y)}))
             {
-                m_buffer.set_cell(x + 1, position.y,
-                                  {U' ', style.foreground, style.background, style.attributes, true});
+                m_buffer.set_cell(x + 1, y, {U' ', style.foreground, style.background, style.attributes, true});
             }
         }
         x += width;
@@ -141,6 +143,6 @@ Rect CellBufferPainter::intersect(const Rect& first, const Rect& second)
     const auto top{std::max(first.y, second.y)};
     const auto right{std::min(first.x + first.width, second.x + second.width)};
     const auto bottom{std::min(first.y + first.height, second.y + second.height)};
-    return {left, top, std::max(0, right - left), std::max(0, bottom - top)};
+    return {left, top, std::max(0.0, right - left), std::max(0.0, bottom - top)};
 }
 } // namespace olagarro::oui

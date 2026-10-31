@@ -20,7 +20,10 @@ class CellDesktopClient final : public Backend
   public:
     explicit CellDesktopClient(std::unique_ptr<DesktopLink> link) : m_link{std::move(link)} {}
 
-    [[nodiscard]] Size size() const override { return {m_link->columns(), m_link->rows()}; }
+    [[nodiscard]] Size size() const override
+    {
+        return {static_cast<double>(m_link->columns()), static_cast<double>(m_link->rows())};
+    }
     std::optional<Event> poll_event() override { return m_link->poll_event(); }
     void wait_for_input(std::optional<std::chrono::steady_clock::time_point> deadline) override
     {

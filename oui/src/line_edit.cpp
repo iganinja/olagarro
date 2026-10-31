@@ -150,7 +150,7 @@ bool LineEdit::handle_event(const Event& event)
         const auto shown{shown_text()};
         const auto first{shown_offset(std::min(m_first_shown, m_text.size()))};
         m_cursor = text_offset(first + metrics.byte_at(std::string_view{shown}.substr(first),
-                                                       (mouse->x - bounds().x) * metrics.cell_width() +
+                                                       whole(mouse->x - bounds().x) * metrics.cell_width() +
                                                            mouse->cell_offset - metrics.field_padding(),
                                                        !mouse->pressed));
         if(mouse->pressed)
@@ -277,7 +277,7 @@ Size LineEdit::measure(const Constraints& constraints) const
     const auto units{std::max(metrics.width(shown_text()), metrics.width(m_placeholder)) + metrics.field_padding()};
     const auto cell{std::max(1, metrics.cell_width())};
     const auto content_width{(units + cell - 1) / cell};
-    return constraints.constrain({std::max(content_width + 1, 4), 1});
+    return constraints.constrain({static_cast<double>(std::max(content_width + 1, 4)), 1.0});
 }
 void LineEdit::keep_cursor_shown() const
 {
@@ -286,7 +286,7 @@ void LineEdit::keep_cursor_shown() const
     const std::string_view text{shown};
     const auto cursor{shown_offset(m_cursor)};
     // What fits after the padding, leaving a cell for the cursor at the end.
-    const auto room{std::max(1, (bounds().width - 1) * metrics.cell_width() - metrics.field_padding())};
+    const auto room{std::max(1, (whole(bounds().width) - 1) * metrics.cell_width() - metrics.field_padding())};
     auto first{std::min({shown_offset(std::min(m_first_shown, m_text.size())), cursor, text.size()})};
     while(first < cursor && metrics.width(text.substr(first, cursor - first)) > room)
     {

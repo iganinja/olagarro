@@ -47,7 +47,7 @@ class SplitView final : public Container
   private:
     void check_room() const;
     // Where the line is, as a column or a row, when both widgets show.
-    [[nodiscard]] std::optional<int> divider() const;
+    [[nodiscard]] std::optional<double> divider() const;
 
     Orientation m_orientation;
     double m_ratio{0.5};

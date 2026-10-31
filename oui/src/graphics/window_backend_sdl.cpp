@@ -126,7 +126,7 @@ class WindowBackend final : public DesktopWindow
         }
         // Hidden until it is where it belongs, so it does not jump there.
         const auto& geometry{options.geometry};
-        if(!SDL_CreateWindowAndRenderer(options.title.c_str(), geometry.size.width, geometry.size.height,
+        if(!SDL_CreateWindowAndRenderer(options.title.c_str(), whole(geometry.size.width), whole(geometry.size.height),
                                         SDL_WINDOW_RESIZABLE | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN, &m_window,
                                         &m_renderer))
         {
@@ -149,8 +149,8 @@ class WindowBackend final : public DesktopWindow
         }
         if(geometry.position)
         {
-            const SDL_Rect wanted{geometry.position->x, geometry.position->y, geometry.size.width,
-                                  geometry.size.height};
+            const SDL_Rect wanted{whole(geometry.position->x), whole(geometry.position->y), whole(geometry.size.width),
+                                  whole(geometry.size.height)};
             if(SDL_GetDisplayForRect(&wanted) != 0)
             {
                 SDL_SetWindowPosition(m_window, wanted.x, wanted.y);
@@ -264,8 +264,11 @@ class WindowBackend final : public DesktopWindow
             int x{};
             int y{};
             SDL_GetWindowPosition(m_window, &x, &y);
-            SDL_GetWindowSize(m_window, &result.size.width, &result.size.height);
-            result.position = Point{x, y};
+            int width{};
+            int height{};
+            SDL_GetWindowSize(m_window, &width, &height);
+            result.size = Size{static_cast<double>(width), static_cast<double>(height)};
+            result.position = Point{static_cast<double>(x), static_cast<double>(y)};
         }
         return result;
     }
@@ -273,8 +276,8 @@ class WindowBackend final : public DesktopWindow
     void fit_content(Size cells) override
     {
         const auto cell{cell_size()};
-        auto width{cells.width * cell.width + 2 * frame};
-        auto height{cells.height * cell.height + 2 * frame + m_title_height};
+        auto width{whole(cells.width * cell.width) + 2 * frame};
+        auto height{whole(cells.height * cell.height) + 2 * frame + m_title_height};
         SDL_Rect room{};
         if(SDL_GetDisplayUsableBounds(SDL_GetDisplayForWindow(m_window), &room))
         {
@@ -538,8 +541,9 @@ class WindowBackend final : public DesktopWindow
         {
             return std::nullopt;
         }
-        return Point{(x - content.x) / cell_size().width,
-                     GraphicalPainter::row_at(y - content.y, content.height, cell_size().height)};
+        return Point{
+            std::floor((x - content.x) / cell_size().width),
+            static_cast<double>(GraphicalPainter::row_at(y - content.y, content.height, whole(cell_size().height)))};
     }
 
     // A pixel in the window, in the content area's pixels: negative or past its size outside it.
@@ -547,8 +551,8 @@ class WindowBackend final : public DesktopWindow
     {
         const auto scale{pixel_scale()};
         const auto& content{content_area()};
-        return {static_cast<int>(std::floor(window_x * scale)) - content.x,
-                static_cast<int>(std::floor(window_y * scale)) - content.y};
+        return {static_cast<double>(static_cast<int>(std::floor(window_x * scale)) - content.x),
+                static_cast<double>(static_cast<int>(std::floor(window_y * scale)) - content.y)};
     }
 
     // The cell a pixel would be in, as if the cells went on past the content area: where a drag that left it is.
@@ -556,17 +560,20 @@ class WindowBackend final : public DesktopWindow
     {
         const auto& content{content_area()};
         const auto floor_divide{[](int value, int by) { return value >= 0 ? value / by : -((-value + by - 1) / by); }};
-        const auto row{pixel.y >= 0 && pixel.y < content.height
-                           ? GraphicalPainter::row_at(pixel.y, content.height, cell_size().height)
-                           : floor_divide(pixel.y, cell_size().height)};
-        return {floor_divide(pixel.x, cell_size().width), row};
+        const auto x{whole(pixel.x)};
+        const auto y{whole(pixel.y)};
+        const auto cell_width{whole(cell_size().width)};
+        const auto cell_height{whole(cell_size().height)};
+        const auto row{y >= 0 && y < content.height ? GraphicalPainter::row_at(y, content.height, cell_height)
+                                                    : floor_divide(y, cell_height)};
+        return {static_cast<double>(floor_divide(x, cell_width)), static_cast<double>(row)};
     }
 
     // How far into its cell a pixel lies, from the cell's left.
     [[nodiscard]] int offset_in_cell(float window_x) const
     {
         const auto x{static_cast<int>(window_x * pixel_scale()) - content_area().x};
-        return std::max(0, x) % cell_size().width;
+        return std::max(0, x) % whole(cell_size().width);
     }
 
     [[nodiscard]] static SDL_SystemCursor system_cursor(Pointer pointer)

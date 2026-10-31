@@ -112,8 +112,8 @@ std::optional<Event> unmodified_mouse_event(const std::vector<int>& parameters, 
         return std::nullopt;
     }
     const auto button{parameters.at(0)};
-    const auto x{parameters.at(1) - 1};
-    const auto y{parameters.at(2) - 1};
+    const double x{static_cast<double>(parameters.at(1) - 1)};
+    const double y{static_cast<double>(parameters.at(2) - 1)};
     if((button & 64) != 0)
     {
         if((button & 3) == 0)

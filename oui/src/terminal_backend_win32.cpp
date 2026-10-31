@@ -191,7 +191,8 @@ class AnsiTerminalBackend::Impl
     {
         CONSOLE_SCREEN_BUFFER_INFO info{};
         GetConsoleScreenBufferInfo(m_output, &info);
-        return {info.srWindow.Right - info.srWindow.Left + 1, info.srWindow.Bottom - info.srWindow.Top + 1};
+        return {static_cast<double>(info.srWindow.Right - info.srWindow.Left + 1),
+                static_cast<double>(info.srWindow.Bottom - info.srWindow.Top + 1)};
     }
 
     void set_diagnose(bool enable) { m_diagnose = enable; }
@@ -364,20 +365,22 @@ class AnsiTerminalBackend::Impl
     [[nodiscard]] static std::optional<Event> mouse_record_event(const MOUSE_EVENT_RECORD& record)
     {
         const auto& mouse{record};
+        const double x{static_cast<double>(mouse.dwMousePosition.X)};
+        const double y{static_cast<double>(mouse.dwMousePosition.Y)};
         if(mouse.dwEventFlags == MOUSE_WHEELED)
         {
             const auto delta{static_cast<short>(HIWORD(mouse.dwButtonState)) > 0 ? 1 : -1};
-            return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, false, delta};
+            return MouseEvent{x, y, false, delta};
         }
         if(mouse.dwEventFlags == DOUBLE_CLICK)
         {
             if((mouse.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0)
             {
-                return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, true};
+                return MouseEvent{x, y, true};
             }
             if((mouse.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0)
             {
-                return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, true, 0, false, false, false, true};
+                return MouseEvent{x, y, true, 0, false, false, false, true};
             }
             return std::nullopt;
         }
@@ -385,21 +388,21 @@ class AnsiTerminalBackend::Impl
         {
             if((mouse.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0)
             {
-                return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, true};
+                return MouseEvent{x, y, true};
             }
             if((mouse.dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0)
             {
-                return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, true, 0, false, false, false, true};
+                return MouseEvent{x, y, true, 0, false, false, false, true};
             }
-            return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, false, 0, false, true};
+            return MouseEvent{x, y, false, 0, false, true};
         }
         if(mouse.dwEventFlags == MOUSE_MOVED)
         {
             if((mouse.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0)
             {
-                return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, false, 0, true};
+                return MouseEvent{x, y, false, 0, true};
             }
-            return MouseEvent{mouse.dwMousePosition.X, mouse.dwMousePosition.Y, false, 0, false, false, true};
+            return MouseEvent{x, y, false, 0, false, false, true};
         }
         return std::nullopt;
     }
@@ -412,8 +415,8 @@ class AnsiTerminalBackend::Impl
         }
         if(record.EventType == WINDOW_BUFFER_SIZE_EVENT)
         {
-            return ResizeEvent{record.Event.WindowBufferSizeEvent.dwSize.X,
-                               record.Event.WindowBufferSizeEvent.dwSize.Y};
+            return ResizeEvent{static_cast<double>(record.Event.WindowBufferSizeEvent.dwSize.X),
+                               static_cast<double>(record.Event.WindowBufferSizeEvent.dwSize.Y)};
         }
         if(record.EventType == MOUSE_EVENT)
         {

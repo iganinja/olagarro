@@ -123,7 +123,11 @@ needs: `measure` (required), `arrange`, `paint`, `handle_event`, `is_focusable`,
 
 Layout runs before every paint, from the top: the application arranges its content in the whole screen, and each
 container arranges its children inside its own bounds. Everything is in cells, columns and rows, also when a
-graphical backend draws them in pixels.
+graphical backend draws them in pixels. `Point`, `Size`, `Rect`, `Insets` and `Constraints` hold `double`s, and so do
+a `MouseEvent`'s and a `DropEvent`'s `x` and `y`, so a position may one day fall between cells; today every backend
+keeps them whole. Where a position becomes a row, a column, a character or a cell of a buffer it goes through
+`oui::whole(value)` (geometry.h), the cell it falls in, which takes a 2.9999999 that means 3 as 3; a container that
+shares out space takes `std::floor` of its divisions, as an `int` division gave.
 
 - `Size measure(const Constraints& constraints) const` says how big the widget would like to be. `Constraints`
   ([geometry.h](../oui/include/oui/geometry.h)) has only maximums, `max_width` and `max_height`; a measure returns

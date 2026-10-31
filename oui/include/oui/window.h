@@ -99,8 +99,8 @@ class Window final : public Container
     // What placing from the keyboard puts back on Escape.
     struct Placing
     {
-        int offset_x;
-        int offset_y;
+        double offset_x;
+        double offset_y;
         std::optional<Size> user_size;
         bool moved;
     };
@@ -126,12 +126,12 @@ class Window final : public Container
     bool m_resizing_height{false};
     Size m_resize_start_size{};
     Rect m_area{};
-    int m_drag_offset_x{};
-    int m_drag_offset_y{};
-    int m_drag_start_x{};
-    int m_drag_start_y{};
-    int m_drag_origin_x{};
-    int m_drag_origin_y{};
+    double m_drag_offset_x{};
+    double m_drag_offset_y{};
+    double m_drag_start_x{};
+    double m_drag_start_y{};
+    double m_drag_origin_x{};
+    double m_drag_origin_y{};
     bool m_dragging{false};
     bool m_close_on_escape{true};
     bool m_close_on_enter{false};

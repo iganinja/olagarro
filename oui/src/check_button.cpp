@@ -100,8 +100,8 @@ bool CheckButton::handle_event(const Event& event)
 
 Size CheckButton::measure(const Constraints& constraints) const
 {
-    const auto width{shown_width(strip_mnemonic(m_text)) + 5};
-    return constraints.constrain({width, 1});
+    const double width{static_cast<double>(shown_width(strip_mnemonic(m_text)) + 5)};
+    return constraints.constrain({width, 1.0});
 }
 
 void CheckButton::paint(Painter& painter, const Theme& theme) const

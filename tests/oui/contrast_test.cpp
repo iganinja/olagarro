@@ -20,6 +20,7 @@
 
 #include "../../oui/src/terminal_backend_helpers.h"
 
+#include <cmath>
 #include <limits>
 #include <cstdlib>
 #include <memory>
@@ -157,8 +158,8 @@ TEST(OuiContrastTests, ButtonKeepsItsLabelReadableInEveryState)
     button_widget->paint(normal_painter, {});
     expect_no_unreadable_text(normal_buffer, "normal button");
 
-    static_cast<void>(
-        button_widget->handle_event(oui::MouseEvent{bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, true}));
+    static_cast<void>(button_widget->handle_event(
+        oui::MouseEvent{bounds.x + std::floor(bounds.width / 2), bounds.y + std::floor(bounds.height / 2), true}));
     oui::CellBuffer pressed_buffer{20, 3};
     oui::CellBufferPainter pressed_painter{pressed_buffer};
     button_widget->paint(pressed_painter, {});
@@ -216,10 +217,10 @@ TEST(OuiContrastTests, ListSelectionStandsOutFromUnselectedRows)
     ASSERT_TRUE(backend_reference->last_frame().has_value());
     const auto& frame{*backend_reference->last_frame()};
 
-    EXPECT_EQ(frame.cell_at(list_reference.bounds().x + 1, list_reference.bounds().y + 1).background,
-              theme.item_selected_background);
-    EXPECT_NE(frame.cell_at(list_reference.bounds().x + 1, list_reference.bounds().y).background,
-              theme.item_selected_background);
+    const auto x{oui::whole(list_reference.bounds().x)};
+    const auto y{oui::whole(list_reference.bounds().y)};
+    EXPECT_EQ(frame.cell_at(x + 1, y + 1).background, theme.item_selected_background);
+    EXPECT_NE(frame.cell_at(x + 1, y).background, theme.item_selected_background);
 }
 
 TEST(OuiContrastTests, TreeViewSelectionStandsOutFromBackground)
@@ -245,13 +246,12 @@ TEST(OuiContrastTests, TreeViewSelectionStandsOutFromBackground)
     const auto& frame{*backend_reference->last_frame()};
 
     EXPECT_TRUE(tree_reference.is_focused());
-    EXPECT_NE(frame.cell_at(tree_reference.bounds().x + 4, tree_reference.bounds().y).background,
-              theme.item_selected_background)
+    const auto x{oui::whole(tree_reference.bounds().x)};
+    const auto y{oui::whole(tree_reference.bounds().y)};
+    EXPECT_NE(frame.cell_at(x + 4, y).background, theme.item_selected_background)
         << "highlight stayed on the first row; Key::down did not move the selection";
-    EXPECT_EQ(frame.cell_at(tree_reference.bounds().x + 4, tree_reference.bounds().y + 1).background,
-              theme.item_selected_background);
-    EXPECT_NE(frame.cell_at(tree_reference.bounds().x + 4, tree_reference.bounds().y).background,
-              theme.item_selected_background);
+    EXPECT_EQ(frame.cell_at(x + 4, y + 1).background, theme.item_selected_background);
+    EXPECT_NE(frame.cell_at(x + 4, y).background, theme.item_selected_background);
 }
 
 TEST(OuiContrastTests, TabViewActiveTabDiffersFromInactiveTabs)
@@ -348,9 +348,9 @@ TEST(OuiContrastTests, LineEditSelectionAndCursorRemainVisibleWhenFocused)
 
     bool saw_cursor{};
     bool saw_selection{};
-    for(int x{bounds.x}; x < bounds.x + bounds.width; ++ x)
+    for(int x{oui::whole(bounds.x)}; x < oui::whole(bounds.x + bounds.width); ++ x)
     {
-        const auto& cell{frame.cell_at(x, bounds.y)};
+        const auto& cell{frame.cell_at(x, oui::whole(bounds.y))};
         if(cell.background == theme.focus_text)
         {
             saw_cursor = true;
@@ -416,10 +416,12 @@ TEST(OuiContrastTests, FocusedLineEditStandsOutFromItsRestingState)
     const auto& frame{*backend_reference->last_frame()};
 
     EXPECT_TRUE(edit_reference.is_focused());
-    const auto& focused_cell{frame.cell_at(edit_reference.bounds().x + 3, edit_reference.bounds().y)};
+    const auto x{oui::whole(edit_reference.bounds().x)};
+    const auto y{oui::whole(edit_reference.bounds().y)};
+    const auto& focused_cell{frame.cell_at(x + 3, y)};
     EXPECT_EQ(focused_cell.background, theme.focus_background);
     EXPECT_NE(focused_cell.background, theme.input_background);
-    const auto& glyph_cell{frame.cell_at(edit_reference.bounds().x, edit_reference.bounds().y)};
+    const auto& glyph_cell{frame.cell_at(x, y)};
     EXPECT_EQ(glyph_cell.glyph, U'8');
     EXPECT_TRUE(clearly_readable(glyph_cell.foreground, glyph_cell.background));
     expect_no_unreadable_text(frame, "focused line edit");
@@ -448,7 +450,7 @@ TEST(OuiContrastTests, FocusedCheckButtonShowsItsFocusInItsText)
     const auto& frame{*backend_reference->last_frame()};
 
     EXPECT_TRUE(check_reference.is_focused());
-    const auto& box_cell{frame.cell_at(check_reference.bounds().x, check_reference.bounds().y)};
+    const auto& box_cell{frame.cell_at(oui::whole(check_reference.bounds().x), oui::whole(check_reference.bounds().y))};
     // As a Turbo Vision cluster: the one with the focus in its own colour, on the group's.
     EXPECT_EQ(box_cell.background, theme.cluster_background);
     EXPECT_EQ(box_cell.foreground, theme.cluster_focused_foreground);
@@ -474,9 +476,10 @@ TEST(OuiContrastTests, FocusedButtonUsesTheFocusPalette)
     EXPECT_TRUE(ok_reference.is_focused());
     const auto& button_bounds{ok_reference.bounds()};
     const oui::Cell* label_cell{nullptr};
-    for(int x{button_bounds.x}; x < button_bounds.x + button_bounds.width && label_cell == nullptr; ++ x)
+    for(int x{oui::whole(button_bounds.x)};
+        x < oui::whole(button_bounds.x + button_bounds.width) && label_cell == nullptr; ++ x)
     {
-        const auto& cell{frame.cell_at(x, button_bounds.y)};
+        const auto& cell{frame.cell_at(x, oui::whole(button_bounds.y))};
         if(cell.glyph != U' ')
         {
             label_cell = &cell;
@@ -507,11 +510,12 @@ TEST(OuiContrastTests, FocusedLineEditKeepsItsSelectionReadable)
     ASSERT_TRUE(backend_reference->last_frame().has_value());
     const auto& frame{*backend_reference->last_frame()};
 
-    for(int x{bounds.x + 2}; x < bounds.x + 4; ++ x)
+    const auto left{oui::whole(bounds.x)};
+    for(int x{left + 2}; x < left + 4; ++ x)
     {
-        const auto& cell{frame.cell_at(x, bounds.y)};
-        EXPECT_EQ(cell.foreground, theme.item_selected_foreground) << "selected glyph at offset " << x - bounds.x;
-        EXPECT_EQ(cell.background, theme.item_selected_background) << "selected glyph at offset " << x - bounds.x;
+        const auto& cell{frame.cell_at(x, oui::whole(bounds.y))};
+        EXPECT_EQ(cell.foreground, theme.item_selected_foreground) << "selected glyph at offset " << x - left;
+        EXPECT_EQ(cell.background, theme.item_selected_background) << "selected glyph at offset " << x - left;
         EXPECT_TRUE(clearly_readable(cell.foreground, cell.background));
     }
 }
@@ -546,8 +550,9 @@ TEST(OuiContrastTests, FocusColorsStandOutOnTheApplicationPalette)
 
     ASSERT_TRUE(backend_reference->last_frame().has_value());
     const auto& frame{*backend_reference->last_frame()};
-    EXPECT_EQ(frame.cell_at(editor_reference.bounds().x + 3, editor_reference.bounds().y).background,
-              app_theme.focus_background);
+    EXPECT_EQ(
+        frame.cell_at(oui::whole(editor_reference.bounds().x) + 3, oui::whole(editor_reference.bounds().y)).background,
+        app_theme.focus_background);
 }
 
 TEST(OuiContrastTests, LabelColorOverrideReplacesTheForeground)
@@ -593,9 +598,10 @@ TEST(OuiContrastTests, TabTitlesRemainReadableOnTheApplicationPalette)
 
     ASSERT_FALSE(tabs_reference.bounds().width < 20) << "the tab header did not fit";
     auto saw_bold_title{false};
-    for(auto x{tabs_reference.bounds().x}; x < tabs_reference.bounds().x + tabs_reference.bounds().width; ++ x)
+    const auto& tabs_bounds{tabs_reference.bounds()};
+    for(auto x{oui::whole(tabs_bounds.x)}; x < oui::whole(tabs_bounds.x + tabs_bounds.width); ++ x)
     {
-        const auto& cell{frame.cell_at(x, tabs_reference.bounds().y)};
+        const auto& cell{frame.cell_at(x, oui::whole(tabs_bounds.y))};
         if(cell.glyph != U' ')
         {
             EXPECT_TRUE(clearly_readable(cell.foreground, cell.background))
@@ -635,9 +641,10 @@ TEST(OuiContrastTests, LegacyQuantizationKeepsTabTitleColorsDistinct)
 
     ASSERT_TRUE(backend_reference->last_frame().has_value());
     const auto& frame{*backend_reference->last_frame()};
-    for(auto x{tabs_reference.bounds().x}; x < tabs_reference.bounds().x + tabs_reference.bounds().width; ++ x)
+    const auto& tabs_bounds{tabs_reference.bounds()};
+    for(auto x{oui::whole(tabs_bounds.x)}; x < oui::whole(tabs_bounds.x + tabs_bounds.width); ++ x)
     {
-        const auto& cell{frame.cell_at(x, tabs_reference.bounds().y)};
+        const auto& cell{frame.cell_at(x, oui::whole(tabs_bounds.y))};
         if(cell.glyph != U' ')
         {
             EXPECT_NE(oui::terminal_helpers::console_index(cell.foreground),
@@ -664,17 +671,19 @@ TEST(OuiContrastTests, FocusedButtonStandsOutFromItsRestingState)
 
     EXPECT_TRUE(button_reference.is_focused());
     const auto& button_bounds{button_reference.bounds()};
-    auto label_x{button_bounds.x + button_bounds.width};
-    for(auto x{button_bounds.x}; x < button_bounds.x + button_bounds.width; ++ x)
+    const auto right{oui::whole(button_bounds.x + button_bounds.width)};
+    const auto row{oui::whole(button_bounds.y)};
+    auto label_x{right};
+    for(auto x{oui::whole(button_bounds.x)}; x < right; ++ x)
     {
-        if(frame.cell_at(x, button_bounds.y).glyph != U' ')
+        if(frame.cell_at(x, row).glyph != U' ')
         {
             label_x = x;
             break;
         }
     }
-    ASSERT_LT(label_x, button_bounds.x + button_bounds.width) << "the focused button has no visible label";
-    const auto& focused_cell{frame.cell_at(label_x, button_bounds.y)};
+    ASSERT_LT(label_x, right) << "the focused button has no visible label";
+    const auto& focused_cell{frame.cell_at(label_x, row)};
     EXPECT_EQ(focused_cell.background, theme.button_focused_background);
     EXPECT_NE(focused_cell.background, theme.button_background);
     EXPECT_NE(focused_cell.background, theme.dialog_background);

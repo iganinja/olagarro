@@ -94,7 +94,7 @@ void PopupList::refilter()
     m_selected = 0;
     m_first = 0;
     std::optional<int> best;
-    for(std::size_t index{}; index < m_items.size(); ++index)
+    for(std::size_t index{}; index < m_items.size(); ++ index)
     {
         const auto& item{m_items[index]};
         if(m_filtering && !m_filter.empty())
@@ -137,7 +137,7 @@ int PopupList::visible_rows() const
 
 std::size_t PopupList::row_of_selected() const
 {
-    for(std::size_t row{}; row < m_rows.size(); ++row)
+    for(std::size_t row{}; row < m_rows.size(); ++ row)
     {
         if(!m_rows[row].heading && m_rows[row].item == m_shown[m_selected])
         {
@@ -161,14 +161,15 @@ Size PopupList::measure(const Constraints& constraints) const
                           shown_width(item.section) - 1});
     }
     // A frame round it, and a cell of room each side inside.
-    return constraints.constrain({std::max(10, inner) + 4, top_rows() + visible_rows() + 2});
+    return constraints.constrain(
+        {static_cast<double>(std::max(10, inner) + 4), static_cast<double>(top_rows() + visible_rows() + 2)});
 }
 
 void PopupList::arrange(const Rect& screen)
 {
     const auto size{measure({screen.width, screen.height})};
-    const auto right{screen.x + std::max(0, screen.width - size.width)};
-    const auto bottom{screen.y + std::max(0, screen.height - size.height)};
+    const auto right{screen.x + std::max(0.0, screen.width - size.width)};
+    const auto bottom{screen.y + std::max(0.0, screen.height - size.height)};
     if(m_placement == PopupPlacement::at_anchor)
     {
         auto y{m_anchor.y};
@@ -213,7 +214,7 @@ void PopupList::paint(Painter& painter, const Theme& theme) const
         painter.draw_label({area.x + 2, top}, empty_message(),
                            {theme.menu_foreground, theme.menu_background, text_italic});
     }
-    for(int row{}; row < visible_rows() && m_first + static_cast<std::size_t>(row) < m_rows.size(); ++row)
+    for(int row{}; row < visible_rows() && m_first + static_cast<std::size_t>(row) < m_rows.size(); ++ row)
     {
         const auto& shown{m_rows[m_first + static_cast<std::size_t>(row)]};
         const auto& item{m_items[shown.item]};
@@ -252,7 +253,7 @@ void PopupList::show_selected()
     // The heading over the item shows with it.
     if(row > 0 && m_rows[row - 1].heading)
     {
-        --row;
+        -- row;
     }
     if(row < m_first)
     {
@@ -326,7 +327,7 @@ bool PopupList::handle_event(const Event& event)
                 auto end{m_filter.size() - 1};
                 while(end > 0 && (static_cast<unsigned char>(m_filter[end]) & 0xc0u) == 0x80u)
                 {
-                    --end;
+                    -- end;
                 }
                 m_filter.erase(end);
                 refilter();
@@ -346,7 +347,7 @@ bool PopupList::handle_event(const Event& event)
             move_selection(-mouse->wheel_delta);
             return true;
         }
-        const auto row{mouse->y - bounds().y - 1 - top_rows()};
+        const auto row{whole(mouse->y - bounds().y) - 1 - top_rows()};
         if(row < 0 || row >= visible_rows() || m_first + static_cast<std::size_t>(row) >= m_rows.size())
         {
             return true;

@@ -113,7 +113,7 @@ std::vector<SignatureTip::Row> SignatureTip::rows(int width) const
 Size SignatureTip::measure(const oui::Constraints& constraints) const
 {
     // A frame round it, and a cell of room each side inside.
-    const auto room{std::max(1, std::min(widest, constraints.max_width - 4))};
+    const auto room{std::max(1, std::min(widest, oui::whole(constraints.max_width) - 4))};
     auto inner{1};
     const auto shown{rows(room)};
     for(const auto& row : shown)
@@ -121,20 +121,20 @@ Size SignatureTip::measure(const oui::Constraints& constraints) const
         const std::string_view text{row.signature ? m_signature.text : m_signature.doc[row.line]};
         inner = std::max(inner, cells_of(text.substr(row.start, row.end - row.start)));
     }
-    return constraints.constrain({inner + 4, static_cast<int>(shown.size()) + 2});
+    return constraints.constrain({static_cast<double>(inner + 4), static_cast<double>(shown.size() + 2)});
 }
 
 void SignatureTip::arrange(const Rect& screen)
 {
     const auto size{measure({screen.width, screen.height})};
-    m_rows = rows(size.width - 4);
+    m_rows = rows(oui::whole(size.width) - 4);
     // Its text starts in the anchor's column, the frame and its room before it.
-    const auto x{std::clamp(m_anchor.x - 2, screen.x, screen.x + std::max(0, screen.width - size.width))};
+    const auto x{std::clamp(m_anchor.x - 2, screen.x, screen.x + std::max(0.0, screen.width - size.width))};
     // A row apart from the line, for the shadow under it.
     auto y{m_anchor.y - size.height - 1};
     if(y < screen.y)
     {
-        y = std::min(m_anchor.y + 1, screen.y + std::max(0, screen.height - size.height));
+        y = std::min(m_anchor.y + 1, screen.y + std::max(0.0, screen.height - size.height));
     }
     Widget::arrange({x, y, size.width, size.height});
 }

@@ -22,7 +22,7 @@ bool ScrollView::handle_event(const Event& event)
         if(m_content_height > m_viewport_height)
         {
             if(const auto to{m_scrollbar.handle(
-                   *mouse, {bounds().x + bounds().width - 1, bounds().y, 1, bounds().height}, bounds().height,
+                   *mouse, {bounds().x + bounds().width - 1, bounds().y, 1, bounds().height}, whole(bounds().height),
                    m_content_height, m_scroll_offset, max_scroll_offset(), std::max(1, m_viewport_height - 1))})
             {
                 m_scroll_offset = *to;
@@ -67,8 +67,8 @@ void ScrollView::arrange(const Rect& bounds)
         return;
     }
     const auto content{children().front()->measure({bounds.width, std::numeric_limits<int>::max()})};
-    m_content_height = content.height;
-    m_viewport_height = bounds.height;
+    m_content_height = whole(content.height);
+    m_viewport_height = whole(bounds.height);
     m_scroll_offset = std::min(m_scroll_offset, max_scroll_offset());
     children().front()->arrange({bounds.x, bounds.y - m_scroll_offset, bounds.width, content.height});
 }
@@ -81,9 +81,9 @@ void ScrollView::paint(Painter& painter, const Theme& theme) const
         return;
     }
     const auto track_x{bounds().x + bounds().width - 1};
-    const auto thumb{
-        scrollbar_thumb(bounds().height, bounds().height, m_content_height, m_scroll_offset, max_scroll_offset())};
-    const auto thumb_y{bounds().y + thumb.start};
+    const auto height{whole(bounds().height)};
+    const auto thumb{scrollbar_thumb(height, height, m_content_height, m_scroll_offset, max_scroll_offset())};
+    const auto thumb_y{whole(bounds().y) + thumb.start};
     const auto thumb_height{thumb.length};
     painter.draw_scrollbar({track_x, bounds().y, 1, bounds().height},
                            {thumb_y, thumb_height, theme.panel_background, theme.selection_foreground}, theme);

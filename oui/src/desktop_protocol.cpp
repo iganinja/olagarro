@@ -51,8 +51,8 @@ std::optional<WireEvent> to_wire(const Event& event)
     if(const auto* const mouse{std::get_if<MouseEvent>(&event)})
     {
         wire.kind = static_cast<std::uint32_t>(Kind::mouse);
-        values[0] = mouse->x;
-        values[1] = mouse->y;
+        values[0] = whole(mouse->x);
+        values[1] = whole(mouse->y);
         values[2] = mouse->pressed;
         values[3] = mouse->wheel_delta;
         values[4] = mouse->dragging;
@@ -98,7 +98,7 @@ std::optional<Event> from_wire(const WireEvent& wire)
         return TextEvent{static_cast<char32_t>(values[0]), values[1] != 0, values[2] != 0, values[3] != 0};
     case Kind::mouse:
     {
-        MouseEvent mouse{values[0], values[1], values[2] != 0};
+        MouseEvent mouse{static_cast<double>(values[0]), static_cast<double>(values[1]), values[2] != 0};
         mouse.wheel_delta = values[3];
         mouse.dragging = values[4] != 0;
         mouse.released = values[5] != 0;
@@ -177,7 +177,9 @@ std::optional<std::string> text_of(const Received& received)
     {
         return std::nullopt;
     }
-    struct stat status{};
+    struct stat status
+    {
+    };
     if(::fstat(received.passed, &status) != 0)
     {
         return std::nullopt;

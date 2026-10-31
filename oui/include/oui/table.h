@@ -91,7 +91,7 @@ class Table : public Container
     // Shows the rows from `offset` down, as far as there are rows to show: where a table filled again was.
     void scroll_to(int offset);
     // The row shown at row `y` of the screen, if any: none on the headers or below the last row.
-    [[nodiscard]] std::optional<std::size_t> row_at(int y) const;
+    [[nodiscard]] std::optional<std::size_t> row_at(double y) const;
     void ensure_row_visible(std::size_t row);
     [[nodiscard]] int scroll_offset_x() const;
     void scroll_to_x(int offset);
@@ -167,7 +167,7 @@ class Table : public Container
   protected:
     // The width a column gets in the current bounds, the stretch column taking what the others leave.
     [[nodiscard]] int column_pixel_width(std::size_t col) const;
-    [[nodiscard]] int header_pixel_x(std::size_t col) const;
+    [[nodiscard]] double header_pixel_x(std::size_t col) const;
     [[nodiscard]] int header_height() const;
     // The colour behind the rows: the table's background, or the dialog's when it has none.
     [[nodiscard]] Color background_color(const Theme& theme) const;
@@ -190,7 +190,7 @@ class Table : public Container
     // Sorts by the column, the next way round, as a click on its header does.
     void click_header(std::size_t col);
     // The column whose right edge is at `x`, within a few pixels, on the header row.
-    [[nodiscard]] std::optional<std::size_t> edge_at(int x, int cell_offset) const;
+    [[nodiscard]] std::optional<std::size_t> edge_at(double x, int cell_offset) const;
     // Handles the mouse on the headers: a press, then a drag that resizes or a release that sorts.
     [[nodiscard]] bool handle_header_mouse(const MouseEvent& mouse);
 
@@ -235,7 +235,7 @@ class Table : public Container
     {
         std::size_t col{};
         int direction{1};
-        int start_x{};
+        double start_x{};
         int start_width{};
         bool moved{false};
     };

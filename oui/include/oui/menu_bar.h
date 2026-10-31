@@ -94,8 +94,8 @@ class MenuBar final : public Widget
     [[nodiscard]] bool is_focusable() const override;
     [[nodiscard]] Rect paint_bounds() const override;
     [[nodiscard]] bool is_overlay() const override;
-    void dismiss_overlays_at(int x, int y) override;
-    [[nodiscard]] Widget* hit_test(int x, int y) override;
+    void dismiss_overlays_at(double x, double y) override;
+    [[nodiscard]] Widget* hit_test(double x, double y) override;
     [[nodiscard]] Widget* keyboard_target() override;
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     bool handle_event(const Event& event) override;
@@ -127,10 +127,10 @@ class MenuBar final : public Widget
     [[nodiscard]] const std::vector<MenuItem>& open_items() const;
     // The entries of the open menu, from the bar or a context menu, without its submenu.
     [[nodiscard]] const std::vector<MenuItem>& menu_items() const;
-    [[nodiscard]] int menu_top() const;
-    [[nodiscard]] int context_x() const;
+    [[nodiscard]] double menu_top() const;
+    [[nodiscard]] double context_x() const;
     [[nodiscard]] int list_width(const std::vector<MenuItem>& items) const;
-    [[nodiscard]] int menu_x(std::size_t index) const;
+    [[nodiscard]] double menu_x(std::size_t index) const;
     [[nodiscard]] Rect menu_bounds() const;
     [[nodiscard]] Rect submenu_bounds() const;
     [[nodiscard]] std::optional<std::string> open_tooltip() const;
@@ -148,11 +148,11 @@ class MenuBar final : public Widget
         std::size_t shown{};
         bool arrows{false};
     };
-    [[nodiscard]] PopupLayout layout_of(std::size_t count, int top, std::size_t first) const;
+    [[nodiscard]] PopupLayout layout_of(std::size_t count, double top, std::size_t first) const;
     [[nodiscard]] PopupLayout menu_layout() const;
     [[nodiscard]] PopupLayout submenu_layout() const;
-    [[nodiscard]] int submenu_top() const;
-    [[nodiscard]] int screen_bottom() const;
+    [[nodiscard]] double submenu_top() const;
+    [[nodiscard]] double screen_bottom() const;
     // Scrolls the innermost open list so its selected entry shows.
     void reveal_selection();
     void scroll_list(bool submenu, int step);

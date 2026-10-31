@@ -78,10 +78,10 @@ std::optional<std::string> prompt(Application& application, const PromptOptions&
     auto& dialog_reference{*dialog};
     if(options.width)
     {
-        dialog->set_preferred_size({*options.width, 0});
+        dialog->set_preferred_size({static_cast<double>(*options.width), 0.0});
     }
     // Typing a long text scrolls it in the field rather than widening the dialog past this.
-    dialog->set_maximum_size({std::max(options.width.value_or(0), widest_by_default), 1 << 15});
+    dialog->set_maximum_size({static_cast<double>(std::max(options.width.value_or(0), widest_by_default)), 1 << 15});
     auto content{column()};
     content->set_gap(Spacing::none);
     // A question of one line names the field, so a letter marked in it with & goes there.

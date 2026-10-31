@@ -69,7 +69,7 @@ class NumberField final : public Container
     struct Drag
     {
         MouseEvent press;
-        int last_x{};
+        double last_x{};
         // The value dragged to, in range but not yet on a step.
         double value{};
         bool moved{false};

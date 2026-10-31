@@ -22,11 +22,11 @@ class PixelDesktopClient final : public PixelBackend
         : PixelBackend{std::move(style)}, m_link{std::move(link)}
     {
         const auto cell{cell_size()};
-        resize(m_link->columns() * cell.width, m_link->rows() * cell.height);
+        resize(m_link->columns() * whole(cell.width), m_link->rows() * whole(cell.height));
         m_link->resized = [this](int columns, int rows)
         {
             const auto size{cell_size()};
-            resize(columns * size.width, rows * size.height);
+            resize(columns * whole(size.width), rows * whole(size.height));
         };
     }
 

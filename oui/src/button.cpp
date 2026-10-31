@@ -104,8 +104,8 @@ bool Button::handle_event(const Event& event)
 Size Button::measure(const Constraints& constraints) const
 {
     // Compact, the text and a cell either side on one row; otherwise room for the frame and the shadow below.
-    const auto width{shown_width(strip_mnemonic(m_text))};
-    return constraints.constrain({m_compact ? width + 2 : width + 5, m_compact ? 1 : 2});
+    const double width{static_cast<double>(shown_width(strip_mnemonic(m_text)))};
+    return constraints.constrain({m_compact ? width + 2 : width + 5, m_compact ? 1.0 : 2.0});
 }
 
 void Button::paint(Painter& painter, const Theme& theme) const

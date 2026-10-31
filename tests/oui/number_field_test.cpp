@@ -135,12 +135,12 @@ struct DraggedField
 };
 
 // The application counts the clicks: two presses on one cell are a double click.
-[[nodiscard]] oui::MouseEvent press(int x)
+[[nodiscard]] oui::MouseEvent press(double x)
 {
     return oui::MouseEvent{x, 0, true};
 }
 
-[[nodiscard]] oui::MouseEvent drag(int x, bool shift = false, bool control = false)
+[[nodiscard]] oui::MouseEvent drag(double x, bool shift = false, bool control = false)
 {
     oui::MouseEvent event{x, 0, false, 0, true};
     event.shift = shift;
@@ -148,7 +148,7 @@ struct DraggedField
     return event;
 }
 
-[[nodiscard]] oui::MouseEvent release(int x)
+[[nodiscard]] oui::MouseEvent release(double x)
 {
     return oui::MouseEvent{x, 0, false, 0, false, true};
 }

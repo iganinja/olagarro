@@ -73,7 +73,7 @@ bool ModalLayer::handle_event(const Event& event)
 {
     return m_dialog->handle_event(event);
 }
-Widget* ModalLayer::hit_test(int x, int y)
+Widget* ModalLayer::hit_test(double x, double y)
 {
     if(auto* const target{m_dialog->hit_test(x, y)})
     {
@@ -527,7 +527,7 @@ bool Application::focus_toward(int dx, int dy)
     root->collect_focusable(candidates);
     const auto from{m_focused->bounds()};
     Widget* best{nullptr};
-    auto best_score{0};
+    auto best_score{0.0};
     for(auto* const candidate : candidates)
     {
         const auto to{candidate->bounds()};
@@ -544,8 +544,8 @@ bool Application::focus_toward(int dx, int dy)
         {
             continue;
         }
-        const auto along{dx != 0 ? std::max({0, to.y - (from.y + from.height), from.y - (to.y + to.height)})
-                                 : std::max({0, to.x - (from.x + from.width), from.x - (to.x + to.width)})};
+        const auto along{dx != 0 ? std::max({0.0, to.y - (from.y + from.height), from.y - (to.y + to.height)})
+                                 : std::max({0.0, to.x - (from.x + from.width), from.x - (to.x + to.width)})};
         // One beside it comes before one nearer but off to a side.
         const auto score{across + 3 * along};
         if(best == nullptr || score < best_score)
@@ -1334,19 +1334,19 @@ void Application::paint_tooltip(Painter& painter, Size size) const
     const auto at{m_tooltip->at};
     const auto after{size.width - at.x - m_tooltip->pointer_columns};
     const auto before{at.x};
-    auto [lines, width] = lines_in(size.width);
+    auto [lines, width] = lines_in(whole(size.width));
     if(width > after && width > before)
     {
-        std::tie(lines, width) = lines_in(std::max(after, before));
+        std::tie(lines, width) = lines_in(whole(std::max(after, before)));
     }
-    const auto x{width <= after ? at.x + m_tooltip->pointer_columns : std::max(0, at.x - width)};
-    if(lines.size() > static_cast<std::size_t>(size.height))
+    const auto x{width <= after ? at.x + m_tooltip->pointer_columns : std::max(0.0, at.x - width)};
+    if(lines.size() > static_cast<std::size_t>(whole(size.height)))
     {
-        lines.resize(static_cast<std::size_t>(size.height));
+        lines.resize(static_cast<std::size_t>(whole(size.height)));
     }
-    const auto height{static_cast<int>(lines.size())};
-    const auto y{at.y + 1 + height <= size.height ? at.y + 1 : std::max(0, at.y - height)};
-    painter.draw_tooltip({x, y, width, height}, lines, m_theme);
+    const auto height{static_cast<double>(lines.size())};
+    const auto y{at.y + 1 + height <= size.height ? at.y + 1 : std::max(0.0, at.y - height)};
+    painter.draw_tooltip({x, y, static_cast<double>(width), height}, lines, m_theme);
 }
 // During a key mode the bottom line says what the keys do; a hint too wide for it takes the lines above too,
 // broken between its parts, as " · " separates them.
@@ -1376,10 +1376,10 @@ void Application::paint_key_mode_hint(Painter& painter, Size size) const
         }
     }
     const TextStyle style{m_theme.status_foreground, m_theme.status_background};
-    const auto top{std::max(0, size.height - static_cast<int>(lines.size()))};
-    for(std::size_t index{}; index < lines.size() && top + static_cast<int>(index) < size.height; ++ index)
+    const auto top{std::max(0.0, size.height - static_cast<double>(lines.size()))};
+    for(std::size_t index{}; index < lines.size() && top + static_cast<double>(index) < size.height; ++ index)
     {
-        const auto y{top + static_cast<int>(index)};
+        const auto y{top + static_cast<double>(index)};
         painter.draw_bar({0, y, size.width, 1}, BarKind::status, m_theme);
         painter.draw_label({1, y}, lines[index], style);
     }

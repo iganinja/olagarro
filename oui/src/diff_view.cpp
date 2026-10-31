@@ -170,18 +170,18 @@ std::optional<std::size_t> DiffView::difference_at(std::size_t row) const
 
 int DiffView::content_rows() const
 {
-    return std::max(0, bounds().height - 2);
+    return std::max(0, whole(bounds().height) - 2);
 }
 
 int DiffView::left_width() const
 {
     // The scroll bar takes the last column and the divider the one between the sides.
-    return std::max(0, (bounds().width - 2) / 2);
+    return std::max(0, (whole(bounds().width) - 2) / 2);
 }
 
 int DiffView::right_width() const
 {
-    return std::max(0, bounds().width - 2 - left_width());
+    return std::max(0, whole(bounds().width) - 2 - left_width());
 }
 
 int DiffView::gutter_width() const
@@ -220,7 +220,7 @@ int DiffView::line_columns(std::string_view line) const
 
 Size DiffView::measure(const Constraints& constraints) const
 {
-    return constraints.constrain({std::max(1, constraints.max_width), std::max(1, constraints.max_height)});
+    return constraints.constrain({std::max(1.0, constraints.max_width), std::max(1.0, constraints.max_height)});
 }
 
 bool DiffView::is_focusable() const
@@ -228,14 +228,14 @@ bool DiffView::is_focusable() const
     return true;
 }
 
-void DiffView::paint_side(Painter& painter, const Theme& theme, const DiffRow& row, DiffSide side, int x, int y,
+void DiffView::paint_side(Painter& painter, const Theme& theme, const DiffRow& row, DiffSide side, double x, double y,
                           int width, bool current) const
 {
     const auto left{side == DiffSide::left};
     const auto line_number{left ? row.left_line : row.right_line};
     if(!line_number)
     {
-        painter.fill_rect({x, y, width, 1}, theme.diff_filler_background);
+        painter.fill_rect({x, y, static_cast<double>(width), 1.0}, theme.diff_filler_background);
         return;
     }
     const auto line{(left ? m_left_lines : m_right_lines)[*line_number]};
@@ -257,13 +257,13 @@ void DiffView::paint_side(Painter& painter, const Theme& theme, const DiffRow& r
     const auto gutter{std::min(gutter_width(), width)};
     const TextStyle number_style{current ? theme.selection_foreground : theme.line_number_foreground,
                                  current ? theme.selection_background : theme.editor_background};
-    painter.fill_rect({x, y, gutter, 1}, number_style.background);
+    painter.fill_rect({x, y, static_cast<double>(gutter), 1.0}, number_style.background);
     const auto number{std::to_string(*line_number + 1)};
     painter.draw_text({x + gutter - 1 - static_cast<int>(number.size()), y}, number, number_style);
 
     const auto text_x{x + gutter};
     const auto text_columns{width - gutter};
-    painter.fill_rect({text_x, y, text_columns, 1}, base.background);
+    painter.fill_rect({text_x, y, static_cast<double>(text_columns), 1.0}, base.background);
     auto range{changes.begin()};
     int column{};
     std::size_t index{};
@@ -296,7 +296,7 @@ void DiffView::paint_side(Painter& painter, const Theme& theme, const DiffRow& r
             const auto cell_x{text_x + column - m_scroll_column};
             if(codepoint == U'\t')
             {
-                painter.fill_rect({cell_x, y, cells, 1}, style.background);
+                painter.fill_rect({cell_x, y, static_cast<double>(cells), 1.0}, style.background);
             }
             else
             {
@@ -345,8 +345,9 @@ void DiffView::paint(Painter& painter, const Theme& theme) const
         const auto thumb{scrollbar_thumb(track_height, track_height, static_cast<int>(m_rows.size()),
                                          static_cast<int>(m_scroll_row), static_cast<int>(max_scroll_row()))};
         painter.draw_scrollbar(
-            {area.x + area.width - 1, area.y + 1, 1, track_height},
-            {area.y + 1 + thumb.start, thumb.length, theme.scrollbar_background, theme.scrollbar_foreground}, theme);
+            {area.x + area.width - 1, area.y + 1, 1, static_cast<double>(track_height)},
+            {whole(area.y) + 1 + thumb.start, thumb.length, theme.scrollbar_background, theme.scrollbar_foreground},
+            theme);
     }
 
     // The bar under them: how many differences, which one the row is in, and the keys that go from one to the next.
@@ -374,7 +375,7 @@ void DiffView::paint(Painter& painter, const Theme& theme) const
     if(area.height > 1)
     {
         painter.fill_rect({area.x, footer_y, area.width, 1}, footer.background);
-        painter.draw_label({area.x + 1, footer_y}, fit_text(status, std::max(0, area.width - 2)), footer);
+        painter.draw_label({area.x + 1, footer_y}, fit_text(status, std::max(0, whole(area.width) - 2)), footer);
     }
 }
 
@@ -441,10 +442,10 @@ bool DiffView::handle_event(const Event& event)
     {
         if(m_rows.size() > static_cast<std::size_t>(content_rows()) && content_rows() > 0)
         {
-            if(const auto to{
-                   m_scrollbar.handle(*mouse, {bounds().x + bounds().width - 1, bounds().y + 1, 1, content_rows()},
-                                      content_rows(), static_cast<int>(m_rows.size()), static_cast<int>(m_scroll_row),
-                                      static_cast<int>(max_scroll_row()), std::max(1, content_rows() - 1))})
+            if(const auto to{m_scrollbar.handle(
+                   *mouse, {bounds().x + bounds().width - 1, bounds().y + 1, 1, static_cast<double>(content_rows())},
+                   content_rows(), static_cast<int>(m_rows.size()), static_cast<int>(m_scroll_row),
+                   static_cast<int>(max_scroll_row()), std::max(1, content_rows() - 1))})
             {
                 m_scroll_row = static_cast<std::size_t>(*to);
                 return true;
@@ -457,7 +458,7 @@ bool DiffView::handle_event(const Event& event)
                                                   : std::min(max_scroll_row(), m_scroll_row + rows);
             return true;
         }
-        const auto row{mouse->y - bounds().y - 1};
+        const auto row{whole(mouse->y - bounds().y) - 1};
         if(!mouse->pressed || mouse->dragging || row < 0 || row >= content_rows() ||
            mouse->x >= bounds().x + bounds().width - 1)
         {

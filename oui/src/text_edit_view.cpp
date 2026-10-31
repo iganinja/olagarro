@@ -288,7 +288,7 @@ int TextEdit::gutter_width() const
 }
 int TextEdit::content_width() const
 {
-    return std::max(1, bounds().width - gutter_width() - scrollbar_width());
+    return std::max(1, whole(bounds().width) - gutter_width() - scrollbar_width());
 }
 int TextEdit::scrollbar_width() const
 {
@@ -300,7 +300,7 @@ int TextEdit::horizontal_scrollbar_height() const
 }
 int TextEdit::text_rows() const
 {
-    return std::max(1, bounds().height - horizontal_scrollbar_height());
+    return std::max(1, whole(bounds().height) - horizontal_scrollbar_height());
 }
 // The width in columns of the longest line, plus one for a cursor after its end; cached until the text or
 // its wrapping changes.
@@ -342,7 +342,8 @@ bool TextEdit::handle_horizontal_scrollbar(const MouseEvent& mouse)
         if(mouse.dragging)
         {
             const auto range{content_width() - horizontal_thumb_width()};
-            const auto left{std::clamp(mouse.x - bounds().x - gutter_width() - *m_horizontal_thumb_grab, 0, range)};
+            const auto left{
+                std::clamp(whole(mouse.x - bounds().x) - gutter_width() - *m_horizontal_thumb_grab, 0, range)};
             const auto maximum{static_cast<int>(maximum_scroll_column())};
             m_scroll_column = range == 0 ? 0 : static_cast<std::size_t>((left * maximum + range / 2) / range);
         }
@@ -362,7 +363,7 @@ bool TextEdit::handle_horizontal_scrollbar(const MouseEvent& mouse)
     {
         return true;
     }
-    const auto column{mouse.x - track_left};
+    const auto column{whole(mouse.x - track_left)};
     const auto left{horizontal_thumb_left()};
     const auto page{static_cast<std::size_t>(std::max(1, content_width() - 1))};
     if(column < left)
@@ -405,7 +406,7 @@ bool TextEdit::handle_scrollbar(const MouseEvent& mouse)
         if(mouse.dragging)
         {
             const auto range{text_rows() - thumb_height()};
-            const auto top{std::clamp(mouse.y - bounds().y - *m_thumb_grab, 0, range)};
+            const auto top{std::clamp(whole(mouse.y - bounds().y) - *m_thumb_grab, 0, range)};
             const auto maximum{static_cast<int>(maximum_scroll_line())};
             m_scroll_line = range == 0 ? 0 : static_cast<std::size_t>((top * maximum + range / 2) / range);
         }
@@ -424,7 +425,7 @@ bool TextEdit::handle_scrollbar(const MouseEvent& mouse)
     {
         return true;
     }
-    const auto row{mouse.y - bounds().y};
+    const auto row{whole(mouse.y - bounds().y)};
     const auto top{thumb_top()};
     const auto page{static_cast<std::size_t>(std::max(1, text_rows() - 1))};
     if(row < top)
@@ -442,7 +443,7 @@ bool TextEdit::handle_scrollbar(const MouseEvent& mouse)
     return true;
 }
 
-void TextEdit::paint_line(Painter& painter, const Theme& theme, std::size_t index, std::size_t end, int x, int y,
+void TextEdit::paint_line(Painter& painter, const Theme& theme, std::size_t index, std::size_t end, double x, double y,
                           const std::vector<SyntaxSpan>& spans, std::size_t line_start) const
 {
     std::size_t column{};
@@ -522,7 +523,9 @@ void TextEdit::paint_line(Painter& painter, const Theme& theme, std::size_t inde
                 std::min(static_cast<int>(column) + visible, static_cast<int>(m_scroll_column) + content_width())};
             if(start < finish)
             {
-                painter.fill_rect({x + start - static_cast<int>(m_scroll_column), y, finish - start, 1}, background);
+                painter.fill_rect(
+                    {x + start - static_cast<int>(m_scroll_column), y, static_cast<double>(finish - start), 1.0},
+                    background);
             }
         }
         if(m_text.at(character) != '\t' && column + static_cast<std::size_t>(visible) > m_scroll_column &&
@@ -568,15 +571,16 @@ void TextEdit::paint(Painter& painter, const Theme& theme) const
     {
         const auto track_x{bounds().x + bounds().width - 1};
         painter.draw_scrollbar(
-            {track_x, bounds().y, 1, text_rows()},
-            {bounds().y + thumb_top(), thumb_height(), theme.scrollbar_background, theme.scrollbar_foreground}, theme);
+            {track_x, bounds().y, 1, static_cast<double>(text_rows())},
+            {whole(bounds().y) + thumb_top(), thumb_height(), theme.scrollbar_background, theme.scrollbar_foreground},
+            theme);
     }
     if(horizontal_scrollbar_height() > 0)
     {
         const auto track_y{bounds().y + text_rows()};
         const auto track_left{bounds().x + gutter_width()};
-        painter.draw_scrollbar({track_left, track_y, content_width(), 1},
-                               {track_left + horizontal_thumb_left(), horizontal_thumb_width(),
+        painter.draw_scrollbar({track_left, track_y, static_cast<double>(content_width()), 1.0},
+                               {whole(track_left) + horizontal_thumb_left(), horizontal_thumb_width(),
                                 theme.scrollbar_background, theme.scrollbar_foreground},
                                theme);
     }

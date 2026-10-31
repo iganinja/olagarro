@@ -73,7 +73,8 @@ It has two levels.
 | `shade(rect, foreground, background)` | Casts a shadow: in cells the characters stay, recoloured, as Turbo Vision's shadows |
 
 `TextStyle` is a foreground, a background and attributes: `text_bold`, `text_underline`, `text_italic`, `text_dim`,
-which can be combined. Positions and rectangles (`Point`, `Rect`) are in cells.
+which can be combined. Positions and rectangles (`Point`, `Rect`) are in cells, as `double`s; a painter of cells takes
+the cell each falls in, with `whole`.
 
 **Elements** are the parts of an interface a style draws its own way: a window, a button, a tab. A widget does not
 draw a button out of characters; it asks for one, saying what it shows and in which state, and the painter decides

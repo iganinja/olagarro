@@ -277,7 +277,7 @@ Size NumberField::measure(const Constraints& constraints) const
 void NumberField::arrange(const Rect& bounds)
 {
     Widget::arrange(bounds);
-    m_field->arrange({bounds.x, bounds.y, std::max(0, bounds.width - arrows_width), bounds.height});
+    m_field->arrange({bounds.x, bounds.y, std::max(0.0, bounds.width - arrows_width), bounds.height});
 }
 
 void NumberField::paint(Painter& painter, const Theme& theme) const
@@ -320,7 +320,7 @@ bool NumberField::handle_event(const Event& event)
     const auto right{m_bounds.x + m_bounds.width};
     if(m_stacked_arrows && mouse->pixel && mouse->x >= right - arrows_width && mouse->x < right)
     {
-        step_by(mouse->pixel->y < m_stacked_arrows->y + m_stacked_arrows->height / 2 ? 1 : -1);
+        step_by(mouse->pixel->y < m_stacked_arrows->y + std::floor(m_stacked_arrows->height / 2) ? 1 : -1);
         return true;
     }
     if(mouse->x == right - 2)

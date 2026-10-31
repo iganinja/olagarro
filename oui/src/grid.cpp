@@ -1,6 +1,7 @@
 #include <oui/grid.h>
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace olagarro::oui
@@ -32,11 +33,11 @@ namespace
 // The sizes of the columns, or of the rows, from their lengths: a line without one is as big as its content, `fill`
 // and `flex` share what the others leave when `distribute` says so, and are as big as their content when not, as a
 // grid measured does. A line not shown takes no room, nor a gap.
-[[nodiscard]] std::vector<int> line_sizes(const std::vector<Length>& lengths, const std::vector<int>& content,
-                                          const std::vector<bool>& shown, int available, int gap, bool distribute)
+[[nodiscard]] std::vector<double> line_sizes(const std::vector<Length>& lengths, const std::vector<double>& content,
+                                             const std::vector<bool>& shown, double available, int gap, bool distribute)
 {
-    std::vector<int> sizes(content.size(), 0);
-    auto used{0};
+    std::vector<double> sizes(content.size(), 0.0);
+    auto used{0.0};
     auto lines_shown{0};
     auto factor{0.0f};
     for(std::size_t line{}; line < content.size(); ++ line)
@@ -53,7 +54,8 @@ namespace
             sizes[line] = std::max(0, static_cast<int>(length.value()));
             break;
         case Length::Kind::percent:
-            sizes[line] = std::max(0, static_cast<int>(available * length.value() / 100.0f));
+            sizes[line] =
+                std::max(0.0, std::floor(static_cast<double>(static_cast<float>(available) * length.value() / 100.0f)));
             break;
         case Length::Kind::fill:
         case Length::Kind::flex:
@@ -75,22 +77,22 @@ namespace
     {
         return sizes;
     }
-    const auto remaining{std::max(0, available - used)};
+    const auto remaining{std::max(0.0, available - used)};
     for(std::size_t line{}; line < content.size(); ++ line)
     {
         const auto length{line < lengths.size() ? lengths[line] : Length::content()};
         if(shown[line] && (length.kind() == Length::Kind::fill || length.kind() == Length::Kind::flex))
         {
-            sizes[line] = static_cast<int>(remaining * length.value() / factor);
+            sizes[line] = std::floor(static_cast<double>(static_cast<float>(remaining) * length.value() / factor));
         }
     }
     return sizes;
 }
 
 // The room the lines take, with a gap between each two shown.
-[[nodiscard]] int total(const std::vector<int>& sizes, const std::vector<bool>& shown, int gap)
+[[nodiscard]] double total(const std::vector<double>& sizes, const std::vector<bool>& shown, int gap)
 {
-    auto sum{0};
+    auto sum{0.0};
     auto lines_shown{0};
     for(std::size_t line{}; line < sizes.size(); ++ line)
     {
@@ -125,10 +127,10 @@ std::vector<bool> Grid::shown_rows() const
     return shown;
 }
 
-std::vector<int> Grid::column_widths(int available, bool distribute_flexible) const
+std::vector<double> Grid::column_widths(double available, bool distribute_flexible) const
 {
     // Each column's content: its widest widget shown.
-    std::vector<int> content(m_columns.size(), 0);
+    std::vector<double> content(m_columns.size(), 0.0);
     for(std::size_t child{}; child < children().size(); ++ child)
     {
         if(children()[child]->is_visible())
@@ -140,10 +142,10 @@ std::vector<int> Grid::column_widths(int available, bool distribute_flexible) co
     return line_sizes(m_columns, content, shown_columns(), available, spacing_cells(m_gap), distribute_flexible);
 }
 
-std::vector<int> Grid::row_heights(const Constraints& constraints, bool distribute_flexible) const
+std::vector<double> Grid::row_heights(const Constraints& constraints, bool distribute_flexible) const
 {
     const auto shown{shown_rows()};
-    std::vector<int> content(shown.size(), 0);
+    std::vector<double> content(shown.size(), 0.0);
     for(std::size_t child{}; child < children().size(); ++ child)
     {
         if(children()[child]->is_visible())
@@ -213,8 +215,8 @@ Rect Grid::paint_bounds() const
             continue;
         }
         const auto child_bounds{child->paint_bounds()};
-        const int right{std::max(result.x + result.width, child_bounds.x + child_bounds.width)};
-        const int bottom{std::max(result.y + result.height, child_bounds.y + child_bounds.height)};
+        const double right{std::max(result.x + result.width, child_bounds.x + child_bounds.width)};
+        const double bottom{std::max(result.y + result.height, child_bounds.y + child_bounds.height)};
         result.x = std::min(result.x, child_bounds.x);
         result.y = std::min(result.y, child_bounds.y);
         result.width = right - result.x;

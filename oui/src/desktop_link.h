@@ -256,7 +256,7 @@ class DesktopLink
             {
                 resized(columns, rows);
             }
-            m_events.emplace_back(ResizeEvent{columns, rows});
+            m_events.emplace_back(ResizeEvent{static_cast<double>(columns), static_cast<double>(rows)});
         }
         if(!m_configured || (configure.focused != 0) != m_focused)
         {

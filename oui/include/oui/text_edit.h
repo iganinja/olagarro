@@ -244,7 +244,7 @@ class TextEdit final : public Widget
     [[nodiscard]] int horizontal_thumb_left() const;
     [[nodiscard]] bool handle_horizontal_scrollbar(const MouseEvent& mouse);
     // `spans` colour the logical line the visual line belongs to, which starts at `line_start`.
-    void paint_line(Painter& painter, const Theme& theme, std::size_t index, std::size_t end, int x, int y,
+    void paint_line(Painter& painter, const Theme& theme, std::size_t index, std::size_t end, double x, double y,
                     const std::vector<SyntaxSpan>& spans, std::size_t line_start) const;
     // Brings the highlighter's colours up to date down to `line`; lines before it are reused while their text
     // and the state they start in are the same.

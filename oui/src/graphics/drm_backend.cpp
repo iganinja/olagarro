@@ -11,6 +11,7 @@
 #include <atomic>
 #include <csignal>
 #include <cerrno>
+#include <cmath>
 #include <cstring>
 #include <deque>
 #include <optional>
@@ -764,11 +765,15 @@ class DrmBackend final : public PixelBackend
         {
             return std::nullopt;
         }
-        return Point{(m_pointer_x - content.x) / cell_size().width,
-                     GraphicalPainter::row_at(m_pointer_y - content.y, content.height, cell_size().height)};
+        return Point{std::floor((m_pointer_x - content.x) / cell_size().width),
+                     static_cast<double>(
+                         GraphicalPainter::row_at(m_pointer_y - content.y, content.height, whole(cell_size().height)))};
     }
 
-    [[nodiscard]] int offset_in_cell() const { return std::max(0, m_pointer_x - content_area().x) % cell_size().width; }
+    [[nodiscard]] int offset_in_cell() const
+    {
+        return std::max(0, m_pointer_x - content_area().x) % whole(cell_size().width);
+    }
 
     void take_button(bool right, bool pressed)
     {

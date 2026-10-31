@@ -50,7 +50,7 @@ TEST(OuiTextEditGutterTests, WrapsAgainAtOnceWhenItsWidthChanges)
     edit.set_text("alpha beta gamma delta epsilon zeta");
     const auto row_text{[&edit](int width, int row)
                         {
-                            edit.arrange({0, 0, width, 6});
+                            edit.arrange({0, 0, static_cast<double>(width), 6});
                             CellBuffer buffer{width, 6};
                             CellBufferPainter painter{buffer};
                             edit.paint(painter, Theme{});

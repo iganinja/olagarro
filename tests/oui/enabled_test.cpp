@@ -102,12 +102,12 @@ TEST(OuiEnabledTests, ADisabledButtonShowsItsTextInTheDisabledColour)
     const auto* const frame{&*form.backend->last_frame()};
     const auto at{form.save->bounds()};
     auto found{false};
-    for(int x{at.x}; x < at.x + at.width; ++ x)
+    for(int x{oui::whole(at.x)}; x < oui::whole(at.x + at.width); ++ x)
     {
-        if(frame->cell_at(x, at.y).glyph == U'S')
+        if(frame->cell_at(x, oui::whole(at.y)).glyph == U'S')
         {
             found = true;
-            EXPECT_EQ(frame->cell_at(x, at.y).foreground, form.application->theme().disabled_foreground);
+            EXPECT_EQ(frame->cell_at(x, oui::whole(at.y)).foreground, form.application->theme().disabled_foreground);
         }
     }
     EXPECT_TRUE(found);

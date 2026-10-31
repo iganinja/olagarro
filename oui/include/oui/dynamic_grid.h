@@ -17,7 +17,7 @@ class DynamicGrid final : public Container
 
   private:
     [[nodiscard]] Size cell_size(const Constraints& constraints) const;
-    [[nodiscard]] int column_count(int available_width, int cell_width) const;
+    [[nodiscard]] int column_count(double available_width, double cell_width) const;
     Length m_column_width{Length::content()};
     Spacing m_gap{Spacing::none};
 };

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <iterator>
 #include <cstdio>
 #include <stdexcept>
@@ -21,7 +22,7 @@ class PixelTextMetrics final : public TextMetrics
   public:
     PixelTextMetrics(FontSet fonts, Size cell) : m_fonts{fonts}, m_cell{cell} {}
 
-    int cell_width() const override { return m_cell.width; }
+    int cell_width() const override { return whole(m_cell.width); }
     int width(std::string_view text) const override { return m_fonts.interface_width(text); }
     int field_padding() const override { return GraphicalPainter::field_padding(m_cell); }
     int popup_frame_rows() const override { return 0; }
@@ -91,7 +92,7 @@ void PixelBackend::load_fonts()
     }
     m_interface_font = built_in_interface_font(level.interface_pixels, m_style.interface_font);
     m_cell = GraphicalPainter::cell_size(*m_cell_font);
-    m_symbols = symbol_font(m_cell.width, m_cell.height, m_cell_font->ascent());
+    m_symbols = symbol_font(whole(m_cell.width), whole(m_cell.height), m_cell_font->ascent());
     m_metrics = std::make_unique<PixelTextMetrics>(FontSet{*m_cell_font, *m_interface_font, *m_symbols}, m_cell);
     set_text_metrics(m_metrics.get());
 }
@@ -143,7 +144,7 @@ int PixelBackend::columns_covered(int cell_offset, int cell_width, int pointer_s
 
 int PixelBackend::pointer_columns(int cell_offset) const
 {
-    return columns_covered(cell_offset, cell_size().width, pointer_size());
+    return columns_covered(cell_offset, whole(cell_size().width), pointer_size());
 }
 
 int PixelBackend::default_zoom()
@@ -170,7 +171,8 @@ PixelBackend::~PixelBackend()
 
 Size PixelBackend::size() const
 {
-    return {std::max(0, m_content.width / m_cell.width), std::max(0, m_content.height / m_cell.height)};
+    return {std::max(0.0, std::floor(m_content.width / m_cell.width)),
+            std::max(0.0, std::floor(m_content.height / m_cell.height))};
 }
 
 void PixelBackend::render(const std::function<void(Painter&)>& paint)
@@ -224,7 +226,7 @@ void PixelBackend::present(const CellBuffer& buffer)
                     {
                         continue;
                     }
-                    painter.draw_text({x, y}, encode_utf8(cell.glyph),
+                    painter.draw_text({static_cast<double>(x), static_cast<double>(y)}, encode_utf8(cell.glyph),
                                       {cell.foreground, cell.background, cell.attributes});
                 }
             }
@@ -265,7 +267,7 @@ void PixelBackend::resize(int width, int height)
 
 ImageBackend::ImageBackend(Size pixels, std::vector<Event> events) : m_events{std::move(events)}
 {
-    resize(pixels.width, pixels.height);
+    resize(whole(pixels.width), whole(pixels.height));
 }
 
 void ImageBackend::push(const Event& event)

@@ -55,7 +55,7 @@ struct Screen
         application->render();
     }
 
-    void move_to(int x, int y, oui::Point pixel)
+    void move_to(double x, double y, oui::Point pixel)
     {
         oui::MouseEvent mouse{x, y, false};
         mouse.hover = true;
@@ -67,7 +67,7 @@ struct Screen
     Recorder* recorder{};
 };
 
-oui::MouseEvent middle_press(int x, int y)
+oui::MouseEvent middle_press(double x, double y)
 {
     oui::MouseEvent mouse{x, y, true};
     mouse.middle = true;

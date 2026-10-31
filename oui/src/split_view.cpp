@@ -55,13 +55,13 @@ void SplitView::move_divider(int cells)
     const auto length{horizontal ? bounds().width : bounds().height};
     if(length > 2)
     {
-        const auto moved{std::clamp(*line - start + cells, 1, length - 2)};
-        set_ratio(static_cast<double>(moved) / static_cast<double>(length - 1));
+        const auto moved{std::clamp(*line - start + cells, 1.0, length - 2)};
+        set_ratio(moved / (length - 1));
         arrange(bounds());
     }
 }
 
-std::optional<int> SplitView::divider() const
+std::optional<double> SplitView::divider() const
 {
     if(child_count() < 2 || !child_at(0).is_visible() || !child_at(1).is_visible())
     {
@@ -71,7 +71,8 @@ std::optional<int> SplitView::divider() const
     const auto start{horizontal ? bounds().x : bounds().y};
     const auto length{horizontal ? bounds().width : bounds().height};
     // Each side keeps at least one cell, and the line one more.
-    const auto first{std::clamp(static_cast<int>(std::lround(m_ratio * (length - 1))), 1, std::max(1, length - 2))};
+    const auto first{
+        std::clamp(static_cast<double>(std::lround(m_ratio * (length - 1))), 1.0, std::max(1.0, length - 2))};
     return start + first;
 }
 
@@ -147,7 +148,7 @@ bool SplitView::handle_event(const Event& event)
         const auto length{horizontal ? bounds().width : bounds().height};
         if(length > 1)
         {
-            set_ratio(static_cast<double>(position - start) / static_cast<double>(length - 1));
+            set_ratio((position - start) / (length - 1));
         }
     }
     if(mouse->released)

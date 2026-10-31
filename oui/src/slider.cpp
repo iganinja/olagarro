@@ -97,9 +97,9 @@ double Slider::value_at(const MouseEvent& mouse) const
     if(mouse.pixel && m_pixels && m_pixels->width > 1)
     {
         // The thumb's middle under the pointer, and the thumb as wide as the track is tall.
-        const auto thumb{std::min(m_pixels->height, m_pixels->width / 2)};
-        const auto travel{std::max(1, m_pixels->width - thumb)};
-        fraction = static_cast<double>(mouse.pixel->x - m_pixels->x - thumb / 2) / travel;
+        const auto thumb{std::min(m_pixels->height, std::floor(m_pixels->width / 2))};
+        const auto travel{std::max(1.0, m_pixels->width - thumb)};
+        fraction = (mouse.pixel->x - m_pixels->x - std::floor(thumb / 2)) / travel;
     }
     else if(m_bounds.width > 1)
     {

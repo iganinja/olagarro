@@ -45,9 +45,9 @@ class Container : public Widget
 
     [[nodiscard]] bool contains(const Widget* target) const override;
 
-    [[nodiscard]] Widget* hit_test(int x, int y) override;
+    [[nodiscard]] Widget* hit_test(double x, double y) override;
 
-    void dismiss_overlays_at(int x, int y) override;
+    void dismiss_overlays_at(double x, double y) override;
 
     [[nodiscard]] Widget* keyboard_target() override;
 

@@ -247,7 +247,7 @@ class AnsiTerminalBackend::Impl
     {
         winsize dimensions{};
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &dimensions);
-        return {dimensions.ws_col, dimensions.ws_row};
+        return {static_cast<double>(dimensions.ws_col), static_cast<double>(dimensions.ws_row)};
     }
 
     std::optional<Event> poll_event()

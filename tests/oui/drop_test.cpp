@@ -25,7 +25,7 @@ class DropRecorder final : public oui::Widget
 
     [[nodiscard]] oui::Size measure(const oui::Constraints& constraints) const override
     {
-        return {m_width, constraints.max_height};
+        return {static_cast<double>(m_width), constraints.max_height};
     }
     bool handle_event(const oui::Event& event) override
     {
@@ -69,12 +69,12 @@ struct Screen
     DropRecorder* right{};
 };
 
-oui::DropEvent moving(int x, int y)
+oui::DropEvent moving(double x, double y)
 {
     return oui::DropEvent{oui::DropEvent::Phase::moving, x, y};
 }
 
-oui::DropEvent dropped(int x, int y, std::vector<std::string> paths)
+oui::DropEvent dropped(double x, double y, std::vector<std::string> paths)
 {
     return oui::DropEvent{oui::DropEvent::Phase::dropped, x, y, std::move(paths)};
 }
@@ -218,14 +218,14 @@ struct DragScreen
         application->render();
     }
 
-    void press(int x, int y) const { application->dispatch_event(oui::MouseEvent{x, y, true}); }
-    void drag(int x, int y) const
+    void press(double x, double y) const { application->dispatch_event(oui::MouseEvent{x, y, true}); }
+    void drag(double x, double y) const
     {
         oui::MouseEvent move{x, y, false};
         move.dragging = true;
         application->dispatch_event(move);
     }
-    void release(int x, int y) const
+    void release(double x, double y) const
     {
         oui::MouseEvent up{x, y, false};
         up.released = true;

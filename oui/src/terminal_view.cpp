@@ -213,14 +213,14 @@ TerminalView::~TerminalView() = default;
 
 Size TerminalView::measure(const Constraints& constraints) const
 {
-    return constraints.constrain({std::max(1, constraints.max_width), std::max(1, constraints.max_height)});
+    return constraints.constrain({std::max(1.0, constraints.max_width), std::max(1.0, constraints.max_height)});
 }
 
 void TerminalView::arrange(const Rect& bounds)
 {
     Widget::arrange(bounds);
-    const auto columns{std::max(1, bounds.width)};
-    const auto rows{std::max(1, bounds.height)};
+    const auto columns{std::max(1, whole(bounds.width))};
+    const auto rows{std::max(1, whole(bounds.height))};
     if(columns != m_screen.columns() || rows != m_screen.rows())
     {
         m_screen.resize(columns, rows);
@@ -236,8 +236,8 @@ void TerminalView::paint(Painter& painter, const Theme& theme) const
 {
     const auto& area{bounds()};
     painter.fill_rect(area, theme.editor_background);
-    const auto rows{std::min(area.height, m_screen.rows())};
-    const auto columns{std::min(area.width, m_screen.columns())};
+    const auto rows{std::min(whole(area.height), m_screen.rows())};
+    const auto columns{std::min(whole(area.width), m_screen.columns())};
     const auto show_cursor{is_focused() && m_screen.cursor_visible() && m_scrolled_back == 0};
     for(int row{}; row < rows; ++ row)
     {
@@ -426,10 +426,10 @@ bool TerminalView::handle_selection(const MouseEvent& mouse)
     return mouse.pressed;
 }
 
-TerminalView::Place TerminalView::place_at(int x, int y) const
+TerminalView::Place TerminalView::place_at(double x, double y) const
 {
-    const auto column{std::clamp(x - bounds().x, 0, std::max(0, m_screen.columns() - 1))};
-    const auto row{std::clamp(y - bounds().y, 0, std::max(0, m_screen.rows() - 1))};
+    const auto column{std::clamp(whole(x - bounds().x), 0, std::max(0, m_screen.columns() - 1))};
+    const auto row{std::clamp(whole(y - bounds().y), 0, std::max(0, m_screen.rows() - 1))};
     return {m_screen.history_size() - m_scrolled_back + row, column};
 }
 

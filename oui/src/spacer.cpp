@@ -9,7 +9,7 @@ VSpacer::VSpacer(int height) : m_height{height}
 
 Size VSpacer::measure(const Constraints& constraints) const
 {
-    return constraints.constrain({0, m_height});
+    return constraints.constrain({0.0, static_cast<double>(m_height)});
 }
 
 void VSpacer::paint(Painter&, const Theme&) const
@@ -32,7 +32,7 @@ HSpacer::HSpacer(int width) : m_width{width}
 
 Size HSpacer::measure(const Constraints& constraints) const
 {
-    return constraints.constrain({m_width, 0});
+    return constraints.constrain({static_cast<double>(m_width), 0.0});
 }
 
 void HSpacer::paint(Painter&, const Theme&) const

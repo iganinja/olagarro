@@ -130,6 +130,13 @@ class GraphicalPainter final : public Painter
                              Color mnemonic_color, Align align) override;
 
   private:
+    // A cell's size in whole pixels.
+    struct CellPixels
+    {
+        int width{};
+        int height{};
+    };
+
     [[nodiscard]] PixelRect pixels(const Rect& cells) const;
     // Light top-left and dark bottom-right edges, or the other way round when sunken, around `face`.
     void bevel(const PixelRect& rect, bool sunken, Color face);
@@ -153,7 +160,7 @@ class GraphicalPainter final : public Painter
     Font& m_cell_font;
     Font& m_interface_font;
     FontSet m_fonts;
-    Size m_cell;
+    CellPixels m_cell;
     PixelRect m_area;
     std::vector<PixelRect> m_clips;
 };

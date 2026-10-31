@@ -95,7 +95,7 @@ void TabView::ensure_selected_visible()
     {
         total_width += tab_width(index);
     }
-    const auto max_scroll{std::max(0, total_width - bounds().width)};
+    const auto max_scroll{std::max(0.0, total_width - bounds().width)};
     m_header_scroll = std::min(m_header_scroll, max_scroll);
     auto x{bounds().x - m_header_scroll};
     for(std::size_t index{}; index < m_selected; ++ index)
@@ -206,7 +206,7 @@ void TabView::arrange(const Rect& bounds)
         ensure_selected_visible();
     }
     if(child_count() != 0)
-        child_at(m_selected).arrange({bounds.x, bounds.y + 1, bounds.width, std::max(0, bounds.height - 1)});
+        child_at(m_selected).arrange({bounds.x, bounds.y + 1, bounds.width, std::max(0.0, bounds.height - 1)});
 }
 void TabView::set_closable(bool closable)
 {
@@ -223,7 +223,7 @@ void TabView::paint(Painter& painter, const Theme& theme) const
     for(std::size_t index{}; index < m_titles.size(); ++ index)
     {
         painter.draw_tab(
-            {x, bounds().y, tab_width(index), 1},
+            {x, bounds().y, static_cast<double>(tab_width(index)), 1},
             {m_titles.at(index), index == m_selected, m_closable, m_is_highlighted && m_is_highlighted(index)}, theme);
         x += tab_width(index);
     }
@@ -237,7 +237,7 @@ void TabView::collect_focusable(std::vector<Widget*>& widgets)
     if(child_count() != 0)
         child_at(m_selected).collect_focusable(widgets);
 }
-Widget* TabView::hit_test(int x, int y)
+Widget* TabView::hit_test(double x, double y)
 {
     if(Widget::hit_test(x, y) == nullptr)
         return nullptr;
@@ -321,7 +321,7 @@ std::vector<std::size_t> TabView::recent_order() const
     }
     return order;
 }
-std::optional<std::size_t> TabView::tab_at(int x) const
+std::optional<std::size_t> TabView::tab_at(double x) const
 {
     auto left{bounds().x - m_header_scroll};
     for(std::size_t index{}; index < m_titles.size(); ++ index)
