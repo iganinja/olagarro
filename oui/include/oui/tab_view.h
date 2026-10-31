@@ -93,7 +93,7 @@ class TabView final : public Container
     bool m_close_on_right_click{false};
     bool m_closable{true};
     // A tab's title in the header: its text, the spaces round it, and the close mark when there is one.
-    [[nodiscard]] int tab_width(std::size_t index) const;
+    [[nodiscard]] double tab_width(std::size_t index) const;
     std::size_t m_selected{};
     double m_header_scroll{};
     olagarro::signal_slot::Signal<std::size_t> m_close_requested;

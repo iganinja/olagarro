@@ -1,5 +1,6 @@
 #include <oui/graphics/graphical_painter.h>
 #include <oui/text_layout.h>
+#include <oui/text_metrics.h>
 #include <oui/trace.h>
 #include <oui/translation.h>
 #include <oui/utf8.h>
@@ -455,6 +456,12 @@ int GraphicalPainter::interface_width(std::string_view text)
     return m_fonts.interface_width(text);
 }
 
+double GraphicalPainter::label_columns(std::string_view text)
+{
+    return label_columns(interface_width(text), m_style.text_margin,
+                         {static_cast<double>(m_cell.width), static_cast<double>(m_cell.height)});
+}
+
 int GraphicalPainter::label(const PixelRect& area, std::string_view text, Color color, Align align, bool bold)
 {
     const auto width{interface_width(text)};
@@ -492,6 +499,31 @@ void GraphicalPainter::draw_label(Point position, std::string_view text, const T
         const auto top{area.y + (area.height - m_interface_font.line_height()) / 2};
         m_canvas.fill({x, top + m_interface_font.ascent() + 2, interface_width(text), 1}, foreground);
     }
+}
+
+void GraphicalPainter::draw_label(const Rect& area, std::string_view text, const TextStyle& style, Align align)
+{
+    const auto box{pixels(area)};
+    // The background behind the text and its margins, where it is set, as the cells a terminal writes take theirs.
+    const auto width{std::min(box.width, interface_width(text) + 2 * m_style.text_margin)};
+    const auto left{align == Align::center ? box.x + (box.width - width) / 2
+                    : align == Align::end  ? box.x + box.width - width
+                                           : box.x};
+    if(!text.empty())
+    {
+        m_canvas.fill({left, box.y, width, box.height}, style.background);
+    }
+    const auto foreground{(style.attributes & text_dim) != 0 ? mix(style.foreground, style.background, 110)
+                                                             : style.foreground};
+    const auto previous{m_canvas.clip()};
+    m_canvas.set_clip(intersect(previous, box));
+    const auto x{label(with_margin(box, align), text, foreground, align, (style.attributes & text_bold) != 0)};
+    if((style.attributes & text_underline) != 0)
+    {
+        const auto top{box.y + (box.height - m_interface_font.line_height()) / 2};
+        m_canvas.fill({x, top + m_interface_font.ascent() + 2, interface_width(text), 1}, foreground);
+    }
+    m_canvas.set_clip(previous);
 }
 
 void GraphicalPainter::draw_label_runs(Point position, const std::vector<LabelRun>& runs, Color background)
@@ -714,8 +746,9 @@ void GraphicalPainter::draw_tab(const Rect& bounds, const TabLook& look, const T
         m_canvas.fill({area.x, area.y, line, area.height}, m_style.light);
         m_canvas.fill({area.x + area.width - line, area.y, line, area.height}, m_style.shadow);
     }
-    const auto title_columns{shown_width(look.title)};
-    label({area.x + m_cell.width, area.y, title_columns * m_cell.width, m_cell.height}, look.title,
+    // The title in the cells TabView gives it, a cell in, as TextMetrics::label_width measures it.
+    const auto title_columns{label_columns(look.title)};
+    label(pixels({bounds.x + 1, bounds.y, title_columns, 1}), look.title,
           look.selected ? theme.tab_active_foreground : theme.tab_inactive_foreground, Align::center);
     if(!look.closable)
     {
@@ -1021,6 +1054,11 @@ std::optional<Rect> GraphicalPainter::pixel_bounds(const Rect& cells) const
 int GraphicalPainter::field_padding(Size cell)
 {
     return whole(cell.width) / 2;
+}
+
+double GraphicalPainter::label_columns(int pixels, int margin, Size cell)
+{
+    return pixels == 0 ? 0.0 : snap_up((pixels + 2 * margin) / cell.width, 1.0 / cell.width);
 }
 
 float GraphicalPainter::unit() const

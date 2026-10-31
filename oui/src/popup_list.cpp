@@ -202,7 +202,7 @@ void PopupList::paint(Painter& painter, const Theme& theme) const
     {
         if(m_filter.empty())
         {
-            painter.draw_label({area.x + 2, area.y + 1}, m_placeholder,
+            painter.draw_label(Point{area.x + 2, area.y + 1}, m_placeholder,
                                {theme.menu_foreground, theme.menu_background, text_italic | text_dim});
         }
         else
@@ -213,7 +213,7 @@ void PopupList::paint(Painter& painter, const Theme& theme) const
     const auto top{area.y + 1 + top_rows()};
     if(m_shown.empty())
     {
-        painter.draw_label({area.x + 2, top}, empty_message(),
+        painter.draw_label(Point{area.x + 2, top}, empty_message(),
                            {theme.menu_foreground, theme.menu_background, text_italic});
     }
     for(int row{}; row < visible_rows() && m_first + static_cast<std::size_t>(row) < m_rows.size(); ++ row)
@@ -224,7 +224,7 @@ void PopupList::paint(Painter& painter, const Theme& theme) const
         if(shown.heading)
         {
             painter.fill_rect({area.x + 1, y, area.width - 2, 1}, normal.background);
-            painter.draw_label({area.x + 1, y}, item.section,
+            painter.draw_label(Point{area.x + 1, y}, item.section,
                                {theme.menu_foreground, theme.menu_background, text_bold | text_dim});
             continue;
         }

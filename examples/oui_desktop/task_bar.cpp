@@ -44,7 +44,7 @@ void TaskBar::paint(oui::Painter& painter, const oui::Theme& theme) const
         // What F12 can be followed by, at the right.
         const std::string_view keys{"F12: Tab next  t terminal  x close  m maximize  n minimize  q quit "};
         const auto width{static_cast<double>(oui::text_width(keys))};
-        painter.draw_label({bounds().x + std::max(0.0, bounds().width - width), bounds().y}, keys,
+        painter.draw_label(oui::Point{bounds().x + std::max(0.0, bounds().width - width), bounds().y}, keys,
                            {theme.status_foreground, theme.status_background});
     }
 }

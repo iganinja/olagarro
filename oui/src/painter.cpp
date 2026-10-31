@@ -48,6 +48,18 @@ void Painter::draw_label(Point position, std::string_view text, const TextStyle&
     draw_text(position, text, style);
 }
 
+void Painter::draw_label(const Rect& area, std::string_view text, const TextStyle& style, Align align)
+{
+    const Rect columns{area.x, area.y, std::floor(area.width), area.height};
+    const auto room{columns.width - text_width(text)};
+    const auto offset{align == Align::center ? std::max(0.0, std::floor(room / 2))
+                      : align == Align::end  ? std::max(0.0, room)
+                                             : 0.0};
+    push_clip(columns);
+    draw_label(Point{area.x + offset, area.y}, text, style, align);
+    pop_clip();
+}
+
 void Painter::draw_label_runs(Point position, const std::vector<LabelRun>& runs, Color)
 {
     for(const auto& run : runs)
@@ -66,8 +78,8 @@ void Painter::draw_mnemonic_label(Point position, std::string_view text, std::si
     auto underlined{style};
     underlined.attributes |= text_underline;
     underlined.foreground = mnemonic_color;
-    draw_label({position.x + text_width(text.substr(0, mnemonic)), position.y}, text.substr(mnemonic, end - mnemonic),
-               underlined);
+    draw_label(Point{position.x + text_width(text.substr(0, mnemonic)), position.y},
+               text.substr(mnemonic, end - mnemonic), underlined);
 }
 
 void Painter::draw_window(const Rect& bounds, const WindowLook& look, const Theme& theme)
@@ -200,7 +212,7 @@ void Painter::draw_check_box(const Rect& bounds, const CheckBoxLook& look, const
                                          : theme.cluster_foreground,
                           theme.cluster_background};
     draw_text({bounds.x, bounds.y}, look.checked ? "[X] " : "[ ] ", style);
-    draw_label({bounds.x + 4, bounds.y}, look.text, style);
+    draw_label(Point{bounds.x + 4, bounds.y}, look.text, style);
     if(look.enabled && look.mnemonic && *look.mnemonic < look.text.size())
     {
         auto end{*look.mnemonic};
@@ -219,7 +231,7 @@ void Painter::draw_tab(const Rect& bounds, const TabLook& look, const Theme& the
     {
         title_style.attributes |= text_bold;
     }
-    draw_label({bounds.x, bounds.y}, " " + std::string{look.title} + " ", title_style);
+    draw_label(Point{bounds.x, bounds.y}, " " + std::string{look.title} + " ", title_style);
     if(look.closable)
     {
         const auto close_fg{look.highlighted ? theme.warning_foreground
@@ -238,18 +250,18 @@ void Painter::draw_header(const Rect& cell, const HeaderLook& look, const Theme&
     const std::string text{look.text};
     if(!look.sort)
     {
-        draw_label({cell.x, cell.y}, fit_text(text, whole(cell.width)), style);
+        draw_label({cell.x, cell.y, cell.width, 1}, fit_text(text, whole(cell.width)), style);
         return;
     }
     style.attributes |= text_bold;
     const auto fitted{fit_text(text + " ▲", whole(cell.width))};
     if(fitted != text + " ▲")
     {
-        draw_label({cell.x, cell.y}, fitted, style);
+        draw_label({cell.x, cell.y, cell.width, 1}, fitted, style);
         return;
     }
     // The arrow is a mark of its own, so a graphical style draws it as a shape.
-    draw_label({cell.x, cell.y}, text + " ", style);
+    draw_label({cell.x, cell.y, cell.width, 1}, text + " ", style);
     draw_icon({cell.x + text_width(text) + 1, cell.y}, *look.sort, style);
 }
 
@@ -345,7 +357,7 @@ void Painter::draw_progress(const Rect& bounds, const ProgressLook& look, const 
     {
         const TextStyle style{theme.dialog_foreground, theme.dialog_background};
         draw_text({bounds.x + length, bounds.y}, " ", style);
-        draw_label({bounds.x + length + 1, bounds.y}, look.text, style);
+        draw_label(Point{bounds.x + length + 1, bounds.y}, look.text, style);
     }
 }
 
@@ -491,7 +503,7 @@ void Painter::draw_tooltip(const Rect& bounds, const std::vector<std::string>& l
     {
         const auto& line{lines[static_cast<std::size_t>(row)]};
         draw_label(
-            {bounds.x, bounds.y + row},
+            Point{bounds.x, bounds.y + row},
             " " + line +
                 std::string(static_cast<std::size_t>(std::max(0, whole(bounds.width) - 1 - text_width(line))), ' '),
             {theme.menu_foreground, theme.menu_background});

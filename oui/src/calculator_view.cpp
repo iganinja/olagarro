@@ -9,6 +9,7 @@
 #include <oui/syntax_highlighter.h>
 #include <oui/text_layout.h>
 #include <oui/text_edit.h>
+#include <oui/text_metrics.h>
 #include <oui/translation.h>
 #include <oui/window.h>
 
@@ -82,13 +83,14 @@ class AngleSwitch final : public Widget
 
     [[nodiscard]] Size measure(const Constraints& constraints) const override
     {
-        return constraints.constrain({static_cast<double>(shown_width(text())), 1.0});
+        return constraints.constrain({text_metrics().label_width(text()), 1.0});
     }
 
     void paint(Painter& painter, const Theme& theme) const override
     {
         painter.fill_rect(bounds(), theme.button_background);
-        painter.draw_label({bounds().x, bounds().y}, text(), {theme.button_foreground, theme.button_background});
+        painter.draw_label({bounds().x, bounds().y, bounds().width, 1}, text(),
+                           {theme.button_foreground, theme.button_background});
     }
 
     bool handle_event(const Event& event) override

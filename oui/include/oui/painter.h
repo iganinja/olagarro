@@ -221,6 +221,11 @@ class Painter
     // Interface text, such as a label or a title, over the cells its characters take: a graphical style may set it in
     // a proportional font, placed in those cells as `align` says.
     virtual void draw_label(Point position, std::string_view text, const TextStyle& style, Align align = Align::start);
+    // Interface text set within `area` as `align` says, and cut to it, as a widget sized by
+    // TextMetrics::label_width draws its text in its bounds: a terminal writes it in whole columns from the area's
+    // left, or where they centre or end it, cut to the area's whole columns.
+    virtual void draw_label(const Rect& area, std::string_view text, const TextStyle& style,
+                            Align align = Align::start);
     // Runs of interface text one after another on a line, as prose with words in bold, code or links: a graphical
     // style sets them flowing in a proportional font over `background`, the line's own.
     virtual void draw_label_runs(Point position, const std::vector<LabelRun>& runs, Color background);

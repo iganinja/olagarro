@@ -129,7 +129,7 @@ class MenuBar final : public Widget
     [[nodiscard]] const std::vector<MenuItem>& menu_items() const;
     [[nodiscard]] double menu_top() const;
     [[nodiscard]] double context_x() const;
-    [[nodiscard]] int list_width(const std::vector<MenuItem>& items) const;
+    [[nodiscard]] double list_width(const std::vector<MenuItem>& items) const;
     [[nodiscard]] double menu_x(std::size_t index) const;
     [[nodiscard]] Rect menu_bounds() const;
     [[nodiscard]] Rect submenu_bounds() const;

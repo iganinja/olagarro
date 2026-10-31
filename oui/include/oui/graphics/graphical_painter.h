@@ -87,6 +87,9 @@ class GraphicalPainter final : public Painter
     [[nodiscard]] static Size cell_size(Font& cell_font);
     // How far from its left edge a text field's text starts.
     [[nodiscard]] static int field_padding(Size cell);
+    // The cells interface text `pixels` wide takes with a margin of `margin` pixels at each side, up to a pixel of a
+    // cell `cell` in size; nothing for no text. TextMetrics::label_width in a window.
+    [[nodiscard]] static double label_columns(int pixels, int margin, Size cell);
 
     void fill_rect(const Rect& rect, Color color) override;
     void draw_text(Point position, std::string_view text, const TextStyle& style) override;
@@ -94,6 +97,7 @@ class GraphicalPainter final : public Painter
     void pop_clip() override;
 
     void draw_label(Point position, std::string_view text, const TextStyle& style, Align align) override;
+    void draw_label(const Rect& area, std::string_view text, const TextStyle& style, Align align) override;
     void draw_label_runs(Point position, const std::vector<LabelRun>& runs, Color background) override;
     void draw_window(const Rect& bounds, const WindowLook& look, const Theme& theme) override;
     void draw_button(const Rect& bounds, const ButtonLook& look, const Theme& theme) override;
@@ -138,6 +142,8 @@ class GraphicalPainter final : public Painter
     [[nodiscard]] const GlyphBitmap& cell_glyph(char32_t character);
     [[nodiscard]] const GlyphBitmap& interface_glyph(char32_t character);
     [[nodiscard]] int interface_width(std::string_view text);
+    // label_columns of `text` in this painter's font, margin and cells.
+    [[nodiscard]] double label_columns(std::string_view text);
     // Draws interface text in the pixels given, as `align` says; returns where it starts.
     int label(const PixelRect& area, std::string_view text, Color color, Align align, bool bold = false);
     void focus_ring(const PixelRect& rect);

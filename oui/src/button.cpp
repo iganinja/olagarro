@@ -2,6 +2,7 @@
 #include <oui/command.h>
 #include <oui/utf8.h>
 #include <oui/text_layout.h>
+#include <oui/text_metrics.h>
 
 namespace olagarro::oui
 {
@@ -103,9 +104,12 @@ bool Button::handle_event(const Event& event)
 
 Size Button::measure(const Constraints& constraints) const
 {
-    // Compact, the text and a cell either side on one row; otherwise room for the frame and the shadow below.
-    const double width{static_cast<double>(shown_width(strip_mnemonic(m_text)))};
-    return constraints.constrain({m_compact ? width + 2 : width + 5, m_compact ? 1.0 : 2.0});
+    // Compact, the text and a cell either side on one row; otherwise room for the frame and the shadow below. Drawn in
+    // pixels a button's text is raised round its margins, with no frame of characters beside it, but for an icon.
+    const auto& metrics{text_metrics()};
+    const auto width{metrics.label_width(strip_mnemonic(m_text))};
+    const auto frame{metrics.cell_pixels() && !m_icon ? 0.0 : m_compact ? 2.0 : 5.0};
+    return constraints.constrain({width + frame, m_compact ? 1.0 : 2.0});
 }
 
 void Button::paint(Painter& painter, const Theme& theme) const

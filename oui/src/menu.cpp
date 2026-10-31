@@ -1,5 +1,6 @@
 #include <oui/menu.h>
 #include <oui/text_layout.h>
+#include <oui/text_metrics.h>
 
 #include <algorithm>
 #include <string>
@@ -46,13 +47,13 @@ bool Menu::handle_event(const Event& event)
 }
 Size Menu::measure(const Constraints& constraints) const
 {
-    auto width{0};
+    auto width{0.0};
     for(const auto& item : m_items)
     {
         const auto marker_width{m_commands.checked(item.command_id).has_value() ? 4 : 0};
-        width = std::max(width, static_cast<int>(item.title.size()) + marker_width);
+        width = std::max(width, text_metrics().label_width(item.title) + marker_width);
     }
-    return constraints.constrain({static_cast<double>(width), static_cast<double>(m_items.size())});
+    return constraints.constrain({width, static_cast<double>(m_items.size())});
 }
 void Menu::paint(Painter& painter, const Theme& theme) const
 {
@@ -71,8 +72,8 @@ void Menu::paint(Painter& painter, const Theme& theme) const
         {
             painter.draw_check_mark({bounds().x, y}, *checked, style);
         }
-        painter.draw_label({bounds().x + (checked ? text_width(check_marker(*checked)) : 0), y},
-                           m_items.at(index).title, style);
+        const auto marker{checked ? text_width(check_marker(*checked)) : 0};
+        painter.draw_label({bounds().x + marker, y, bounds().width - marker, 1}, m_items.at(index).title, style);
     }
 }
 std::unique_ptr<Menu> menu(CommandRegistry& commands)

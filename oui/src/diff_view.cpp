@@ -321,8 +321,9 @@ void DiffView::paint(Painter& painter, const Theme& theme) const
     // The bar over the sides, with their names.
     const TextStyle header{theme.table_header_foreground, theme.table_header_background};
     painter.fill_rect({area.x, area.y, area.width, 1}, header.background);
-    painter.draw_label({area.x + 1, area.y}, fit_from_start(m_left_title, std::max(0, left_width() - 2)), header);
-    painter.draw_label({right_x + 1, area.y}, fit_from_start(m_right_title, std::max(0, right_width() - 2)), header);
+    painter.draw_label(Point{area.x + 1, area.y}, fit_from_start(m_left_title, std::max(0, left_width() - 2)), header);
+    painter.draw_label(Point{right_x + 1, area.y}, fit_from_start(m_right_title, std::max(0, right_width() - 2)),
+                       header);
 
     const TextStyle divider{theme.line_number_foreground, theme.editor_background};
     for(int screen_row{}; screen_row < content_rows(); ++ screen_row)
@@ -375,7 +376,7 @@ void DiffView::paint(Painter& painter, const Theme& theme) const
     if(area.height > 1)
     {
         painter.fill_rect({area.x, footer_y, area.width, 1}, footer.background);
-        painter.draw_label({area.x + 1, footer_y}, fit_text(status, std::max(0, whole(area.width) - 2)), footer);
+        painter.draw_label(Point{area.x + 1, footer_y}, fit_text(status, std::max(0, whole(area.width) - 2)), footer);
     }
 }
 

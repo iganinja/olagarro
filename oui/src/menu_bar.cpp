@@ -26,17 +26,27 @@ namespace
     return columns;
 }
 
-// Draws a title with its mnemonic letter underlined, in the hotkey colour unless `hotkey` is empty.
+// Draws a title in the cells from `position` its text takes, with its mnemonic letter underlined, in the hotkey colour
+// unless `hotkey` is empty.
 void draw_with_mnemonic(Painter& painter, Point position, std::string_view title, const TextStyle& style,
-                        std::optional<Color> hotkey = std::nullopt, Align align = Align::start)
+                        std::optional<Color> hotkey = std::nullopt)
 {
     const auto shown{strip_mnemonic(title)};
+    const Rect area{position.x, position.y, text_metrics().label_width(shown), 1};
     if(const auto offset{mnemonic_offset(title)})
     {
-        painter.draw_mnemonic_label(position, shown, *offset, style, hotkey.value_or(style.foreground), align);
+        painter.push_clip(area);
+        painter.draw_mnemonic_label(position, shown, *offset, style, hotkey.value_or(style.foreground));
+        painter.pop_clip();
         return;
     }
-    painter.draw_label(position, shown, style, align);
+    painter.draw_label(area, shown, style);
+}
+
+// The cells a menu's title takes on the bar: its text and a cell each side.
+[[nodiscard]] double title_width(std::string_view title)
+{
+    return text_metrics().label_width(strip_mnemonic(title)) + 2;
 }
 
 [[nodiscard]] bool inside(const Rect& area, double x, double y)
@@ -294,16 +304,18 @@ const std::vector<MenuItem>& MenuBar::open_items() const
     return m_submenu_open ? m_submenu_items : menu_items();
 }
 
-int MenuBar::list_width(const std::vector<MenuItem>& items) const
+double MenuBar::list_width(const std::vector<MenuItem>& items) const
 {
-    auto width{5};
+    const auto& metrics{text_metrics()};
+    auto width{5.0};
     for(const auto& item : items)
     {
         const auto entry{row(item)};
-        auto columns{shown_width(strip_mnemonic(entry.title)) + (entry.checked ? 4 : 0) + (entry.submenu ? 2 : 0)};
+        auto columns{metrics.label_width(strip_mnemonic(entry.title)) + (entry.checked ? 4 : 0) +
+                     (entry.submenu ? 2 : 0)};
         if(!entry.shortcut.empty())
         {
-            columns += 2 + shown_width(entry.shortcut);
+            columns += 2 + metrics.label_width(entry.shortcut);
         }
         width = std::max(width, columns + 4);
     }
@@ -315,7 +327,7 @@ double MenuBar::menu_x(std::size_t index) const
     auto x{bounds().x};
     for(std::size_t current{}; current < index; ++ current)
     {
-        x += shown_width(strip_mnemonic(m_menus.at(current).title)) + 2;
+        x += title_width(m_menus.at(current).title);
     }
     return x;
 }
@@ -706,7 +718,7 @@ bool MenuBar::handle_mouse(const MouseEvent& mouse)
         for(std::size_t index{}; index < m_menus.size(); ++ index)
         {
             const auto x{menu_x(index)};
-            if(mouse.x >= x && mouse.x < x + shown_width(strip_mnemonic(m_menus.at(index).title)) + 2)
+            if(mouse.x >= x && mouse.x < x + title_width(m_menus.at(index).title))
             {
                 if(mouse.pressed)
                 {
@@ -849,7 +861,8 @@ void MenuBar::paint_list(Painter& painter, const Theme& theme, const std::vector
         }
         if(!entry.shortcut.empty())
         {
-            painter.draw_label({area.x + area.width - 2 - shown_width(entry.shortcut), y}, entry.shortcut,
+            const auto width{text_metrics().label_width(entry.shortcut)};
+            painter.draw_label({area.x + area.width - 2 - width, y, width, 1}, entry.shortcut,
                                {!entry.enabled ? theme.disabled_foreground
                                 : highlighted  ? foreground
                                                : theme.muted_text,
@@ -870,10 +883,9 @@ void MenuBar::paint(Painter& painter, const Theme& theme) const
                               selected ? theme.menu_selected_background : theme.menu_background};
         const auto x{menu_x(index)};
         const auto& title{m_menus.at(index).title};
-        painter.fill_rect({x, bounds().y, static_cast<double>(shown_width(strip_mnemonic(title)) + 2), 1},
-                          style.background);
+        painter.fill_rect({x, bounds().y, title_width(title), 1}, style.background);
         draw_with_mnemonic(painter, {x + 1, bounds().y}, title, style,
-                           selected ? std::nullopt : std::optional<Color>{theme.hotkey_foreground}, Align::center);
+                           selected ? std::nullopt : std::optional<Color>{theme.hotkey_foreground});
     }
     if(m_active == no_menu)
     {
@@ -890,7 +902,7 @@ void MenuBar::paint(Painter& painter, const Theme& theme) const
     {
         const auto y{lowest.y + lowest.height + 1};
         painter.fill_rect({lowest.x, y, lowest.width, 1}, theme.menu_background);
-        painter.draw_label({lowest.x + 1, y}, *tooltip, {theme.menu_foreground, theme.menu_background});
+        painter.draw_label(Point{lowest.x + 1, y}, *tooltip, {theme.menu_foreground, theme.menu_background});
     }
 }
 

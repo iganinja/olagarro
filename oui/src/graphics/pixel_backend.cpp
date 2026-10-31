@@ -20,13 +20,20 @@ namespace
 class PixelTextMetrics final : public TextMetrics
 {
   public:
-    PixelTextMetrics(FontSet fonts, Size cell) : m_fonts{fonts}, m_cell{cell} {}
+    PixelTextMetrics(FontSet fonts, Size cell, int text_margin)
+        : m_fonts{fonts}, m_cell{cell}, m_text_margin{text_margin}
+    {
+    }
 
     int cell_width() const override { return whole(m_cell.width); }
     double column_step() const override { return 1.0 / m_cell.width; }
     double row_step() const override { return 1.0 / m_cell.height; }
     std::optional<Size> cell_pixels() const override { return m_cell; }
     int width(std::string_view text) const override { return m_fonts.interface_width(text); }
+    double label_width(std::string_view text) const override
+    {
+        return GraphicalPainter::label_columns(m_fonts.interface_width(text), m_text_margin, m_cell);
+    }
     int field_padding() const override { return GraphicalPainter::field_padding(m_cell); }
     int popup_frame_rows() const override { return 0; }
     int panel_gap() const override { return 1; }
@@ -54,6 +61,7 @@ class PixelTextMetrics final : public TextMetrics
   private:
     FontSet m_fonts;
     Size m_cell;
+    int m_text_margin;
 };
 
 } // namespace
@@ -96,7 +104,8 @@ void PixelBackend::load_fonts()
     m_interface_font = built_in_interface_font(level.interface_pixels, m_style.interface_font);
     m_cell = GraphicalPainter::cell_size(*m_cell_font);
     m_symbols = symbol_font(whole(m_cell.width), whole(m_cell.height), m_cell_font->ascent());
-    m_metrics = std::make_unique<PixelTextMetrics>(FontSet{*m_cell_font, *m_interface_font, *m_symbols}, m_cell);
+    m_metrics = std::make_unique<PixelTextMetrics>(FontSet{*m_cell_font, *m_interface_font, *m_symbols}, m_cell,
+                                                   m_style.text_margin);
     set_text_metrics(m_metrics.get());
 }
 

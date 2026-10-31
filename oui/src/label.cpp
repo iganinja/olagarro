@@ -1,6 +1,7 @@
 #include <oui/label.h>
 #include <oui/command.h>
 #include <oui/text_layout.h>
+#include <oui/text_metrics.h>
 #include <oui/utf8.h>
 
 #include <algorithm>
@@ -87,8 +88,8 @@ Size Label::measure(const Constraints& constraints) const
     if(!m_wrap)
     {
         return constraints.constrain(
-            {static_cast<double>((m_has_marker ? m_marker_columns : 0) +
-                                 shown_width(buddy() != nullptr ? strip_mnemonic(m_text) : m_text)),
+            {(m_has_marker ? m_marker_columns : 0) +
+                 text_metrics().label_width(buddy() != nullptr ? strip_mnemonic(m_text) : m_text),
              1.0});
     }
     const auto width{std::max(1, std::min(shown_width(m_text), whole(constraints.max_width)))};
@@ -111,22 +112,21 @@ void Label::paint(Painter& painter, const Theme& theme) const
     {
         style.attributes |= text_bold;
     }
+    const auto align{m_centered ? Align::center : m_right_aligned ? Align::end : Align::start};
     if(!m_wrap)
     {
-        const auto offset{m_centered        ? std::max(0.0, std::floor((bounds().width - shown_width(m_text)) / 2))
-                          : m_right_aligned ? std::max(0.0, bounds().width - shown_width(m_text))
-                                            : 0.0};
         if(const auto mark{marker()})
         {
             painter.draw_marker({bounds().x, bounds().y}, *mark, style);
-            painter.draw_label({bounds().x + mark->columns, bounds().y}, m_text, style);
+            painter.draw_label({bounds().x + mark->columns, bounds().y, bounds().width - mark->columns, 1}, m_text,
+                               style);
             return;
         }
         if(buddy() != nullptr)
         {
             const auto shown{strip_mnemonic(m_text)};
-            const auto room{bounds().width - shown_width(shown)};
-            const Point at{bounds().x + (m_centered        ? std::max(0.0, std::floor(room / 2))
+            const auto room{bounds().width - text_metrics().label_width(shown)};
+            const Point at{bounds().x + (m_centered        ? std::max(0.0, snap_x(room / 2))
                                          : m_right_aligned ? std::max(0.0, room)
                                                            : 0.0),
                            bounds().y};
@@ -138,10 +138,7 @@ void Label::paint(Painter& painter, const Theme& theme) const
             painter.draw_label(at, shown, style);
             return;
         }
-        painter.draw_label({bounds().x + offset, bounds().y}, m_text, style,
-                           m_centered        ? Align::center
-                           : m_right_aligned ? Align::end
-                                             : Align::start);
+        painter.draw_label({bounds().x, bounds().y, bounds().width, 1}, m_text, style, align);
         return;
     }
     const auto lines{wrap_text(m_text, whole(bounds().width))};
@@ -149,9 +146,7 @@ void Label::paint(Painter& painter, const Theme& theme) const
     const auto y_offset{m_centered ? std::max(0.0, std::floor((bounds().height - total_height) / 2)) : 0.0};
     for(std::size_t index{}; index < lines.size(); ++ index)
     {
-        const auto line_offset{
-            m_centered ? std::max(0.0, std::floor((bounds().width - shown_width(lines.at(index))) / 2)) : 0.0};
-        painter.draw_label({bounds().x + line_offset, bounds().y + y_offset + static_cast<double>(index)},
+        painter.draw_label({bounds().x, bounds().y + y_offset + static_cast<double>(index), bounds().width, 1},
                            lines.at(index), style, m_centered ? Align::center : Align::start);
     }
 }

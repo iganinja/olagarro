@@ -27,7 +27,7 @@ struct StatusText
 };
 
 // How many cells `keys` take at the start of a status line, with the line that sets them apart from the text after.
-[[nodiscard]] int status_keys_width(const std::vector<StatusKey>& keys);
+[[nodiscard]] double status_keys_width(const std::vector<StatusKey>& keys);
 
 // A one-row bar with text at its left and right ends.
 class StatusBar final : public Widget

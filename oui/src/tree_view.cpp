@@ -344,7 +344,7 @@ void TreeView::paint(Painter& painter, const Theme& theme) const
     if(!m_header.empty() && m_top_padding > 0)
     {
         painter.fill_rect({bounds().x, bounds().y, bounds().width, 1}, theme.table_header_background);
-        painter.draw_label({bounds().x, bounds().y}, m_header,
+        painter.draw_label(Point{bounds().x, bounds().y}, m_header,
                            {theme.table_header_foreground, theme.table_header_background, text_bold});
     }
     const auto nodes{visible_nodes_const()};
@@ -353,7 +353,7 @@ void TreeView::paint(Painter& painter, const Theme& theme) const
         const auto msg_x{bounds().x +
                          std::max(0, (whole(bounds().width) - static_cast<int>(m_empty_message.size())) / 2)};
         const auto msg_y{bounds().y + std::max(0, whole(bounds().height) / 2 - 1)};
-        painter.draw_label({msg_x, msg_y}, m_empty_message, {theme.panel_foreground, background}, Align::center);
+        painter.draw_label(Point{msg_x, msg_y}, m_empty_message, {theme.panel_foreground, background}, Align::center);
         return;
     }
     const auto last{m_scroll_offset + visible_height()};
@@ -391,7 +391,7 @@ void TreeView::paint(Painter& painter, const Theme& theme) const
                                   theme.item_selected_background);
             }
             painter.draw_text({bounds().x + indentation, y}, line == 0 ? prefix : "", style);
-            painter.draw_label({bounds().x + indentation + marker_width, y}, lines.at(line), style);
+            painter.draw_label(Point{bounds().x + indentation + marker_width, y}, lines.at(line), style);
         }
     }
     if(has_scroll)

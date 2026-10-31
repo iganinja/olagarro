@@ -28,6 +28,9 @@ class TextMetrics
     // The size of a cell in pixels where the backend draws pixels; none in a terminal.
     [[nodiscard]] virtual std::optional<Size> cell_pixels() const;
     [[nodiscard]] virtual int width(std::string_view text) const;
+    // How many cells interface text takes as a label shows it, with the margins it keeps from its edges: its columns
+    // in a terminal; in a window its pixels and margins, up to the column step. No text takes none.
+    [[nodiscard]] virtual double label_width(std::string_view text) const;
     // How far from the left edge of a text field its text starts.
     [[nodiscard]] virtual int field_padding() const;
     // How many rows the frame of a drop-down menu takes above and below its entries: a terminal draws a line in

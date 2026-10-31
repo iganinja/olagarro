@@ -100,7 +100,7 @@ theme. The look says what the element shows, never how.
 
 | Element | Look | Used for |
 |---------|------|----------|
-| `draw_label` | text, `TextStyle`, `Align` | Interface text: a label, a title. A graphical style sets it in a proportional font within the cells, aligned as asked |
+| `draw_label` | a position or an area, text, `TextStyle`, `Align` | Interface text: a label, a title. A graphical style sets it in a proportional font within the cells, aligned as asked; given an area, within it and cut to it, as a widget measured by `label_width` draws its text in its bounds |
 | `draw_label_runs` | `LabelRun`s, line background | Runs of interface text in their own styles on one line, as prose with bold words, code or links |
 | `draw_mnemonic_label` | text, byte of the mnemonic, its colour | Interface text with the letter Alt opens underlined |
 | `draw_window` | `WindowLook`: title, double or single frame, resizable, placing, closable, minimizable, maximizable, background | A window's background, frame, title, buttons and shadow; its content paints over it |
@@ -262,9 +262,10 @@ track starts in as a terminal shows it, is drawn as far from the track's own sta
 - **Cells.** `draw_text` fills each cell with the background and draws the character centred in it from the cell
   font, combining accents composed as in the cell buffer. Bold draws the glyph twice a pixel apart, underline is a
   line two pixels under the baseline, and dim mixes the foreground towards the background.
-- **Interface text.** `draw_label`, `draw_label_runs` and `draw_mnemonic_label` fill the cells the text takes,
-  `shown_width(text)` of them, and set the text in the interface font, vertically centred, kept
-  `GraphicalStyle::text_margin` pixels from the edge it is aligned to.
+- **Interface text.** `draw_label`, `draw_label_runs` and `draw_mnemonic_label` at a position fill the cells the text
+  takes, `shown_width(text)` of them, and set the text in the interface font, vertically centred, kept
+  `GraphicalStyle::text_margin` pixels from the edge it is aligned to. `draw_label` in an area sets it the same way
+  within the area, fills the background only behind the text and its margins, and draws nothing outside the area.
 - **Elements.** Windows, buttons, tabs, check boxes, scrollbars, bars, menus and fields are bevels (a face with a
   light edge at the top and left and a shadow edge at the bottom and right, or the other way round when sunken) in the
   `GraphicalStyle`'s shades, with a focus ring in its `focus` colour. Shapes are designed for cells 24 pixels high and
@@ -321,12 +322,20 @@ Widgets use them through [text_layout.h](../oui/include/oui/text_layout.h):
 
 - `text_width(text)`: columns, always, for text on the grid.
 - `shown_width(text)`: the cells interface text takes as it shows, rounded up to whole cells, with the field padding
-  on both sides: its columns in a terminal, fewer in a proportional font. What a label measures and what a painter
-  fills behind it.
+  on both sides: its columns in a terminal, fewer in a proportional font. What a painter fills behind text drawn at a
+  position.
+
+and through `text_metrics()` itself:
+
+- `label_width(text)`: the cells interface text takes as a label shows it, with its margins: its columns in a
+  terminal; in a window its pixels and `text_margin` on each side, up to the column step, so it may end between cells.
+  What a label, a button, a check box, a combo box, a tab, a menu's entries and the status bar's keys measure; such a
+  widget draws its text with `draw_label` in its bounds. Nothing for no text.
 - `wrap_text(text, width)` and `fit_text(text, width)`: lines that fit, broken at spaces, or the text cut with `~`,
   both measured with `text_metrics()`.
 
-So in a window a label is narrower than its characters, a menu needs no frame rows, and a window has a title bar of
+So in a window a label is narrower than its characters, a button with text is as wide as its text and margins (its
+raised face needs no cells of frame and shadow), a menu needs no frame rows, and a window has a title bar of
 two rows; in a terminal the same code gives the Turbo Vision shapes.
 
 ## Zoom
@@ -367,8 +376,8 @@ What a `paint()` does, from OUI's own widgets:
   `draw_label`: then it looks right in every style, a terminal's and a graphical one, with no code for each. Plain
   `draw_text` and `fill_rect` are for content on the grid: code, tables, a terminal's screen.
 - **Interface text goes through `draw_label`** (or `draw_mnemonic_label` with an Alt letter, `draw_label_runs` for
-  mixed styles), not `draw_text`, so a graphical style can set it in the proportional font; measure it with
-  `shown_width`, not `text_width`.
+  mixed styles), not `draw_text`, so a graphical style can set it in the proportional font; a widget sized by its
+  text measures it with `text_metrics().label_width` and draws it with `draw_label` in an area, not `text_width`.
 - **Colours come from the theme**, or from a `ColorRef` resolved with it, never written in: a widget with a fixed
   colour would ignore every theme. See [ColorRef](themes.md#colorref-colours-resolved-when-painting).
 - **It paints its background** where it has one; what is under it is whatever was painted before.

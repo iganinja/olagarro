@@ -41,6 +41,11 @@ int TextMetrics::width(std::string_view text) const
     return text_width(text);
 }
 
+double TextMetrics::label_width(std::string_view text) const
+{
+    return static_cast<double>(text_width(text));
+}
+
 int TextMetrics::field_padding() const
 {
     return 0;

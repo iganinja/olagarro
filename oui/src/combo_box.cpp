@@ -1,6 +1,7 @@
 #include <oui/combo_box.h>
 #include <oui/utf8.h>
 #include <oui/text_layout.h>
+#include <oui/text_metrics.h>
 
 #include <algorithm>
 
@@ -135,12 +136,12 @@ bool ComboBox::handle_event(const Event& event)
 
 Size ComboBox::measure(const Constraints& constraints) const
 {
-    auto width{0};
+    auto width{0.0};
     for(const auto& option : m_options)
     {
-        width = std::max(width, shown_width(option));
+        width = std::max(width, text_metrics().label_width(option));
     }
-    return constraints.constrain({static_cast<double>(width + 4), 1.0});
+    return constraints.constrain({width + 4, 1.0});
 }
 
 Rect ComboBox::paint_bounds() const
@@ -196,7 +197,9 @@ void ComboBox::paint(Painter& painter, const Theme& theme) const
                                          : closed_foreground};
         const double y{bounds().y + static_cast<double>(row)};
         painter.fill_rect({bounds().x, y, bounds().width, 1}, background);
-        painter.draw_label({bounds().x + 1, y}, m_options.at(option), {foreground, background});
+        // Closed, the text stops before the arrow's cells.
+        painter.draw_label({bounds().x + 1, y, std::max(0.0, bounds().width - (m_expanded ? 1 : 3)), 1},
+                           m_options.at(option), {foreground, background});
         if(!m_expanded)
         {
             // The arrow sits at the far right, so the field reads as a dropdown at a glance.

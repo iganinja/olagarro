@@ -1384,7 +1384,7 @@ void Application::paint_key_mode_hint(Painter& painter, Size size) const
     {
         const auto y{top + static_cast<double>(index)};
         painter.draw_bar({0, y, size.width, 1}, BarKind::status, m_theme);
-        painter.draw_label({1, y}, lines[index], style);
+        painter.draw_label(Point{1, y}, lines[index], style);
     }
 }
 namespace

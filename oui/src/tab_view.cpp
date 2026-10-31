@@ -9,9 +9,9 @@ namespace olagarro::oui
 namespace
 {
 
-[[nodiscard]] int title_columns(std::string_view title)
+[[nodiscard]] double title_columns(std::string_view title)
 {
-    return shown_width(title);
+    return text_metrics().label_width(title);
 }
 
 } // namespace
@@ -90,7 +90,7 @@ void TabView::select(std::size_t index)
 }
 void TabView::ensure_selected_visible()
 {
-    auto total_width{0};
+    auto total_width{0.0};
     for(std::size_t index{}; index < m_titles.size(); ++ index)
     {
         total_width += tab_width(index);
@@ -215,7 +215,7 @@ void TabView::set_closable(bool closable)
 {
     m_closable = closable;
 }
-int TabView::tab_width(std::size_t index) const
+double TabView::tab_width(std::size_t index) const
 {
     return title_columns(m_titles.at(index)) + (m_closable ? 4 : 2);
 }
@@ -226,7 +226,7 @@ void TabView::paint(Painter& painter, const Theme& theme) const
     for(std::size_t index{}; index < m_titles.size(); ++ index)
     {
         painter.draw_tab(
-            {x, bounds().y, static_cast<double>(tab_width(index)), 1},
+            {x, bounds().y, tab_width(index), 1},
             {m_titles.at(index), index == m_selected, m_closable, m_is_highlighted && m_is_highlighted(index)}, theme);
         x += tab_width(index);
     }

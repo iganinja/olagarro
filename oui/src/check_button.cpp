@@ -2,6 +2,7 @@
 #include <oui/command.h>
 #include <oui/painter.h>
 #include <oui/text_layout.h>
+#include <oui/text_metrics.h>
 #include <oui/theme.h>
 #include <oui/utf8.h>
 
@@ -100,7 +101,7 @@ bool CheckButton::handle_event(const Event& event)
 
 Size CheckButton::measure(const Constraints& constraints) const
 {
-    const double width{static_cast<double>(shown_width(strip_mnemonic(m_text)) + 5)};
+    const auto width{text_metrics().label_width(strip_mnemonic(m_text)) + 5};
     return constraints.constrain({width, 1.0});
 }
 

@@ -325,7 +325,8 @@ void FolderView::paint(Painter& painter, const Theme& theme) const
     {
         const auto x{bounds().x + std::max(0, (whole(bounds().width) - text_width(m_texts.empty)) / 2)};
         const auto y{bounds().y + std::max(0, whole(bounds().height) / 2 - 1)};
-        painter.draw_label({x, y}, m_texts.empty, {theme.panel_foreground, background_color(theme)}, Align::center);
+        painter.draw_label(Point{x, y}, m_texts.empty, {theme.panel_foreground, background_color(theme)},
+                           Align::center);
         return;
     }
     // The header says where the panel is, and whether it is held to a project: outside one it stands out.
@@ -339,9 +340,9 @@ void FolderView::paint(Painter& painter, const Theme& theme) const
                           : m_scope ? theme.table_header_foreground
                                     : theme.warning_foreground,
                           header_background};
-    painter.draw_label({bounds().x, bounds().y}, label, style);
+    painter.draw_label(Point{bounds().x, bounds().y}, label, style);
     const auto label_width{shown_width(label)};
-    painter.draw_label({bounds().x + label_width, bounds().y},
+    painter.draw_label(Point{bounds().x + label_width, bounds().y},
                        fit_from_end(header_location(), std::max(0, whole(bounds().width) - label_width)), style);
 }
 

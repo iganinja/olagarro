@@ -737,7 +737,7 @@ void Table::paint(Painter& painter, const Theme& theme) const
                 }
                 // Held to its column, as a proportional font may draw past the cells it counts.
                 painter.push_clip({x, y, std::max(0.0, width), static_cast<double>(m_row_heights[row])});
-                painter.draw_label({x, y}, fit_text(text->text(), std::max(0, whole(width))), style);
+                painter.draw_label(Point{x, y}, fit_text(text->text(), std::max(0, whole(width))), style);
                 painter.pop_clip();
             }
             else

@@ -13,6 +13,7 @@
 #include <oui/grid.h>
 #include <oui/label.h>
 #include <oui/layout.h>
+#include <oui/menu_bar.h>
 #include <oui/popup_list.h>
 #include <oui/split_view.h>
 #include <oui/text_layout.h>
@@ -654,16 +655,139 @@ TEST(OuiGraphicsTests, WidgetsWithTextAskForTheCellsItShowsInNotItsCharacters)
     Application application{std::move(backend)};
     const std::string text{"Rename Files"};
     const auto cell{whole(image.cell_size().width)};
-    // Room for the text as drawn, and for the padding interface text keeps.
-    const auto at_least{(text_metrics().width(text) + 2 * text_metrics().field_padding() + cell - 1) / cell};
-    ASSERT_LT(at_least, text_width(text));
+    // Room for the text as drawn, and for the margins interface text keeps, to the pixel.
+    const auto shown{(text_metrics().width(text) + 2 * classic_style().text_margin) / static_cast<double>(cell)};
+    ASSERT_LT(shown, text_width(text));
+    EXPECT_DOUBLE_EQ(text_metrics().label_width(text), shown);
     const auto width_of{[](const Widget& widget) { return widget.measure({}).width; }};
-    EXPECT_EQ(width_of(*label(text)), at_least);
-    EXPECT_EQ(width_of(*button(text)), at_least + 5);
-    EXPECT_EQ(width_of(*check_button(text)), at_least + 5);
-    EXPECT_EQ(width_of(*combo_box({text, "Go"})), at_least + 4);
-    // No text takes nothing, padding and all: drawn, it covers nothing beside it.
+    EXPECT_DOUBLE_EQ(width_of(*label(text)), shown);
+    // A button's raised face is round the text's margins, with no frame of characters beside them.
+    EXPECT_DOUBLE_EQ(width_of(*button(text)), shown);
+    EXPECT_DOUBLE_EQ(width_of(*check_button(text)), shown + 5);
+    EXPECT_DOUBLE_EQ(width_of(*combo_box({text, "Go"})), shown + 4);
+    // No text takes nothing, margins and all: drawn, it covers nothing beside it.
     EXPECT_EQ(shown_width(""), 0);
+    EXPECT_EQ(text_metrics().label_width(""), 0);
+}
+
+TEST(OuiGraphicsTests, InATerminalALabelIsAsWideAsItsColumns)
+{
+    auto backend{scripted_backend({}, {40, 12})};
+    Application application{std::move(backend)};
+    EXPECT_EQ(text_metrics().label_width("Rename Files"), 12);
+    EXPECT_EQ(label("Rename Files")->measure({}).width, 12);
+    EXPECT_EQ(button("OK")->measure({}).width, 7);
+}
+
+TEST(OuiGraphicsTests, ADialogsOkAndCancelAreAsWideAsTheirTextAndMargins)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    // As a message box sets its answers.
+    auto actions{row()};
+    actions->set_gap(Spacing::tight);
+    actions->set_centered(true);
+    const auto* const ok{&button("OK", *actions, [] {})};
+    const auto* const cancel{&button("Cancel", *actions, [] {})};
+    application.set_content(std::move(actions));
+    application.run_frame();
+    const auto margins{2 * classic_style().text_margin};
+    EXPECT_DOUBLE_EQ(ok->bounds().width, (text_metrics().width("OK") + margins) / 12.0);
+    EXPECT_DOUBLE_EQ(cancel->bounds().width, (text_metrics().width("Cancel") + margins) / 12.0);
+    EXPECT_LT(ok->bounds().width, 7) << "fewer than the cells of a terminal's \"[ OK ]\" and its shadow";
+}
+
+TEST(OuiGraphicsTests, AMenuInAWindowIsAsWideAsItsWidestEntry)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    // The bar is narrow, so the room it takes when open is its menu's and the menu's shadow.
+    auto layout{grid()};
+    layout->set_columns({Length::cells(2), Length::fill()});
+    layout->set_rows({Length::cells(1), Length::fill()});
+    auto& bar{layout->add(menu_bar(application.commands()))};
+    layout->add(label("Beside"));
+    const std::string longest{"Save everything that is open"};
+    bar.add_menu("&File", {menu_action("Open", [] {}).with_shortcut("Ctrl+O"), menu_action(longest, [] {}),
+                           menu_action("Wrap", [] {}, true, true)});
+    application.set_content(std::move(layout));
+    bar.open_menu(0);
+    application.run_frame();
+    const auto& metrics{text_metrics()};
+    // Each entry's text and its shortcut two cells after it, a check mark's four cells, and the frame's four.
+    const auto widest{std::max({metrics.label_width("Open") + 2 + metrics.label_width("Ctrl+O"),
+                                metrics.label_width(longest), metrics.label_width("Wrap") + 4})};
+    ASSERT_DOUBLE_EQ(widest, metrics.label_width(longest));
+    ASSERT_NE(widest, std::floor(widest)) << "between cells, so whole cells would not give it";
+    EXPECT_DOUBLE_EQ(bar.paint_bounds().width, widest + 4 + 1);
+    EXPECT_LT(widest, static_cast<double>(text_width(longest)));
+}
+
+TEST(OuiGraphicsTests, NoLabelsInkFallsOutsideItsBounds)
+{
+    auto backend{image_backend({1000, 700})};
+    auto& image{*backend};
+    Application application{std::move(backend)};
+    const Color ink{250, 10, 200};
+    auto content{column()};
+    std::vector<Label*> labels;
+    const auto add{[&](std::string_view text, Container& parent) -> Label&
+                   {
+                       auto& added{parent.add(label(text))};
+                       added.set_color(ink);
+                       labels.push_back(&added);
+                       return added;
+                   }};
+    add("Starts at its left", row(*content));
+    add("Centred", row(*content)).set_centered(true);
+    add("At its right", row(*content)).set_right_aligned(true);
+    add("Bold and wide", row(*content)).set_bold(true);
+    // Narrower than its text: what is cut does not show in the empty cells beside it.
+    auto& narrow{content->add(grid())};
+    narrow.set_columns({Length::cells(3), Length::cells(30), Length::fill()});
+    add("Much longer than three cells", narrow);
+    narrow.add(label(""));
+    add("Centred in more room than it needs", narrow).set_centered(true);
+    application.set_content(std::move(content));
+    application.run_frame();
+    const auto& canvas{image.canvas()};
+    std::vector<int> inked(labels.size());
+    int outside{};
+    std::string first_outside;
+    for(int y{}; y < canvas.height(); ++ y)
+    {
+        for(int x{}; x < canvas.width(); ++ x)
+        {
+            if(!same(canvas.pixel_at(x, y), ink))
+            {
+                continue;
+            }
+            bool inside{false};
+            for(std::size_t index{}; index < labels.size(); ++ index)
+            {
+                const auto& bounds{labels[index]->bounds()};
+                if(x >= pixel_of(bounds.x, 12) && x < pixel_of(bounds.x + bounds.width, 12) &&
+                   y >= pixel_of(bounds.y, 24) && y < pixel_of(bounds.y + bounds.height, 24))
+                {
+                    inside = true;
+                    ++ inked[index];
+                }
+            }
+            if(!inside)
+            {
+                if(outside == 0)
+                {
+                    first_outside = std::to_string(x) + ", " + std::to_string(y);
+                }
+                ++ outside;
+            }
+        }
+    }
+    EXPECT_EQ(outside, 0) << "the first at " << first_outside;
+    for(std::size_t index{}; index < labels.size(); ++ index)
+    {
+        EXPECT_GT(inked[index], 0) << labels[index]->text();
+    }
 }
 
 TEST(OuiGraphicsTests, ATooltipInPixelsHasAnEdgeAndLetsWhatIsUnderShowThrough)
