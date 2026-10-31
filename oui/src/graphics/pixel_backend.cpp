@@ -34,6 +34,7 @@ class PixelTextMetrics final : public TextMetrics
     {
         return GraphicalPainter::label_columns(m_fonts.interface_width(text), m_text_margin, m_cell);
     }
+    int text_margin() const override { return m_text_margin; }
     int field_padding() const override { return GraphicalPainter::field_padding(m_cell); }
     int popup_frame_rows() const override { return 0; }
     int panel_gap() const override { return 1; }

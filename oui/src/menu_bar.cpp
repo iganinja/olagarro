@@ -54,6 +54,12 @@ void draw_with_mnemonic(Painter& painter, Point position, std::string_view title
     return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height;
 }
 
+// Whether a point is on the bar's row, anywhere in it: a window's pointer falls between cells.
+[[nodiscard]] bool on_bar(const Rect& bounds, double x, double y)
+{
+    return inside({bounds.x, bounds.y, bounds.width, 1}, x, y);
+}
+
 } // namespace
 
 MenuItem::MenuItem(std::string command_id) : m_command_id{std::move(command_id)}
@@ -497,8 +503,7 @@ void MenuBar::dismiss_overlays_at(double x, double y)
     {
         return;
     }
-    const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && whole(y - bounds().y) == 0};
-    if(!on_bar && !inside(menu_bounds(), x, y) && !(m_submenu_open && inside(submenu_bounds(), x, y)))
+    if(!on_bar(bounds(), x, y) && !inside(menu_bounds(), x, y) && !(m_submenu_open && inside(submenu_bounds(), x, y)))
     {
         close_menu();
     }
@@ -511,10 +516,9 @@ Widget* MenuBar::hit_test(double x, double y)
     {
         return nullptr;
     }
-    const auto on_bar{x >= bounds().x && x < bounds().x + bounds().width && whole(y - bounds().y) == 0};
     const auto on_menu{m_active != no_menu && inside(menu_bounds(), x, y)};
     const auto on_sub{m_submenu_open && inside(submenu_bounds(), x, y)};
-    return on_bar || on_menu || on_sub ? this : nullptr;
+    return on_bar(bounds(), x, y) || on_menu || on_sub ? this : nullptr;
 }
 
 Widget* MenuBar::keyboard_target()
@@ -718,7 +722,7 @@ bool MenuBar::handle_mouse(const MouseEvent& mouse)
     {
         return false;
     }
-    if(whole(mouse.y - bounds().y) == 0 && mouse.x >= bounds().x && mouse.x < bounds().x + bounds().width)
+    if(on_bar(bounds(), mouse.x, mouse.y))
     {
         for(std::size_t index{}; index < m_menus.size(); ++ index)
         {

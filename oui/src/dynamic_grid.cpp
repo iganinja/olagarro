@@ -31,7 +31,8 @@ Size DynamicGrid::cell_size(const Constraints& constraints) const
 }
 int DynamicGrid::column_count(double width, double cell_width) const
 {
-    return std::max(1, whole((width + spacing_cells(m_gap)) / (cell_width + spacing_cells(m_gap))));
+    const auto gap{length_across(spacing_length(m_gap))};
+    return std::max(1, whole((width + gap) / (cell_width + gap)));
 }
 Size DynamicGrid::measure(const Constraints& constraints) const
 {
@@ -43,21 +44,23 @@ Size DynamicGrid::measure(const Constraints& constraints) const
     const auto columns{column_count(constraints.max_width, cell.width)};
     const auto rows{static_cast<int>((children().size() + static_cast<std::size_t>(columns) - 1) /
                                      static_cast<std::size_t>(columns))};
-    const auto gap{spacing_cells(m_gap)};
-    return constraints.constrain({columns * cell.width + (columns - 1) * gap, rows * cell.height + (rows - 1) * gap});
+    const auto gap{spacing_length(m_gap)};
+    return constraints.constrain({columns * cell.width + (columns - 1) * length_across(gap),
+                                  rows * cell.height + (rows - 1) * length_down(gap)});
 }
 void DynamicGrid::arrange(const Rect& bounds)
 {
     Widget::arrange(bounds);
     const auto cell{cell_size({bounds.width, bounds.height})};
     const auto columns{column_count(bounds.width, cell.width)};
-    const auto gap{spacing_cells(m_gap)};
+    const auto gap_across{length_across(spacing_length(m_gap))};
+    const auto gap_down{length_down(spacing_length(m_gap))};
     for(std::size_t index{}; index < children().size(); ++ index)
     {
         const auto column{static_cast<int>(index % static_cast<std::size_t>(columns))};
         const auto row{static_cast<int>(index / static_cast<std::size_t>(columns))};
-        children().at(index)->arrange(
-            {bounds.x + column * (cell.width + gap), bounds.y + row * (cell.height + gap), cell.width, cell.height});
+        children().at(index)->arrange({bounds.x + column * (cell.width + gap_across),
+                                       bounds.y + row * (cell.height + gap_down), cell.width, cell.height});
     }
 }
 std::unique_ptr<DynamicGrid> dynamic_grid()

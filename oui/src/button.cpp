@@ -105,11 +105,19 @@ bool Button::handle_event(const Event& event)
 Size Button::measure(const Constraints& constraints) const
 {
     // Compact, the text and a cell either side on one row; otherwise room for the frame and the shadow below. Drawn in
-    // pixels a button's text is raised round its margins, with no frame of characters beside it, but for an icon.
+    // pixels a button's text is raised round its margins, with no frame of characters beside it, and an icon takes a
+    // square as tall as a row with those margins beside it, whatever the text it stands for.
     const auto& metrics{text_metrics()};
+    const auto height{m_compact ? 1.0 : 2.0};
+    const auto cell{metrics.cell_pixels()};
+    if(cell && m_icon)
+    {
+        const auto square{(cell->height + 2 * metrics.text_margin()) / cell->width};
+        return constraints.constrain({snap_up(square, metrics.column_step()), height});
+    }
     const auto width{metrics.label_width(strip_mnemonic(m_text))};
-    const auto frame{metrics.cell_pixels() && !m_icon ? 0.0 : m_compact ? 2.0 : 5.0};
-    return constraints.constrain({width + frame, m_compact ? 1.0 : 2.0});
+    const auto frame{cell ? 0.0 : m_compact ? 2.0 : 5.0};
+    return constraints.constrain({width + frame, height});
 }
 
 void Button::paint(Painter& painter, const Theme& theme) const

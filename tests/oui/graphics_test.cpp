@@ -3,6 +3,7 @@
 #include <oui/check_button.h>
 #include <oui/combo_box.h>
 #include <oui/dock_layout.h>
+#include <oui/dynamic_grid.h>
 #include <oui/event.h>
 #include <oui/file_system.h>
 #include <oui/graphics/canvas.h>
@@ -271,10 +272,10 @@ TEST(OuiGraphicsTests, ASplitViewPutsItsDividerWithinAPixelOfItsRatio)
     split->set_ratio(0.37);
     application.set_content(std::move(split));
     application.run_frame();
-    // The two sides share the width but for the divider's column, 12 pixels, which starts where the first ends.
+    // The two sides share the width but for the divider, 6 pixels, which starts where the first ends.
     const auto first{pixel_of(left.bounds().x + left.bounds().width, 12)};
-    EXPECT_NEAR(static_cast<double>(first), 0.37 * (1000 - 12), 1.0);
-    EXPECT_EQ(pixel_of(right.bounds().x, 12), first + 12);
+    EXPECT_NEAR(static_cast<double>(first), 0.37 * (1000 - 6), 1.0);
+    EXPECT_EQ(pixel_of(right.bounds().x, 12), first + 6);
     EXPECT_EQ(pixel_of(right.bounds().x + right.bounds().width, 12), 1000);
 }
 
@@ -443,6 +444,130 @@ TEST(OuiGraphicsTests, AGapInPixelsIsAcrossARowAndDownAColumn)
             EXPECT_EQ(right.bounds().x, left.bounds().x + left.bounds().width + 1);
         }
     }
+}
+
+TEST(OuiGraphicsTests, ASpacingIsSixPixelsACellInAWindowAndItsCellsInATerminal)
+{
+    for(const auto window : {true, false})
+    {
+        Application application{window ? std::unique_ptr<Backend>{image_backend({1000, 700})}
+                                       : std::unique_ptr<Backend>{scripted_backend({}, {40, 12})}};
+        auto lines{column()};
+        lines->set_gap(Spacing::tight);
+        const auto& first{lines->add(label("First"))};
+        const auto& second{lines->add(label("Second"))};
+        auto& across{lines->add(row())};
+        across.set_gap(Spacing::normal);
+        const auto& left{across.add(label("Left"))};
+        const auto& right{across.add(label("Right"))};
+        auto& table{lines->add(grid())};
+        table.set_columns({Length::content(), Length::content()});
+        table.set_gap(Spacing::loose);
+        const auto& one{table.add(label("One"))};
+        const auto& two{table.add(label("Two"))};
+        const auto& three{table.add(label("Three"))};
+        application.set_content(std::move(lines));
+        application.run_frame();
+        if(window)
+        {
+            EXPECT_EQ(pixel_of(second.bounds().y, 24), pixel_of(first.bounds().y + first.bounds().height, 24) + 6);
+            EXPECT_EQ(pixel_of(right.bounds().x, 12), pixel_of(left.bounds().x + left.bounds().width, 12) + 12);
+            EXPECT_EQ(pixel_of(two.bounds().x, 12), pixel_of(one.bounds().x + one.bounds().width, 12) + 18);
+            EXPECT_EQ(pixel_of(three.bounds().y, 24), pixel_of(one.bounds().y + one.bounds().height, 24) + 18);
+        }
+        else
+        {
+            EXPECT_EQ(second.bounds().y, first.bounds().y + first.bounds().height + 1);
+            EXPECT_EQ(right.bounds().x, left.bounds().x + left.bounds().width + 2);
+            EXPECT_EQ(two.bounds().x, one.bounds().x + one.bounds().width + 3);
+            EXPECT_EQ(three.bounds().y, one.bounds().y + one.bounds().height + 3);
+        }
+    }
+}
+
+TEST(OuiGraphicsTests, ADynamicGridsSpacingIsSixPixelsACellInAWindow)
+{
+    for(const auto window : {true, false})
+    {
+        Application application{window ? std::unique_ptr<Backend>{image_backend({1000, 700})}
+                                       : std::unique_ptr<Backend>{scripted_backend({}, {40, 12})}};
+        auto tiles{dynamic_grid()};
+        tiles->set_column_width(Length::cells(5));
+        tiles->set_gap(Spacing::tight);
+        const auto& first{tiles->add(label("A"))};
+        const auto& second{tiles->add(label("B"))};
+        application.set_content(std::move(tiles));
+        application.run_frame();
+        if(window)
+        {
+            EXPECT_EQ(pixel_of(second.bounds().x, 12), pixel_of(first.bounds().x + first.bounds().width, 12) + 6);
+        }
+        else
+        {
+            EXPECT_EQ(second.bounds().x, first.bounds().x + first.bounds().width + 1);
+        }
+    }
+}
+
+TEST(OuiGraphicsTests, ASplitViewsDividerIsSixPixelsThickAndTakenWithinHalfACellOfItsMiddle)
+{
+    for(const auto orientation : {SplitView::Orientation::horizontal, SplitView::Orientation::vertical})
+    {
+        const auto horizontal{orientation == SplitView::Orientation::horizontal};
+        const auto cell{horizontal ? 12.0 : 24.0};
+        auto backend{image_backend({1000, 700})};
+        auto& events{*backend};
+        Application application{std::move(backend)};
+        auto split{split_view(orientation)};
+        auto& first{split->add(label("First"))};
+        auto& second{split->add(label("Second"))};
+        const auto& view{*split};
+        application.set_content(std::move(split));
+        application.run_frame();
+        const auto end_of_first{horizontal ? first.bounds().x + first.bounds().width
+                                           : first.bounds().y + first.bounds().height};
+        const auto start_of_second{horizontal ? second.bounds().x : second.bounds().y};
+        EXPECT_EQ(pixel_of(start_of_second, cell), pixel_of(end_of_first, cell) + 6) << "the divider is 6 pixels";
+        // Half a cell from its middle: 4 pixels beside it down a column of rows of 24, 2 across one of columns of 12.
+        const auto beside{horizontal ? 2.0 : 4.0};
+        const auto press_at{static_cast<double>(pixel_of(end_of_first, cell)) - beside};
+        const auto ratio{view.ratio()};
+        const auto at{[&](double pixels) { return horizontal ? Point{pixels / 12, 10} : Point{10, pixels / 24}; }};
+        const auto pressed{at(press_at)};
+        const auto moved{at(press_at + 120)};
+        events.push(MouseEvent{pressed.x, pressed.y, true});
+        events.push(MouseEvent{moved.x, moved.y, false, 0, true});
+        events.push(MouseEvent{moved.x, moved.y, false, 0, false, true});
+        application.run_frame();
+        EXPECT_GT(view.ratio(), ratio) << (horizontal ? "horizontal" : "vertical");
+    }
+}
+
+TEST(OuiGraphicsTests, ASplitViewsDividerInATerminalIsACellTakenOnItsCell)
+{
+    auto backend{scripted_backend({}, {40, 12})};
+    auto& events{*backend};
+    Application application{std::move(backend)};
+    auto split{split_view(SplitView::Orientation::horizontal)};
+    auto& first{split->add(label("First"))};
+    auto& second{split->add(label("Second"))};
+    const auto& view{*split};
+    application.set_content(std::move(split));
+    application.run_frame();
+    EXPECT_EQ(first.bounds().width, 20);
+    EXPECT_EQ(second.bounds().x, 21);
+    EXPECT_EQ(second.bounds().width, 19);
+    // A press beside the divider's cell is the side's, not the divider's.
+    events.push(MouseEvent{19, 3, true});
+    events.push(MouseEvent{25, 3, false, 0, true});
+    events.push(MouseEvent{25, 3, false, 0, false, true});
+    application.run_frame();
+    EXPECT_DOUBLE_EQ(view.ratio(), 0.5);
+    events.push(MouseEvent{20, 3, true});
+    events.push(MouseEvent{25, 3, false, 0, true});
+    events.push(MouseEvent{25, 3, false, 0, false, true});
+    application.run_frame();
+    EXPECT_EQ(second.bounds().x, 26);
 }
 
 TEST(OuiGraphicsTests, ADockedStripInPixelsIsItsPixelsInAWindowAndItsCellsInATerminal)
@@ -1140,6 +1265,46 @@ TEST(OuiGraphicsTests, AButtonWithAnIconDrawsItInPlaceOfItsText)
     made->set_icon(Icon::play);
     EXPECT_EQ(made->icon(), Icon::play);
     EXPECT_EQ(made->text(), "Play");
+}
+
+TEST(OuiGraphicsTests, AnIconButtonInAWindowIsASquareAsTallAsItsRowWithTheTextsMarginsBesideIt)
+{
+    // The icon takes a square as tall as a row, with the margins interface text keeps at each side and none of the
+    // terminal's frame and shadow; its text, which a terminal writes, does not widen it.
+    auto backend{image_backend({480, 240})};
+    const auto& image{*backend};
+    Application application{std::move(backend)};
+    const auto cell{image.cell_size()};
+    const auto margin{classic_style().text_margin};
+    EXPECT_EQ(text_metrics().text_margin(), margin);
+    const auto square{(cell.height + 2 * margin) / cell.width};
+    for(const auto compact : {true, false})
+    {
+        for(const std::string_view text : {"Play", "A much longer name"})
+        {
+            auto made{button(text)};
+            made->set_compact(compact);
+            made->set_icon(Icon::play);
+            const auto measured{made->measure({})};
+            EXPECT_DOUBLE_EQ(measured.width, square) << text << ", compact " << compact;
+            EXPECT_DOUBLE_EQ(measured.height, compact ? 1.0 : 2.0) << text << ", compact " << compact;
+        }
+    }
+}
+
+TEST(OuiGraphicsTests, AnIconButtonInATerminalWritesItsTextInItsFrame)
+{
+    EXPECT_EQ(text_metrics().cell_pixels(), std::nullopt);
+    EXPECT_EQ(text_metrics().text_margin(), 0);
+    auto compact{button("Play")};
+    compact->set_compact(true);
+    compact->set_icon(Icon::play);
+    EXPECT_DOUBLE_EQ(compact->measure({}).width, 4.0 + 2.0);
+    EXPECT_DOUBLE_EQ(compact->measure({}).height, 1.0);
+    auto framed{button("Play")};
+    framed->set_icon(Icon::play);
+    EXPECT_DOUBLE_EQ(framed->measure({}).width, 4.0 + 5.0);
+    EXPECT_DOUBLE_EQ(framed->measure({}).height, 2.0);
 }
 
 TEST(OuiGraphicsTests, EachIconOfAPlayerAndATrackIsDrawnInsideItsAreaAndUnlikeTheOthers)

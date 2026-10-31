@@ -119,4 +119,11 @@ class Length
     return 0;
 }
 
+// A spacing as a length: its cells in a terminal, 6 pixels for each of them where the backend draws pixels.
+[[nodiscard]] constexpr Length spacing_length(Spacing spacing)
+{
+    const auto cells{spacing_cells(spacing)};
+    return Length::pixels(6.0 * cells, cells);
+}
+
 } // namespace olagarro::oui

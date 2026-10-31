@@ -54,12 +54,20 @@ void SplitView::move_divider(int cells)
     const auto horizontal{m_orientation == Orientation::horizontal};
     const auto start{horizontal ? bounds().x : bounds().y};
     const auto length{horizontal ? bounds().width : bounds().height};
-    if(length > 2)
+    const auto thickness{divider_thickness()};
+    if(length > thickness + 1)
     {
-        const auto moved{std::clamp(*line - start + cells, 1.0, length - 2)};
-        set_ratio(moved / (length - 1));
+        const auto moved{std::clamp(*line - start + cells, 1.0, length - thickness - 1)};
+        set_ratio(moved / (length - thickness));
         arrange(bounds());
     }
+}
+
+double SplitView::divider_thickness() const
+{
+    // A cell in a terminal, 6 pixels in a window.
+    const auto line{Length::pixels(6, 1)};
+    return m_orientation == Orientation::horizontal ? length_across(line) : length_down(line);
 }
 
 std::optional<double> SplitView::divider() const
@@ -71,10 +79,43 @@ std::optional<double> SplitView::divider() const
     const auto horizontal{m_orientation == Orientation::horizontal};
     const auto start{horizontal ? bounds().x : bounds().y};
     const auto length{horizontal ? bounds().width : bounds().height};
-    // Each side keeps at least one cell, and the line one more; it lies at the step nearest the ratio.
+    const auto thickness{divider_thickness()};
+    // Each side keeps at least one cell, and the line its thickness; it lies at the step nearest the ratio.
     const auto step{horizontal ? text_metrics().column_step() : text_metrics().row_step()};
-    const auto first{std::clamp(snap(m_ratio * (length - 1) + step / 2, step), 1.0, std::max(1.0, length - 2))};
+    const auto first{
+        std::clamp(snap(m_ratio * (length - thickness) + step / 2, step), 1.0, std::max(1.0, length - thickness - 1))};
     return start + first;
+}
+
+bool SplitView::on_divider(double position) const
+{
+    // Within half a cell of the line's middle, which in a terminal is its cell and in a window more than its pixels:
+    // a thin line is as easy to take as a cell is.
+    const auto line{divider()};
+    if(!line)
+    {
+        return false;
+    }
+    const auto middle{*line + divider_thickness() / 2};
+    return position >= middle - 0.5 && position < middle + 0.5;
+}
+
+Widget* SplitView::hit_test(double x, double y)
+{
+    auto* const result{Container::hit_test(x, y)};
+    if(result == nullptr || result == this || !on_divider(m_orientation == Orientation::horizontal ? x : y))
+    {
+        return result;
+    }
+    // Near the line the pointer is on it, though a side's pixels lie there, but for an overlay over it.
+    for(const auto* widget{result}; widget != nullptr && widget != this; widget = widget->parent())
+    {
+        if(widget->is_overlay())
+        {
+            return result;
+        }
+    }
+    return this;
 }
 
 Size SplitView::measure(const Constraints& constraints) const
@@ -86,6 +127,7 @@ void SplitView::arrange(const Rect& bounds)
 {
     Widget::arrange(bounds);
     const auto line{divider()};
+    const auto thickness{divider_thickness()};
     for(std::size_t index{}; index < child_count(); ++ index)
     {
         auto& child{child_at(index)};
@@ -101,12 +143,14 @@ void SplitView::arrange(const Rect& bounds)
         if(m_orientation == Orientation::horizontal)
         {
             child.arrange(index == 0 ? Rect{bounds.x, bounds.y, *line - bounds.x, bounds.height}
-                                     : Rect{*line + 1, bounds.y, bounds.x + bounds.width - *line - 1, bounds.height});
+                                     : Rect{*line + thickness, bounds.y, bounds.x + bounds.width - *line - thickness,
+                                            bounds.height});
         }
         else
         {
             child.arrange(index == 0 ? Rect{bounds.x, bounds.y, bounds.width, *line - bounds.y}
-                                     : Rect{bounds.x, *line + 1, bounds.width, bounds.y + bounds.height - *line - 1});
+                                     : Rect{bounds.x, *line + thickness, bounds.width,
+                                            bounds.y + bounds.height - *line - thickness});
         }
     }
 }
@@ -119,8 +163,9 @@ void SplitView::paint(Painter& painter, const Theme& theme) const
     {
         return;
     }
-    painter.draw_divider(m_orientation == Orientation::horizontal ? Rect{*line, bounds().y, 1, bounds().height}
-                                                                  : Rect{bounds().x, *line, bounds().width, 1},
+    const auto thickness{divider_thickness()};
+    painter.draw_divider(m_orientation == Orientation::horizontal ? Rect{*line, bounds().y, thickness, bounds().height}
+                                                                  : Rect{bounds().x, *line, bounds().width, thickness},
                          theme);
 }
 
@@ -134,7 +179,7 @@ bool SplitView::handle_event(const Event& event)
     }
     const auto horizontal{m_orientation == Orientation::horizontal};
     const auto position{horizontal ? mouse->x : mouse->y};
-    if(mouse->pressed && !mouse->right && whole(position - *line) == 0)
+    if(mouse->pressed && !mouse->right && on_divider(position))
     {
         m_dragging = true;
         m_grab = position - *line;
@@ -148,10 +193,11 @@ bool SplitView::handle_event(const Event& event)
     {
         const auto start{horizontal ? bounds().x : bounds().y};
         const auto length{horizontal ? bounds().width : bounds().height};
-        if(length > 1)
+        const auto thickness{divider_thickness()};
+        if(length > thickness)
         {
             // To the step, which divider() keeps it at.
-            set_ratio((position - m_grab - start) / (length - 1));
+            set_ratio((position - m_grab - start) / (length - thickness));
         }
     }
     if(mouse->released)
@@ -163,9 +209,8 @@ bool SplitView::handle_event(const Event& event)
 
 Pointer SplitView::pointer_at(Point point) const
 {
-    const auto line{divider()};
     const auto horizontal{m_orientation == Orientation::horizontal};
-    if(m_dragging || (line && whole((horizontal ? point.x : point.y) - *line) == 0))
+    if(m_dragging || on_divider(horizontal ? point.x : point.y))
     {
         return horizontal ? Pointer::resize_columns : Pointer::resize_rows;
     }
