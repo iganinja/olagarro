@@ -2176,6 +2176,63 @@ TEST(OuiWidgetTests, TextEditCursorUsesTheNextVisualLineAtAWordWrapBoundary)
     EXPECT_EQ(after_boundary_frame.cell_at(1, 1).background, theme.editor_foreground);
 }
 
+TEST(OuiWidgetTests, TextEditCursorAfterAWrappedLineThatFillsTheWidthShowsOnTheNextRow)
+{
+    // At the end of the text a line as wide as the editor would leave the cursor under the scrollbar, or past
+    // the edge beside a split's divider.
+    for(const auto scrollbar : {true, false})
+    {
+        auto backend{std::make_unique<MemoryBackend>()};
+        auto* const backend_reference{backend.get()};
+        oui::Application application{std::move(backend)};
+        auto editor{oui::text_edit()};
+        auto* const editor_reference{editor.get()};
+        editor->set_word_wrap(true);
+        editor->set_scrollbar_visible(scrollbar);
+        application.set_content(std::move(editor));
+        application.render();
+        const auto width{backend_reference->last_frame()->width() - (scrollbar ? 1 : 0)};
+        editor_reference->set_text(std::string(static_cast<std::size_t>(width), 'a') + "\nb");
+        application.dispatch_event(oui::KeyEvent{oui::Key::end});
+        application.render();
+
+        const auto& frame{*backend_reference->last_frame()};
+        const oui::Theme theme;
+        EXPECT_EQ(frame.cell_at(0, 1).background, theme.editor_foreground) << "the cursor, on a row of its own";
+        EXPECT_EQ(frame.cell_at(0, 2).glyph, U'b') << "the next line below it";
+        application.dispatch_event(oui::KeyEvent{oui::Key::down});
+        EXPECT_EQ(editor_reference->line_column(), (std::pair<std::size_t, std::size_t>{2, 1}));
+    }
+}
+
+TEST(OuiWidgetTests, TextEditHomeAndEndGoToTheEdgesOfTheWrappedRowFirst)
+{
+    oui::TextEdit edit;
+    edit.set_text("one two three");
+    edit.set_word_wrap(true);
+    edit.set_scrollbar_visible(false);
+    // "one two " on the first row, "three" on the second.
+    edit.arrange({0, 0, 10, 3});
+    const auto column{[&edit] { return edit.line_column().second; }};
+
+    edit.handle_event(oui::KeyEvent{oui::Key::end, true});
+    edit.handle_event(oui::KeyEvent{oui::Key::home});
+    EXPECT_EQ(column(), 9u) << "the start of the row";
+    edit.handle_event(oui::KeyEvent{oui::Key::home});
+    EXPECT_EQ(column(), 1u) << "then the start of the line";
+
+    edit.handle_event(oui::KeyEvent{oui::Key::end});
+    EXPECT_EQ(column(), 8u) << "the end of the row, before the space it wraps at";
+    edit.handle_event(oui::KeyEvent{oui::Key::end});
+    EXPECT_EQ(column(), 14u) << "then the end of the line";
+
+    edit.handle_event(oui::KeyEvent{oui::Key::home});
+    edit.handle_event(oui::KeyEvent{oui::Key::home});
+    EXPECT_EQ(column(), 1u) << "from the second row its start, then the line's";
+    edit.handle_event(oui::KeyEvent{oui::Key::end, false, false, true});
+    EXPECT_EQ(edit.selected_text(), "one two") << "Shift extends to the row's end";
+}
+
 TEST(OuiWidgetTests, TextEditCursorKeepsTheLogicalLineAtItsNewlineBoundary)
 {
     oui::TextEdit edit;

@@ -294,6 +294,10 @@ bool TextEdit::handle_input(const Event& event)
             m_last_home_was_at_column_zero = false;
             move_to_document_edge(false, key->shift);
         }
+        else if(move_to_wrapped_row_edge(false, key->shift))
+        {
+            m_last_home_was_at_column_zero = false;
+        }
         else if(m_last_home_was_at_column_zero)
         {
             m_last_home_was_at_column_zero = false;
@@ -311,6 +315,10 @@ bool TextEdit::handle_input(const Event& event)
         {
             m_last_end_was_at_eol = false;
             move_to_document_edge(true, key->shift);
+        }
+        else if(move_to_wrapped_row_edge(true, key->shift))
+        {
+            m_last_end_was_at_eol = false;
         }
         else if(m_last_end_was_at_eol)
         {
@@ -709,6 +717,41 @@ void TextEdit::move_to_line_edge(bool end, bool extend)
         m_anchor = m_cursor;
     }
     ensure_cursor_visible();
+}
+// With wrapping, Home and End go to the start and end of the row the cursor is on before those of its line: false
+// when the cursor is there already, or the row is where the line starts or ends. A row's end is before its last
+// character, the space it wraps at most often, since right at its end the cursor shows on the next row.
+bool TextEdit::move_to_wrapped_row_edge(bool end, bool extend)
+{
+    if(!m_word_wrap_enabled)
+    {
+        return false;
+    }
+    const auto& vlines{visual_lines()};
+    const auto row{cursor_visual_line().first};
+    if(row >= vlines.size())
+    {
+        return false;
+    }
+    const auto& line{vlines.at(row)};
+    const auto line_start{line_starts().at(line.logical_line)};
+    const auto line_last{line_end(line_start)};
+    if(end ? line.end_byte == line_last : line.start_byte == line_start)
+    {
+        return false;
+    }
+    const auto target{end ? previous_codepoint(line.end_byte) : line.start_byte};
+    if(target == m_cursor)
+    {
+        return false;
+    }
+    m_cursor = target;
+    if(!extend)
+    {
+        m_anchor = m_cursor;
+    }
+    ensure_cursor_visible();
+    return true;
 }
 void TextEdit::move_to_first_non_whitespace(bool extend)
 {

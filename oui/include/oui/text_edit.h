@@ -213,6 +213,7 @@ class TextEdit final : public Widget
     void move_right(bool extend_selection);
     void move_word(bool forward, bool extend_selection);
     void move_to_line_edge(bool end, bool extend_selection);
+    bool move_to_wrapped_row_edge(bool end, bool extend_selection);
     void move_to_first_non_whitespace(bool extend_selection);
     void move_to_last_non_whitespace(bool extend_selection);
     void move_to_document_edge(bool end, bool extend_selection);
