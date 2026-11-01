@@ -293,7 +293,8 @@ olagarro_embed_files(olagarro_oui_graphics NAMESPACE olagarro::oui FUNCTION embe
 
 # The desktop window: SDL3 opens it and brings its input, OUI draws everything in it, and plays sound. SDL3 is linked
 # statically, so the program needs nothing installed beside it; an installed SDL3 is used when CMake finds one, and
-# otherwise its source is fetched and built with only what a window and sound need.
+# otherwise its source is fetched and built with only what a window, sound and the graphics card (SDL_GPU, on Vulkan)
+# need.
 if(OLAGARRO_OUI_WINDOW)
     find_package(SDL3 CONFIG COMPONENTS SDL3-static QUIET)
     if(NOT TARGET SDL3::SDL3-static)
@@ -304,11 +305,13 @@ if(OLAGARRO_OUI_WINDOW)
         set(SDL_TESTS OFF CACHE BOOL "" FORCE)
         set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
         set(SDL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
-        foreach(subsystem CAMERA JOYSTICK HAPTIC SENSOR HIDAPI GPU POWER VULKAN X11_XSCRNSAVER X11_XTEST)
+        foreach(subsystem CAMERA JOYSTICK HAPTIC SENSOR HIDAPI POWER X11_XSCRNSAVER X11_XTEST)
             set(SDL_${subsystem} OFF CACHE BOOL "" FORCE)
         endforeach()
-        # On even in a build made before sound was, which had it off.
-        set(SDL_AUDIO ON CACHE BOOL "" FORCE)
+        # On even in a build made before sound and the graphics card were, which had them off.
+        foreach(subsystem AUDIO GPU VULKAN)
+            set(SDL_${subsystem} ON CACHE BOOL "" FORCE)
+        endforeach()
         FetchContent_Declare(SDL3
             URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.16/SDL3-3.4.16.tar.gz
             URL_HASH SHA256=7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68)
