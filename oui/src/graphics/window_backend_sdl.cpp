@@ -7,8 +7,10 @@
 
 #include <SDL3/SDL.h>
 
+#include <algorithm>
 #include <cmath>
 #include <deque>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -126,11 +128,15 @@ class WindowBackend final : public DesktopWindow
         }
         // Hidden until it is where it belongs, so it does not jump there.
         const auto& geometry{options.geometry};
-        if(!SDL_CreateWindowAndRenderer(options.title.c_str(), whole(geometry.size.width), whole(geometry.size.height),
-                                        SDL_WINDOW_RESIZABLE | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN, &m_window,
-                                        &m_renderer))
+        m_window = SDL_CreateWindow(options.title.c_str(), whole(geometry.size.width), whole(geometry.size.height),
+                                    SDL_WINDOW_RESIZABLE | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN);
+        if(m_window == nullptr || !open_renderer())
         {
             const std::string error{SDL_GetError()};
+            if(m_window != nullptr)
+            {
+                SDL_DestroyWindow(m_window);
+            }
             quit_video();
             throw std::runtime_error{"Cannot open a window: " + error};
         }
@@ -184,7 +190,15 @@ class WindowBackend final : public DesktopWindow
         {
             SDL_DestroyTexture(m_texture);
         }
+        for(const auto& wrapped : m_wrapped)
+        {
+            SDL_DestroyTexture(wrapped.texture);
+        }
         SDL_DestroyRenderer(m_renderer);
+        if(m_device != nullptr)
+        {
+            SDL_DestroyGPUDevice(m_device);
+        }
         SDL_DestroyWindow(m_window);
         quit_video();
     }
@@ -296,6 +310,8 @@ class WindowBackend final : public DesktopWindow
 
     [[nodiscard]] int pointer_size() const override { return m_pointer_size; }
 
+    [[nodiscard]] SDL_GPUDevice* gpu_device() const override { return m_device; }
+
     void set_pointer(Pointer pointer) override
     {
         m_pointer = pointer;
@@ -372,19 +388,123 @@ class WindowBackend final : public DesktopWindow
             {
                 SDL_DestroyTexture(m_texture);
             }
-            m_texture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING,
+            m_texture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
                                           canvas.width(), canvas.height());
             SDL_SetTextureScaleMode(m_texture, SDL_SCALEMODE_NEAREST);
             m_texture_width = canvas.width();
             m_texture_height = canvas.height();
         }
         SDL_UpdateTexture(m_texture, nullptr, canvas.pixels().data(), canvas.width() * 4);
+        const auto& placed{layers()};
+        wrap_layers(placed);
+        const auto desktop{style().desktop};
+        SDL_SetRenderDrawColor(m_renderer, desktop.red, desktop.green, desktop.blue, 255);
         SDL_RenderClear(m_renderer);
+        for(std::size_t index{}; index < placed.size(); ++ index)
+        {
+            const auto& visible{placed[index].visible};
+            const auto& area{placed[index].area};
+            const SDL_Rect clip{visible.x, visible.y, visible.width, visible.height};
+            const SDL_FRect target{static_cast<float>(area.x), static_cast<float>(area.y),
+                                   static_cast<float>(area.width), static_cast<float>(area.height)};
+            SDL_SetRenderClipRect(m_renderer, &clip);
+            SDL_RenderTexture(m_renderer, m_wrapped[index].texture, nullptr, &target);
+        }
+        SDL_SetRenderClipRect(m_renderer, nullptr);
+        // See-through only where a layer shows; without one, the frame as it is.
+        SDL_SetTextureBlendMode(m_texture, placed.empty() ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND);
         SDL_RenderTexture(m_renderer, m_texture, nullptr, nullptr);
         SDL_RenderPresent(m_renderer);
     }
 
+    [[nodiscard]] bool shows_layers() const override { return m_device != nullptr; }
+
   private:
+    // A layer's texture as the renderer draws it, made for the layer it was made for.
+    struct WrappedLayer
+    {
+        std::shared_ptr<const PixelLayer> layer;
+        SDL_Texture* texture{};
+    };
+
+    // Through SDL's GPU renderer on a device of the window's own, which programs can draw on too; where none opens,
+    // the renderer SDL chooses, and no device.
+    bool open_renderer()
+    {
+        m_device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, false, nullptr);
+        if(m_device != nullptr)
+        {
+            m_renderer = SDL_CreateGPURenderer(m_device, m_window);
+            if(m_renderer != nullptr)
+            {
+                return true;
+            }
+            SDL_DestroyGPUDevice(m_device);
+            m_device = nullptr;
+        }
+        m_renderer = SDL_CreateRenderer(m_window, nullptr);
+        return m_renderer != nullptr;
+    }
+
+    // A texture for each layer, in their order: the one it had in the last frame, its own texture wrapped, or its
+    // pixels uploaded when it has none. Those no layer has now go.
+    void wrap_layers(const std::vector<PlacedLayer>& placed)
+    {
+        std::vector<WrappedLayer> wrapped;
+        wrapped.reserve(placed.size());
+        for(const auto& each : placed)
+        {
+            const auto kept{std::find_if(m_wrapped.begin(), m_wrapped.end(),
+                                         [&](const WrappedLayer& old) { return old.layer == each.layer; })};
+            if(kept != m_wrapped.end())
+            {
+                wrapped.push_back(std::move(*kept));
+                m_wrapped.erase(kept);
+            }
+            else
+            {
+                wrapped.push_back({each.layer, wrap(*each.layer)});
+            }
+        }
+        for(const auto& old : m_wrapped)
+        {
+            SDL_DestroyTexture(old.texture);
+        }
+        m_wrapped = std::move(wrapped);
+    }
+
+    [[nodiscard]] SDL_Texture* wrap(const PixelLayer& layer)
+    {
+        SDL_Texture* texture{};
+        if(auto* const gpu_texture{layer.texture()})
+        {
+            const auto properties{SDL_CreateProperties()};
+            SDL_SetNumberProperty(properties, SDL_PROP_TEXTURE_CREATE_FORMAT_NUMBER, SDL_PIXELFORMAT_RGBA32);
+            SDL_SetNumberProperty(properties, SDL_PROP_TEXTURE_CREATE_ACCESS_NUMBER, SDL_TEXTUREACCESS_STATIC);
+            SDL_SetNumberProperty(properties, SDL_PROP_TEXTURE_CREATE_WIDTH_NUMBER, layer.width());
+            SDL_SetNumberProperty(properties, SDL_PROP_TEXTURE_CREATE_HEIGHT_NUMBER, layer.height());
+            SDL_SetPointerProperty(properties, SDL_PROP_TEXTURE_CREATE_GPU_TEXTURE_POINTER, gpu_texture);
+            texture = SDL_CreateTextureWithProperties(m_renderer, properties);
+            SDL_DestroyProperties(properties);
+        }
+        else
+        {
+            const auto pixels{layer.pixels()};
+            texture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, layer.width(),
+                                        layer.height());
+            if(texture != nullptr &&
+               pixels.size() >= static_cast<std::size_t>(layer.width()) * static_cast<std::size_t>(layer.height()))
+            {
+                SDL_UpdateTexture(texture, nullptr, pixels.data(), layer.width() * 4);
+            }
+        }
+        if(texture != nullptr)
+        {
+            SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        }
+        return texture;
+    }
+
     enum class Control
     {
         none,
@@ -981,8 +1101,11 @@ class WindowBackend final : public DesktopWindow
     bool m_full_screen{false};
     WindowGeometry m_windowed;
     SDL_Window* m_window{};
+    // The device the renderer draws on, the window's own; null where none opened.
+    SDL_GPUDevice* m_device{};
     SDL_Renderer* m_renderer{};
     SDL_Texture* m_texture{};
+    std::vector<WrappedLayer> m_wrapped;
     int m_texture_width{};
     int m_texture_height{};
     Uint32 m_wake_event{};

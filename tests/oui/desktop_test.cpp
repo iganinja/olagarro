@@ -87,7 +87,7 @@ TEST(OuiDesktopTests, AProgramShowsOnTheDesktopAndHearsItsInput)
     ASSERT_FALSE(client->pixels.empty());
     EXPECT_EQ(client->width % 30, 0) << "a whole number of cells across";
     EXPECT_EQ(client->height % 8, 0);
-    EXPECT_EQ(client->pixels.front(), 0xC80A14u) << "what the program drew";
+    EXPECT_EQ(client->pixels.front(), 0xFFC80A14u) << "what the program drew, solid";
     server.send(*connected, oui::MouseEvent{3, 2, true});
     server.send(*connected, oui::KeyEvent{oui::Key::f5, true});
     key_sent = true;

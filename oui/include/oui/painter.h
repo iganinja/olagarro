@@ -4,10 +4,13 @@
 #include <oui/color.h>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
+
+struct SDL_GPUTexture;
 
 namespace olagarro::oui
 {
@@ -177,9 +180,9 @@ struct LabelRun
     TextStyle style;
 };
 
-// Pixels drawn somewhere else, such as another program's window: `width` by `height`, as 0x00RRGGBB, each row
-// `stride` pixels after the one before. With `alpha`, they are 0xAARRGGBB with straight alpha, as an icon, and are
-// mixed over what is under them.
+// Pixels drawn somewhere else, such as another program's window: `width` by `height`, as 0x00RRGGBB (the top byte
+// not read), each row `stride` pixels after the one before. With `alpha`, they are 0xAARRGGBB with straight alpha, as
+// an icon, and are mixed over what is under them.
 struct PixelImage
 {
     const std::uint32_t* pixels{};
@@ -187,6 +190,25 @@ struct PixelImage
     int height{};
     int stride{};
     bool alpha{false};
+};
+
+// Pixels kept on the graphics card, as a video's frame composited there, that a widget shows beneath what it paints
+// (Painter::draw_layer) without bringing them back to memory. The program makes the texture on the device the backend
+// gives (Backend::gpu_device) and keeps it unchanged while the layer lives: the backend keeps the layer until the next
+// frame is painted.
+class PixelLayer
+{
+  public:
+    virtual ~PixelLayer() = default;
+
+    [[nodiscard]] virtual int width() const = 0;
+    [[nodiscard]] virtual int height() const = 0;
+    // `width` by `height`, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM with straight alpha, made with
+    // SDL_GPU_TEXTUREUSAGE_SAMPLER, on Backend::gpu_device(); null where it has none, as without a device.
+    [[nodiscard]] virtual SDL_GPUTexture* texture() const = 0;
+    // Its pixels in memory, row after row, as 0xAARRGGBB with straight alpha: for what draws in memory, as an
+    // ImageBackend in a test, or a window without a device. It may read them back from the card, which is slow.
+    [[nodiscard]] virtual std::vector<std::uint32_t> pixels() const = 0;
 };
 
 // How far a progress bar has gone, from 0 to 1, and what it says after it.
@@ -279,6 +301,11 @@ class Painter
     virtual void draw_field_frame(const Rect& bounds, bool focused, const Theme& theme);
     // Pixels from the top left corner of `bounds`, cut to it: a terminal, which has none, shows the background.
     virtual void draw_image(const Rect& bounds, const PixelImage& image, const Theme& theme);
+    // A layer beneath, stretched over `bounds` and cut to the clip: in a window with a device the layer's texture is
+    // drawn first and the frame over it, see-through in `bounds` but where something is painted over them afterwards,
+    // so a menu or a tooltip covers it as anything else; elsewhere its pixels are drawn in place. Its see-through
+    // pixels show the desktop's colour. A terminal, which has no pixels, shows what was there.
+    virtual void draw_layer(const Rect& bounds, std::shared_ptr<const PixelLayer> layer);
     // Where `cells` are in pixels, from the top left of the application's area, as MouseEvent::pixel counts, where the
     // painter draws in pixels; none in a terminal. Rows are not all the same height, so this is the only sure way.
     [[nodiscard]] virtual std::optional<Rect> pixel_bounds(const Rect& cells) const;

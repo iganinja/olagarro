@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Olagarro VERSION 0.6.0 LANGUAGES C CXX)
+project(Olagarro VERSION 0.7.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -723,6 +723,7 @@ if(OLAGARRO_BUILD_TESTS)
             tests/oui/ui_description_test.cpp
             tests/oui/inflate_test.cpp
             tests/oui/graphics_test.cpp
+            tests/oui/pixel_layer_test.cpp
             tests/oui/tab_view_test.cpp
             tests/oui/text_edit_gutter_test.cpp
             tests/oui/menu_scroll_test.cpp

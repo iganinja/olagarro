@@ -139,7 +139,7 @@ class Backend
     virtual void render(const std::function<void(Painter&)>& paint);
     virtual void wait_for_input(std::optional<std::chrono::steady_clock::time_point> deadline);
     virtual void wake();
-    // and: reset, reports_modifiers, the clipboard, set_title, zooms/zoom_by/zoom_reset, set_pointer
+    // and: reset, reports_modifiers, the clipboard, set_title, zooms/zoom_by/zoom_reset, set_pointer, gpu_device
 };
 ```
 
@@ -153,7 +153,7 @@ make a `CellBuffer` of `size()`, paint it with a `CellBufferPainter`, and `prese
 | `ScriptedBackend`, from `scripted_backend()` | [scripted_backend.h](../oui/include/oui/scripted_backend.h) | Nothing: replays a list of events and keeps the frames, for tests and automation |
 | `RasterBackend` | [raster_backend.h](../oui/include/oui/raster_backend.h) | Each cell's background as a block of pixels, no glyphs; a minimal check that cells become pixels |
 | `PixelBackend` | [pixel_backend.h](../oui/include/oui/graphics/pixel_backend.h) | The base of every graphical backend: paints each frame on a `Canvas` with a `GraphicalPainter` |
-| `DesktopWindow`, from `window_backend()` | [window_backend.h](../oui/include/oui/graphics/window_backend.h), `window_backend_sdl.cpp` | A desktop window through SDL3; OUI draws its frame and title bar too |
+| `DesktopWindow`, from `window_backend()` | [window_backend.h](../oui/include/oui/graphics/window_backend.h), `window_backend_sdl.cpp` | A desktop window through SDL3, on its GPU renderer where a device opens; OUI draws its frame and title bar too |
 | `drm_backend()` | [drm_backend.h](../oui/include/oui/graphics/drm_backend.h) | The whole screen through the kernel's mode setting, no display server; Linux |
 | `ImageBackend`, from `image_backend()` | [pixel_backend.h](../oui/include/oui/graphics/pixel_backend.h) | Pixels in memory, with a script of events, for tests and pictures; `write_png` saves the canvas |
 | `desktop_backend()` | [desktop.h](../oui/include/oui/desktop.h), [graphics/desktop.h](../oui/include/oui/graphics/desktop.h) | A window on OUI's own desktop: pixels in memory shared with it, or cells when the desktop is in a terminal |
@@ -166,7 +166,8 @@ root reaches its last pixel; `cell_at(pixel)` is where a pixel of the content ar
 SDL window and the DRM screen give as the pointer's `x` and `y`;
 `render` fills the canvas with the style's `desktop` colour, paints the frame with a `GraphicalPainter` limited to the
 content area, then calls `decorate` (what the backend draws around it, as the SDL window's frame and title bar) and
-`show`, which each backend implements: SDL uploads the canvas as a texture, DRM copies it into a dumb buffer, draws
+`show`, which each backend implements: SDL uploads the canvas as a texture, over the frame's
+[layers](#layers-beneath-pixels-on-the-graphics-card) where it has a device, DRM copies it into a dumb buffer, draws
 the pointer on it and flips pages. `present(CellBuffer)` on a pixel backend shows a buffer of cells as it is, in the
 cell font.
 
@@ -251,8 +252,10 @@ So a colour from the sixteen of a text console (`TurboCTheme`'s constants, or th
 ## Pixels: the graphical painter
 
 `GraphicalPainter` paints on a `Canvas` ([canvas.h](../oui/include/oui/graphics/canvas.h)): pixels in memory as
-`0x00RRGGBB`, with a clip rectangle that every operation respects, and fills, blends, antialiased polygons and lines,
-copies, and glyphs drawn from coverage bitmaps.
+`0xAARRGGBB` with straight alpha, with a clip rectangle that every operation respects, and fills, blends, antialiased
+polygons and lines, copies, and glyphs drawn from coverage bitmaps. Everything drawn is solid (alpha 255); only
+`clear` makes pixels see-through, for a layer beneath, and what is blended over a see-through pixel afterwards keeps
+its own colour and makes the pixel as solid as it is.
 
 A cell is as wide as the cell font's `M` and as high as its line (`GraphicalPainter::cell_size`), and every row is
 that high, so a rectangle in pixels is its cells times that size, from the top left of the area the painter was
@@ -274,6 +277,31 @@ track starts in as a terminal shows it, is drawn as far from the track's own sta
 
 The graphical painter takes its shapes' colours from the style and reads only a few of the theme's; see
 [graphical themes](themes.md#graphical-themes).
+
+### Layers beneath: pixels on the graphics card
+
+A widget that shows pixels made on the graphics card, as a video editor's viewer does, need not bring them back to
+memory each frame: `Painter::draw_layer(bounds, layer)` shows a `PixelLayer` ([painter.h](../oui/include/oui/painter.h))
+stretched over `bounds`, beneath the frame. A `PixelLayer` is the program's: its `width()` and `height()`, its
+`texture()`, an `SDL_GPUTexture` in `R8G8B8A8_UNORM` with straight alpha, made for sampling on the device the backend
+gives (`Backend::gpu_device()`), and its `pixels()` in memory as `0xAARRGGBB`, read back from the card if need be. The
+backend keeps the layer, and so its texture, until the next frame is painted.
+
+- **In a window with a device.** The SDL window draws through SDL3's GPU renderer (`SDL_CreateGPURenderer`) on a
+  device of its own, made for SPIR-V shaders, which `gpu_device()` gives while the window lives. `PixelBackend::render`
+  then hands the `GraphicalPainter` a list of `PlacedLayer`s: `draw_layer` adds the layer, with where it is and the
+  part the clip leaves of it, and `clear`s that part of the canvas. `show` clears the window to the style's `desktop`
+  colour, draws each layer's texture, wrapped for the renderer
+  (`SDL_PROP_TEXTURE_CREATE_GPU_TEXTURE_POINTER`, kept while the same layer is drawn in the next frames), in the order
+  drawn, cut to its part, and the canvas over them, blended. What is painted afterwards over a layer's place, the
+  widget's own handles, a menu, a tooltip or a dialog, is solid again or mixed by its alpha, so it covers the layer as
+  it covers anything.
+- **Elsewhere.** Where no device opens, the window uses the renderer SDL chooses, as before, and `gpu_device()` is
+  null; an `ImageBackend`, the DRM screen and a window on OUI's desktop have none either. There `draw_layer` draws the
+  layer's `pixels()` on the canvas as it is painted, over the `desktop` colour, each pixel taking the layer's pixel
+  its middle falls in, so screenshot tests see it. A terminal shows what was painted there before, as for any pixels.
+
+A layer's see-through pixels show the `desktop` colour either way, not what the widget painted before it.
 
 ## Fonts
 

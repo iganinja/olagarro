@@ -9,6 +9,8 @@
 #include <string>
 #include <string_view>
 
+struct SDL_GPUDevice;
+
 namespace olagarro::oui
 {
 
@@ -74,6 +76,10 @@ class Backend
         static_cast<void>(cell_offset);
         return 2;
     }
+    // The graphics card's device it draws with, through SDL3's GPU API, where a program can make the textures of its
+    // layers (PixelLayer) and run its own shaders: a window's, which owns it, while the window lives. Null without
+    // one: in a terminal, in memory, or in a window that could open none.
+    [[nodiscard]] virtual SDL_GPUDevice* gpu_device() const { return nullptr; }
 };
 
 } // namespace olagarro::oui

@@ -54,8 +54,8 @@ class DesktopServer
     {
         int id{};
         std::string title;
-        // Its last frame, `width` by `height`: pixels as 0x00RRGGBB on a desktop of pixels, cells on one of cells.
-        // Empty until it draws one.
+        // Its last frame, `width` by `height`: pixels as 0xFFRRGGBB, solid as a canvas draws them, on a desktop of
+        // pixels, cells on one of cells. Empty until it draws one.
         std::vector<std::uint32_t> pixels;
         std::vector<Cell> cells;
         int width{};

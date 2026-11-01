@@ -198,11 +198,23 @@ void PixelBackend::render(const std::function<void(Painter&)>& paint)
     m_canvas.set_clip({0, 0, m_canvas.width(), m_canvas.height()});
     {
         const TraceScope span{"oui.paint"};
+        m_layers.clear();
         m_canvas.fill({0, 0, m_canvas.width(), m_canvas.height()}, m_style.desktop);
-        GraphicalPainter painter{m_canvas, m_style, *m_cell_font, *m_interface_font, *m_symbols, m_content};
+        GraphicalPainter painter{m_canvas,
+                                 m_style,
+                                 *m_cell_font,
+                                 *m_interface_font,
+                                 *m_symbols,
+                                 m_content,
+                                 shows_layers() ? &m_layers : nullptr};
         paint(painter);
     }
     redecorate();
+}
+
+const std::vector<PlacedLayer>& PixelBackend::layers() const
+{
+    return m_layers;
 }
 
 void PixelBackend::redecorate()
@@ -280,6 +292,8 @@ const Canvas& PixelBackend::canvas() const
 void PixelBackend::resize(int width, int height)
 {
     m_canvas.resize(width, height);
+    // Their places were on the canvas that went.
+    m_layers.clear();
     m_content = {0, 0, width, height};
 }
 

@@ -11,9 +11,11 @@ namespace olagarro::oui
 namespace
 {
 
+constexpr std::uint32_t solid{0xFF000000u};
+
 [[nodiscard]] std::uint32_t pack(Color color)
 {
-    return (std::uint32_t{color.red} << 16) | (std::uint32_t{color.green} << 8) | std::uint32_t{color.blue};
+    return solid | (std::uint32_t{color.red} << 16) | (std::uint32_t{color.green} << 8) | std::uint32_t{color.blue};
 }
 
 [[nodiscard]] Color unpack(std::uint32_t pixel)
@@ -62,6 +64,14 @@ Color Canvas::pixel_at(int x, int y) const
     }
     return unpack(m_pixels[static_cast<std::size_t>(y * m_width + x)]);
 }
+int Canvas::alpha_at(int x, int y) const
+{
+    if(x < 0 || y < 0 || x >= m_width || y >= m_height)
+    {
+        throw std::out_of_range{"The pixel is outside the canvas."};
+    }
+    return static_cast<int>(m_pixels[static_cast<std::size_t>(y * m_width + x)] >> 24u);
+}
 void Canvas::resize(int width, int height)
 {
     if(width < 0 || height < 0)
@@ -70,7 +80,7 @@ void Canvas::resize(int width, int height)
     }
     m_width = width;
     m_height = height;
-    m_pixels.assign(static_cast<std::size_t>(width * height), 0);
+    m_pixels.assign(static_cast<std::size_t>(width * height), solid);
     m_clip = {0, 0, width, height};
 }
 void Canvas::set_clip(const PixelRect& clip)
@@ -91,13 +101,23 @@ void Canvas::fill(const PixelRect& rect, Color color)
         std::fill(row + area.x, row + area.x + area.width, value);
     }
 }
+void Canvas::clear(const PixelRect& rect)
+{
+    const auto area{intersect(rect, m_clip)};
+    for(auto y{area.y}; y < area.y + area.height; ++ y)
+    {
+        auto* const row{&m_pixels[static_cast<std::size_t>(y * m_width)]};
+        std::fill(row + area.x, row + area.x + area.width, 0u);
+    }
+}
 void Canvas::copy(int x, int y, const std::uint32_t* pixels, int width, int height, int stride)
 {
     const auto area{intersect({x, y, width, height}, m_clip)};
     for(auto row{area.y}; row < area.y + area.height; ++ row)
     {
         const auto* const source{pixels + static_cast<std::ptrdiff_t>(row - y) * stride + (area.x - x)};
-        std::copy(source, source + area.width, &m_pixels[static_cast<std::size_t>(row * m_width + area.x)]);
+        std::transform(source, source + area.width, &m_pixels[static_cast<std::size_t>(row * m_width + area.x)],
+                       [](std::uint32_t pixel) { return pixel | solid; });
     }
 }
 void Canvas::mix_over(int x, int y, const std::uint32_t* pixels, int width, int height, int stride)
@@ -126,8 +146,22 @@ void Canvas::blend(int x, int y, Color color, int alpha)
         return;
     }
     const auto under{unpack(pixel)};
-    pixel = pack(
-        {mix(under.red, color.red, alpha), mix(under.green, color.green, alpha), mix(under.blue, color.blue, alpha)});
+    const auto under_alpha{static_cast<int>(pixel >> 24u)};
+    if(under_alpha == 255)
+    {
+        pixel = pack({mix(under.red, color.red, alpha), mix(under.green, color.green, alpha),
+                      mix(under.blue, color.blue, alpha)});
+        return;
+    }
+    // Over a see-through pixel: what is under it counts as much as it shows, as both will be mixed over the layer.
+    const auto under_weight{under_alpha * (255 - alpha)};
+    const auto total{alpha * 255 + under_weight};
+    const auto channel{[&](std::uint8_t from, std::uint8_t to) {
+        return static_cast<std::uint32_t>((from * under_weight + to * alpha * 255 + total / 2) / total);
+    }};
+    const auto out_alpha{static_cast<std::uint32_t>((total + 127) / 255)};
+    pixel = (out_alpha << 24u) | (channel(under.red, color.red) << 16u) | (channel(under.green, color.green) << 8u) |
+            channel(under.blue, color.blue);
 }
 void Canvas::fill_polygon(const std::vector<PixelPoint>& points, Color color)
 {

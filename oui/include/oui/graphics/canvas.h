@@ -34,7 +34,9 @@ struct GlyphBitmap
     std::vector<std::uint8_t> coverage;
 };
 
-// Pixels in memory, as 0x00RRGGBB, that every drawing operation clips to the current clip rectangle.
+// Pixels in memory, as 0xAARRGGBB with straight alpha, that every drawing operation clips to the current clip
+// rectangle. What is drawn is solid; only clear makes pixels see-through, for what shows beneath them (a PixelLayer),
+// and what is drawn over those afterwards is mixed into them by its own alpha.
 class Canvas
 {
   public:
@@ -44,13 +46,17 @@ class Canvas
     [[nodiscard]] int height() const;
     [[nodiscard]] const std::vector<std::uint32_t>& pixels() const;
     [[nodiscard]] Color pixel_at(int x, int y) const;
-    // Keeps nothing of what was drawn.
+    // From 0, see-through, to 255, solid.
+    [[nodiscard]] int alpha_at(int x, int y) const;
+    // Keeps nothing of what was drawn: solid black.
     void resize(int width, int height);
 
     void set_clip(const PixelRect& clip);
     [[nodiscard]] const PixelRect& clip() const;
 
     void fill(const PixelRect& rect, Color color);
+    // Makes a rectangle wholly see-through.
+    void clear(const PixelRect& rect);
     // Mixes `color` over a rectangle by `alpha`, 0 to 255.
     void fill_blended(const PixelRect& rect, Color color, int alpha);
     // Mixes `color` into a pixel by `alpha`, 0 to 255.
@@ -59,7 +65,8 @@ class Canvas
     void fill_polygon(const std::vector<PixelPoint>& points, Color color);
     // A stroke of `width` pixels between two points, antialiased.
     void draw_line(PixelPoint from, PixelPoint to, float width, Color color);
-    // Copies `width` by `height` pixels, each row `stride` after the one before, with their top left corner at x, y.
+    // Copies `width` by `height` pixels, each row `stride` after the one before, with their top left corner at x, y,
+    // as solid: their top byte is not read.
     void copy(int x, int y, const std::uint32_t* pixels, int width, int height, int stride);
     // As copy, but the pixels are 0xAARRGGBB with straight alpha and are mixed over what is there by it.
     void mix_over(int x, int y, const std::uint32_t* pixels, int width, int height, int stride);

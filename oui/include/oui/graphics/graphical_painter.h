@@ -5,6 +5,7 @@
 #include <oui/painter.h>
 #include <oui/theme.h>
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -87,15 +88,29 @@ struct GraphicalTheme
 // The graphical looks built into OUI, the default first.
 [[nodiscard]] std::vector<GraphicalTheme> graphical_themes();
 
+// A layer drawn beneath the canvas (Painter::draw_layer): stretched over `area`, in the canvas's pixels, and shown
+// within `visible`, the area cut to the clip it was drawn in.
+struct PlacedLayer
+{
+    std::shared_ptr<const PixelLayer> layer;
+    PixelRect area;
+    PixelRect visible;
+};
+
+// Draws a layer's pixels on a canvas, over the desktop's colour, where it was placed.
+void draw_placed_layer(Canvas& canvas, const PlacedLayer& placed, Color desktop);
+
 // Paints the cells and elements of OUI on a canvas: the cells in a monospace font, interface text in a proportional
 // one, and every element in a style of shapes rather than characters.
 class GraphicalPainter final : public Painter
 {
   public:
     // `symbols` draws what the other two lack, as symbol_font() does. The cells start at the top left of `area` and
-    // nothing is drawn outside it; without one they take the whole canvas.
+    // nothing is drawn outside it; without one they take the whole canvas. With `layers`, a layer drawn is added to
+    // them and its place on the canvas left see-through, for what shows the canvas to draw beneath it; without, its
+    // pixels are drawn on the canvas.
     GraphicalPainter(Canvas& canvas, const GraphicalStyle& style, Font& cell_font, Font& interface_font, Font& symbols,
-                     std::optional<PixelRect> area = std::nullopt);
+                     std::optional<PixelRect> area = std::nullopt, std::vector<PlacedLayer>* layers = nullptr);
 
     // The size of a cell in pixels, from the cell font.
     [[nodiscard]] static Size cell_size(Font& cell_font);
@@ -137,6 +152,7 @@ class GraphicalPainter final : public Painter
     void draw_slider(const Rect& bounds, const SliderLook& look, const Theme& theme) override;
     void draw_text_cursor(Point position, std::string_view character, const TextStyle& style) override;
     void draw_image(const Rect& bounds, const PixelImage& image, const Theme& theme) override;
+    void draw_layer(const Rect& bounds, std::shared_ptr<const PixelLayer> layer) override;
     [[nodiscard]] std::optional<Rect> pixel_bounds(const Rect& cells) const override;
     void draw_mnemonic_label(Point position, std::string_view text, std::size_t mnemonic, const TextStyle& style,
                              Color mnemonic_color, Align align) override;
@@ -177,6 +193,7 @@ class GraphicalPainter final : public Painter
     CellPixels m_cell;
     PixelRect m_area;
     std::vector<PixelRect> m_clips;
+    std::vector<PlacedLayer>* m_layers;
 };
 
 } // namespace olagarro::oui

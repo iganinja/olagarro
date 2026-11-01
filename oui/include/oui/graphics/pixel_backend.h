@@ -70,6 +70,11 @@ class PixelBackend : public Backend
     [[nodiscard]] Font& interface_font();
     // Called after each frame is painted and decorated.
     virtual void show(const Canvas& canvas) = 0;
+    // Whether show() draws the frame's layers (layers()) beneath the canvas, which is see-through where they are, as a
+    // window with a device does; otherwise their pixels are drawn on the canvas as they are painted.
+    [[nodiscard]] virtual bool shows_layers() const { return false; }
+    // The layers the last frame drew, in the order drawn, while shows_layers().
+    [[nodiscard]] const std::vector<PlacedLayer>& layers() const;
     // Decorates and shows the last frame again, as when only the decoration changed.
     void redecorate();
 
@@ -84,6 +89,7 @@ class PixelBackend : public Backend
     // After m_cell, which it is sized to.
     std::unique_ptr<Font> m_symbols;
     Canvas m_canvas;
+    std::vector<PlacedLayer> m_layers;
     PixelRect m_content;
     std::unique_ptr<TextMetrics> m_metrics;
 };

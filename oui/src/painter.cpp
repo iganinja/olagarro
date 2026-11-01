@@ -524,6 +524,10 @@ void Painter::draw_image(const Rect& bounds, const PixelImage&, const Theme& the
     fill_rect(bounds, theme.background);
 }
 
+void Painter::draw_layer(const Rect&, std::shared_ptr<const PixelLayer>)
+{
+}
+
 std::optional<Rect> Painter::pixel_bounds(const Rect&) const
 {
     return std::nullopt;

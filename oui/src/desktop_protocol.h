@@ -17,7 +17,7 @@ enum class Message : std::uint32_t
 {
     // Program to desktop: its title, as text, first of all.
     hello = 1,
-    // Program to desktop: the memory its frames are in, passed along with it, `Buffer` big: 0x00RRGGBB pixels, or
+    // Program to desktop: the memory its frames are in, passed along with it, `Buffer` big: 0xFFRRGGBB pixels, or
     // `WireCell`s on a desktop of cells.
     buffer,
     // Program to desktop: a new frame is in the memory; it draws no other until the desktop has taken it.

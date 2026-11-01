@@ -348,10 +348,10 @@ Theme theme_for(const GraphicalStyle& style)
 }
 
 GraphicalPainter::GraphicalPainter(Canvas& canvas, const GraphicalStyle& style, Font& cell_font, Font& interface_font,
-                                   Font& symbols, std::optional<PixelRect> area)
+                                   Font& symbols, std::optional<PixelRect> area, std::vector<PlacedLayer>* layers)
     : m_canvas{canvas}, m_style{style}, m_cell_font{cell_font}, m_interface_font{interface_font},
       m_fonts{cell_font, interface_font, symbols}, m_cell{cell_font.glyph(U'M').advance, cell_font.line_height()},
-      m_area{area.value_or(PixelRect{0, 0, canvas.width(), canvas.height()})}
+      m_area{area.value_or(PixelRect{0, 0, canvas.width(), canvas.height()})}, m_layers{layers}
 {
     m_canvas.set_clip(m_area);
 }
@@ -1075,6 +1075,69 @@ void GraphicalPainter::draw_image(const Rect& bounds, const PixelImage& image, c
         m_canvas.copy(area.x, area.y, image.pixels, image.width, image.height, image.stride);
     }
     m_canvas.set_clip(previous);
+}
+
+void GraphicalPainter::draw_layer(const Rect& bounds, std::shared_ptr<const PixelLayer> layer)
+{
+    if(layer == nullptr)
+    {
+        return;
+    }
+    const auto area{pixels(bounds)};
+    PlacedLayer placed{std::move(layer), area, intersect(area, m_canvas.clip())};
+    if(placed.visible.width <= 0 || placed.visible.height <= 0)
+    {
+        return;
+    }
+    if(m_layers == nullptr)
+    {
+        draw_placed_layer(m_canvas, placed, m_style.desktop);
+        return;
+    }
+    m_canvas.clear(placed.visible);
+    m_layers->push_back(std::move(placed));
+}
+
+void draw_placed_layer(Canvas& canvas, const PlacedLayer& placed, Color desktop)
+{
+    const TraceScope span{"oui.draw_layer"};
+    const auto previous{canvas.clip()};
+    canvas.set_clip(intersect(previous, placed.visible));
+    canvas.fill(placed.visible, desktop);
+    const auto width{placed.layer->width()};
+    const auto height{placed.layer->height()};
+    const auto pixels{placed.layer->pixels()};
+    const auto& area{placed.area};
+    if(width > 0 && height > 0 && pixels.size() >= static_cast<std::size_t>(width) * static_cast<std::size_t>(height))
+    {
+        if(width == area.width && height == area.height)
+        {
+            canvas.mix_over(area.x, area.y, pixels.data(), width, height, width);
+        }
+        else
+        {
+            // Stretched, each pixel of the area taking the layer's pixel its middle falls in.
+            const auto& clip{canvas.clip()};
+            std::vector<std::uint32_t> row(static_cast<std::size_t>(clip.width));
+            for(auto y{clip.y}; y < clip.y + clip.height; ++ y)
+            {
+                const auto source_y{std::clamp(
+                    static_cast<int>((static_cast<long long>(y - area.y) * 2 + 1) * height / (2LL * area.height)), 0,
+                    height - 1)};
+                for(auto x{clip.x}; x < clip.x + clip.width; ++ x)
+                {
+                    const auto source_x{std::clamp(
+                        static_cast<int>((static_cast<long long>(x - area.x) * 2 + 1) * width / (2LL * area.width)), 0,
+                        width - 1)};
+                    row[static_cast<std::size_t>(x - clip.x)] =
+                        pixels[static_cast<std::size_t>(source_y) * static_cast<std::size_t>(width) +
+                               static_cast<std::size_t>(source_x)];
+                }
+                canvas.mix_over(clip.x, y, row.data(), clip.width, 1, clip.width);
+            }
+        }
+    }
+    canvas.set_clip(previous);
 }
 
 std::optional<Rect> GraphicalPainter::pixel_bounds(const Rect& cells) const
