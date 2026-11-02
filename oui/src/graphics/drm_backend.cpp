@@ -193,10 +193,10 @@ constexpr std::array<std::string_view, 17> resize_rows_arrow{{
     "   X   ",
 }};
 
-class DrmBackend final : public PixelBackend
+class DrmBackend final : public DrmScreen
 {
   public:
-    explicit DrmBackend(const DrmOptions& options) : PixelBackend{options.style}, m_keyboard{keyboard(options)}
+    explicit DrmBackend(const DrmOptions& options) : DrmScreen{options.style}, m_keyboard{keyboard(options)}
     {
         m_card = Descriptor{open(options.card.c_str(), O_RDWR | O_CLOEXEC)};
         if(m_card.get() < 0)
@@ -264,6 +264,23 @@ class DrmBackend final : public PixelBackend
     }
 
     [[nodiscard]] bool reports_modifiers() const override { return true; }
+
+    void lend_screen() override
+    {
+        m_active = false;
+        control(m_card.get(), DRM_IOCTL_DROP_MASTER, nullptr);
+    }
+
+    void take_screen_back() override
+    {
+        control(m_card.get(), DRM_IOCTL_SET_MASTER, nullptr);
+        // The program may have left another mode: this one's, and its frame.
+        show_now(m_buffers[m_front].framebuffer);
+        take_held_keys();
+        m_active = true;
+        m_flip_pending = false;
+        present();
+    }
 
     std::optional<Event> poll_event() override
     {
@@ -633,7 +650,10 @@ class DrmBackend final : public PixelBackend
             Device device;
             device.keyboard = has_bit(types, EV_KEY) && has_bit(keys, KEY_A) && has_bit(keys, KEY_ENTER);
             const auto relative{has_bit(types, EV_REL) && has_bit(event_bits(fd.get(), EV_REL, REL_MAX), REL_X)};
-            device.absolute = has_bit(types, EV_ABS) && has_bit(event_bits(fd.get(), EV_ABS, ABS_MAX), ABS_X);
+            // A pad has an ABS_X too, its stick, which is not where a pointer is: it is left to whoever reads pads.
+            const auto pad{has_bit(keys, BTN_GAMEPAD) || has_bit(keys, BTN_JOYSTICK)};
+            device.absolute =
+                !pad && has_bit(types, EV_ABS) && has_bit(event_bits(fd.get(), EV_ABS, ABS_MAX), ABS_X);
             if(device.absolute)
             {
                 control(fd.get(), EVIOCGABS(ABS_X), &device.x_range);
@@ -1013,7 +1033,7 @@ class DrmBackend final : public PixelBackend
 
 } // namespace
 
-std::unique_ptr<PixelBackend> drm_backend(DrmOptions options)
+std::unique_ptr<DrmScreen> drm_backend(DrmOptions options)
 {
     return std::make_unique<DrmBackend>(options);
 }
