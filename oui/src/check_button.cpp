@@ -114,7 +114,9 @@ Size CheckButton::measure(const Constraints& constraints) const
 
 void CheckButton::paint(Painter& painter, const Theme& theme) const
 {
-    CheckBoxLook look{strip_mnemonic(m_text), m_checked, is_focused() && is_enabled(),
+    // Kept here: the look only points at it.
+    const auto text{strip_mnemonic(m_text)};
+    CheckBoxLook look{text, m_checked, is_focused() && is_enabled(),
                       resolve(m_background, theme, theme.dialog_background), mnemonic_offset(m_text), is_enabled()};
     if(m_face)
     {
