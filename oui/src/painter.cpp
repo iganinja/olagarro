@@ -203,6 +203,14 @@ void Painter::draw_button(const Rect& bounds, const ButtonLook& look, const Them
     }
 }
 
+void Painter::draw_heading(const Rect& area, std::string_view text, const TextStyle& style, double,
+                           Align align)
+{
+    auto bold{style};
+    bold.attributes |= text_bold;
+    draw_label(Rect{area.x, area.y + std::floor((area.height - 1) / 2), area.width, 1}, text, bold, align);
+}
+
 void Painter::draw_check_box(const Rect& bounds, const CheckBoxLook& look, const Theme& theme)
 {
     const TextStyle style{!look.enabled  ? theme.disabled_foreground

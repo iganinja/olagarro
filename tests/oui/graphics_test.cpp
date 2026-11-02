@@ -876,6 +876,54 @@ TEST(OuiGraphicsTests, AButtonTakesItsWholeWidthWhereNoShadowIsDrawn)
     EXPECT_FALSE(same(canvas.pixel_at(1, 24), around));
 }
 
+TEST(OuiGraphicsTests, AHeadingIsItsTextScaledUp)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    const auto style{classic_style()};
+    const Color background{1, 2, 3};
+    const TextStyle text{Color{250, 250, 250}, background, 0};
+    // How many rows of pixels the text's ink takes, and how many columns.
+    const auto ink{[&](bool heading)
+                   {
+                       Canvas canvas{480, 96};
+                       canvas.fill({0, 0, 480, 96}, background);
+                       GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+                       if(heading)
+                       {
+                           painter.draw_heading({0, 0, 40, 4}, "Mega Drive", text, 2.0, Align::start);
+                       }
+                       else
+                       {
+                           painter.draw_label(Rect{0, 0, 40, 4}, "Mega Drive", text, Align::start);
+                       }
+                       int top{96};
+                       int bottom{-1};
+                       int left{480};
+                       int right{-1};
+                       for(int y{}; y < 96; ++ y)
+                       {
+                           for(int x{}; x < 480; ++ x)
+                           {
+                               if(!same(canvas.pixel_at(x, y), background))
+                               {
+                                   top = std::min(top, y);
+                                   bottom = std::max(bottom, y);
+                                   left = std::min(left, x);
+                                   right = std::max(right, x);
+                               }
+                           }
+                       }
+                       return std::pair<int, int>{right - left + 1, bottom - top + 1};
+                   }};
+    const auto label{ink(false)};
+    const auto heading{ink(true)};
+    ASSERT_GT(label.second, 0);
+    EXPECT_GE(heading.second, label.second * 18 / 10);
+    EXPECT_GE(heading.first, label.first * 18 / 10);
+}
+
 TEST(OuiGraphicsTests, ACheckBoxWithNoTextIsItsBoxAloneInTheMiddleOfItsPlace)
 {
     // As a column of boxes in a table: the box in the middle of its cell, and nothing painted round it, so the row

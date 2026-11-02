@@ -113,6 +113,8 @@ class GraphicalPainter final : public Painter
     void draw_label(Point position, std::string_view text, const TextStyle& style, Align align) override;
     void draw_label(const Rect& area, std::string_view text, const TextStyle& style, Align align) override;
     void draw_label_runs(Point position, const std::vector<LabelRun>& runs, Color background) override;
+    void draw_heading(const Rect& area, std::string_view text, const TextStyle& style, double scale,
+                      Align align) override;
     void draw_window(const Rect& bounds, const WindowLook& look, const Theme& theme) override;
     void draw_button(const Rect& bounds, const ButtonLook& look, const Theme& theme) override;
     void draw_check_box(const Rect& bounds, const CheckBoxLook& look, const Theme& theme) override;
