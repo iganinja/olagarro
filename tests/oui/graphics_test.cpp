@@ -987,6 +987,35 @@ TEST(OuiGraphicsTests, AButtonInAWindowIsAsTallAsItIsDrawnSoADialogEndsARowUnder
     EXPECT_NEAR(under * cell.height, cell.height, 1e-9);
 }
 
+// In a window the bar is a little taller than a row, its titles in the middle, so what is under it stands clear of
+// their letters; in a terminal it is a row.
+TEST(OuiGraphicsTests, AMenuBarInAWindowLeavesRoomAboveAndBelowItsTitles)
+{
+    CommandRegistry commands;
+    {
+        auto backend{image_backend({1000, 700})};
+        auto& image{*backend};
+        Application application{std::move(backend)};
+        const auto cell{image.cell_size()};
+        auto content{column()};
+        auto& bar{content->add(menu_bar(application.commands()))};
+        bar.add_menu("&File", {menu_action("Open", [] {})});
+        const auto& below{content->add(label("Below"))};
+        application.set_content(std::move(content));
+        application.run_frame();
+        // Three pixels above and below 24-pixel rows.
+        const auto room{2.0 * std::floor(cell.height / 8.0)};
+        EXPECT_NEAR(bar.bounds().height * cell.height, cell.height + room, 1e-9);
+        EXPECT_NEAR(below.bounds().y * cell.height, cell.height + room, 1e-9);
+        // Anywhere on it is on the bar, its lowest pixels too.
+        EXPECT_EQ(bar.hit_test(1.5, bar.bounds().height - 0.5 / cell.height), &bar);
+        application.set_content(nullptr);
+    }
+    auto bar{menu_bar(commands)};
+    bar->add_menu("&File", {menu_action("Open", [] {})});
+    EXPECT_DOUBLE_EQ(bar->measure({80, 25}).height, 1.0);
+}
+
 TEST(OuiGraphicsTests, AMenuInAWindowIsAsWideAsItsWidestEntry)
 {
     auto backend{image_backend({1000, 700})};

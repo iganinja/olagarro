@@ -5,6 +5,7 @@
 #include <oui/text_layout.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cctype>
 #include <cstdint>
 
@@ -54,10 +55,18 @@ void draw_with_mnemonic(Painter& painter, Point position, std::string_view title
     return x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height;
 }
 
-// Whether a point is on the bar's row, anywhere in it: a window's pointer falls between cells.
+// How tall the bar is: a row, and in a window a little room above and below its titles, so what is under it stands
+// clear of their letters.
+[[nodiscard]] double bar_rows()
+{
+    const auto cell{text_metrics().cell_pixels()};
+    return cell ? 1.0 + 2.0 * std::floor(cell->height / 8.0) / cell->height : 1.0;
+}
+
+// Whether a point is on the bar, anywhere in it: a window's pointer falls between cells.
 [[nodiscard]] bool on_bar(const Rect& bounds, double x, double y)
 {
-    return inside({bounds.x, bounds.y, bounds.width, 1}, x, y);
+    return inside({bounds.x, bounds.y, bounds.width, bar_rows()}, x, y);
 }
 
 } // namespace
@@ -233,7 +242,7 @@ double MenuBar::menu_top() const
 {
     if(m_active != context_menu)
     {
-        return bounds().y + 1;
+        return bounds().y + bar_rows();
     }
     // Under the pointer, or as high as it must go to fit above the bottom of the screen.
     const auto height{static_cast<int>(m_context_items.size()) + 2 * text_metrics().popup_frame_rows()};
@@ -476,7 +485,7 @@ Rect MenuBar::paint_bounds() const
 {
     if(m_active == no_menu)
     {
-        return {bounds().x, bounds().y, bounds().width, 1};
+        return {bounds().x, bounds().y, bounds().width, bar_rows()};
     }
     const auto menu{menu_bounds()};
     auto bottom{menu.y + menu.height};
@@ -535,7 +544,7 @@ void MenuBar::clear()
 Size MenuBar::measure(const Constraints& constraints) const
 {
     // With no menus there is nothing on it to show; it is there for the menus a right click opens.
-    return constraints.constrain({constraints.max_width, m_menus.empty() ? 0.0 : 1.0});
+    return constraints.constrain({constraints.max_width, m_menus.empty() ? 0.0 : bar_rows()});
 }
 
 void MenuBar::move_selection(int step)
@@ -884,7 +893,9 @@ void MenuBar::paint_list(Painter& painter, const Theme& theme, const std::vector
 
 void MenuBar::paint(Painter& painter, const Theme& theme) const
 {
-    painter.draw_bar({bounds().x, bounds().y, bounds().width, 1}, BarKind::menu, theme);
+    painter.draw_bar({bounds().x, bounds().y, bounds().width, bar_rows()}, BarKind::menu, theme);
+    // The titles in the middle of the bar.
+    const auto title_y{bounds().y + (bar_rows() - 1.0) / 2.0};
     for(std::size_t index{}; index < m_menus.size(); ++ index)
     {
         const auto selected{index == m_active};
@@ -892,8 +903,8 @@ void MenuBar::paint(Painter& painter, const Theme& theme) const
                               selected ? theme.menu_selected_background : theme.menu_background};
         const auto x{menu_x(index)};
         const auto& title{m_menus.at(index).title};
-        painter.fill_rect({x, bounds().y, title_width(title), 1}, style.background);
-        draw_with_mnemonic(painter, {x + 1, bounds().y}, title, style,
+        painter.fill_rect({x, bounds().y, title_width(title), bar_rows()}, style.background);
+        draw_with_mnemonic(painter, {x + 1, title_y}, title, style,
                            selected ? std::nullopt : std::optional<Color>{theme.hotkey_foreground});
     }
     if(m_active == no_menu)
