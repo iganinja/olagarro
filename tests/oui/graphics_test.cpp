@@ -956,6 +956,37 @@ TEST(OuiGraphicsTests, IconAndCompactButtonsInAWindowAreNotWidenedToSixCells)
     EXPECT_DOUBLE_EQ(compact->measure({}).width, (text_metrics().width("OK") + margins) / 12.0);
 }
 
+TEST(OuiGraphicsTests, AButtonInAWindowIsAsTallAsItIsDrawnSoADialogEndsARowUnderIt)
+{
+    auto backend{image_backend({480, 240})};
+    auto& image{*backend};
+    Application application{std::move(backend)};
+    const auto theme{classic_theme()};
+    application.set_theme(theme);
+    auto window{oui::window("Question")};
+    const auto* const shown{window.get()};
+    auto content{column()};
+    content->set_gap(Spacing::tight);
+    content->add(label("Go ahead?"));
+    const auto* const ok{&button("OK", *content, [] {})};
+    window->add(std::move(content));
+    application.set_window(std::move(window));
+    application.run_frame();
+    const auto cell{image.cell_size()};
+    // No row kept for a terminal's shadow: the button is the height it is drawn, half as tall again as a row.
+    const auto pixels{static_cast<int>(cell.height) * 17 / 12};
+    EXPECT_NEAR(ok->bounds().height * cell.height, pixels, 1e-9);
+    const auto& canvas{image.canvas()};
+    const auto x{static_cast<int>((ok->bounds().x + ok->bounds().width / 2) * cell.width)};
+    const auto top{static_cast<int>(std::lround(ok->bounds().y * cell.height))};
+    EXPECT_FALSE(same(canvas.pixel_at(x, top), theme.dialog_background));
+    EXPECT_FALSE(same(canvas.pixel_at(x, top + pixels - 1), theme.dialog_background));
+    EXPECT_TRUE(same(canvas.pixel_at(x, top + pixels), theme.dialog_background));
+    // Under it the window keeps one row, as it keeps one over what it holds.
+    const auto under{shown->bounds().y + shown->bounds().height - ok->bounds().y - ok->bounds().height};
+    EXPECT_NEAR(under * cell.height, cell.height, 1e-9);
+}
+
 TEST(OuiGraphicsTests, AMenuInAWindowIsAsWideAsItsWidestEntry)
 {
     auto backend{image_backend({1000, 700})};
@@ -1307,6 +1338,8 @@ TEST(OuiGraphicsTests, AnIconButtonInAWindowIsASquareAsTallAsItsRowWithTheTextsM
     const auto margin{classic_style().text_margin};
     EXPECT_EQ(text_metrics().text_margin(), margin);
     const auto square{(cell.height + 2 * margin) / cell.width};
+    // Not compact, as tall as it is drawn: half as tall again as a row, with no row kept for a shadow.
+    const auto tall{(static_cast<int>(cell.height) * 17 / 12) / cell.height};
     for(const auto compact : {true, false})
     {
         for(const std::string_view text : {"Play", "A much longer name"})
@@ -1316,7 +1349,7 @@ TEST(OuiGraphicsTests, AnIconButtonInAWindowIsASquareAsTallAsItsRowWithTheTextsM
             made->set_icon(Icon::play);
             const auto measured{made->measure({})};
             EXPECT_DOUBLE_EQ(measured.width, square) << text << ", compact " << compact;
-            EXPECT_DOUBLE_EQ(measured.height, compact ? 1.0 : 2.0) << text << ", compact " << compact;
+            EXPECT_DOUBLE_EQ(measured.height, compact ? 1.0 : tall) << text << ", compact " << compact;
         }
     }
 }

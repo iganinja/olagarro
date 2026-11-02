@@ -110,9 +110,12 @@ Size Button::measure(const Constraints& constraints) const
     // pixels a button's text is raised round its margins, with no frame of characters beside it, and an icon takes a
     // square as tall as a row with those margins beside it, whatever the text it stands for. A button with text that is
     // not compact is at least six cells wide there, as desktop toolkits give OK and Cancel; its text stays centred.
+    // With no shadow drawn there, one that is not compact is as tall as it is drawn, half as tall again as a row
+    // (GraphicalPainter::draw_button).
     const auto& metrics{text_metrics()};
-    const auto height{m_compact ? 1.0 : 2.0};
     const auto cell{metrics.cell_pixels()};
+    const auto rows{static_cast<int>(cell ? cell->height : 0) * 17 / 12};
+    const auto height{m_compact ? 1.0 : cell ? rows / cell->height : 2.0};
     if(cell && m_icon)
     {
         const auto square{(cell->height + 2 * metrics.text_margin()) / cell->width};

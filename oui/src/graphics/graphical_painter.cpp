@@ -713,17 +713,18 @@ void GraphicalPainter::draw_button(const Rect& bounds, const ButtonLook& look, c
     const auto area{pixels(bounds)};
     m_canvas.fill(area, look.around);
     // A terminal button keeps a column and a row for its shadow; here, with no shadow drawn, the button takes its
-    // whole width, as the fields beside it do, and the middle of its rows.
+    // whole width, as the fields beside it do, and is half as tall again as a row, the height Button measures, in the
+    // middle of its bounds when they are taller. Compact, or given less, it fits in a row.
     auto shape{area};
-    if(look.compact || bounds.height < 2)
+    const auto height{m_cell.height * 17 / 12};
+    if(look.compact || area.height < height)
     {
         shape.y += 1;
         shape.height = m_cell.height - 2;
     }
     else
     {
-        const auto height{m_cell.height * 17 / 12};
-        shape.y += (2 * m_cell.height - height) / 2;
+        shape.y += (area.height - height) / 2;
         shape.height = height;
     }
     bevel(shape, look.pressed, look.pressed && m_style.flat ? m_style.light : theme.button_background);
