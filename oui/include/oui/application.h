@@ -249,6 +249,8 @@ class Application
     // Tab wraps around the window; an arrow stops at the first or last field, so holding it does not
     // cycle through the dialog.
     void focus_by_offset(int offset, bool wrap = true);
+    // As focus_by_offset, for Tab, Shift+Tab or an arrow: a field it comes to has all its text selected.
+    void step_focus(int offset, bool wrap = true);
 
     std::unique_ptr<Backend> m_backend;
     // The last title given to the backend; none before the first.

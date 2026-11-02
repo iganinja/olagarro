@@ -6,6 +6,7 @@
 #include <oui/layout.h>
 #include <oui/line_edit.h>
 #include <oui/menu_bar.h>
+#include <oui/number_field.h>
 #include <oui/scripted_backend.h>
 #include <oui/theme.h>
 #include <oui/window.h>
@@ -148,6 +149,43 @@ TEST(OuiFocusHandlerTests, AWidgetsFocusHandlerHearsItTakeAndLoseTheFocus)
     form.click(*form.field);
     form.click(*form.quit);
     EXPECT_EQ(heard, (std::vector<bool>{false, true, false}));
+}
+
+TEST(OuiFocusTests, TabToAFieldSelectsItsTextSoWhatIsTypedReplacesIt)
+{
+    // As a dialog's width and height: Tab from one to the other, and a number typed replaces the one there.
+    auto made{oui::scripted_backend({}, {40, 12})};
+    oui::Application application{std::move(made)};
+    auto window{oui::window("Size")};
+    auto content{oui::column()};
+    auto& width{content->add(oui::number_field())};
+    auto& height{content->add(oui::number_field())};
+    auto& name{content->add(oui::line_edit())};
+    width.set_range(1, 10000);
+    height.set_range(1, 10000);
+    width.set_value(640);
+    height.set_value(480);
+    name.set_text("picture");
+    window->add(std::move(content));
+    application.set_window(std::move(window));
+    application.render();
+    application.focus(width.text_field());
+    application.dispatch_event(oui::KeyEvent{oui::Key::tab});
+    ASSERT_TRUE(height.text_field().is_focused());
+    EXPECT_EQ(height.text_field().selected_text(), "480");
+    application.dispatch_event(oui::TextEvent{U'7'});
+    EXPECT_EQ(height.text_field().text(), "7");
+    application.dispatch_event(oui::KeyEvent{oui::Key::tab});
+    EXPECT_EQ(name.selected_text(), "picture");
+    application.dispatch_event(oui::KeyEvent{oui::Key::shift_tab});
+    EXPECT_EQ(height.text_field().selected_text(), "7") << "Shift+Tab back selects too";
+    // A click puts the cursor where it lands and selects nothing.
+    const auto at{name.bounds()};
+    application.dispatch_event(oui::MouseEvent{at.x + 1, at.y, true});
+    oui::MouseEvent release{at.x + 1, at.y, false};
+    release.released = true;
+    application.dispatch_event(release);
+    EXPECT_EQ(name.selected_text(), "");
 }
 
 TEST(OuiMenuBarTests, AMenuBarWithNoMenusTakesNoRoom)
