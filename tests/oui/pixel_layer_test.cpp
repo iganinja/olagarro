@@ -153,6 +153,39 @@ TEST(OuiPixelLayerTests, AWidgetsLayerShowsInAScreenshot)
     }
 }
 
+// A backend that shows its layers beneath the canvas, as a window with a device does, keeping them as one.
+class LayeredBackend final : public PixelBackend
+{
+  public:
+    explicit LayeredBackend(Size pixels) { resize(whole(pixels.width), whole(pixels.height)); }
+
+    std::optional<Event> poll_event() override { return std::nullopt; }
+    std::size_t kept_layers() const { return layers().size(); }
+    void drop() { drop_layers(); }
+
+  protected:
+    void show(const Canvas&) override {}
+    bool shows_layers() const override { return true; }
+};
+
+// The last frame's layers may be the last to hold a texture, which a window must let go of while its device is there.
+TEST(OuiPixelLayerTests, ABackendKeepsTheLastFramesLayersTillItDropsThem)
+{
+    auto backend{std::make_unique<LayeredBackend>(Size{480, 240})};
+    auto& layered{*backend};
+    Application application{std::move(backend)};
+    auto layer{solid_layer(0xffff0000u)};
+    const std::weak_ptr<const PixelLayer> watched{layer};
+    application.set_content(std::make_unique<LayerView>(std::move(layer)));
+    application.run_frame();
+    ASSERT_EQ(layered.kept_layers(), 1u);
+    application.set_content(nullptr);
+    EXPECT_FALSE(watched.expired()) << "kept by the last frame";
+    layered.drop();
+    EXPECT_EQ(layered.kept_layers(), 0u);
+    EXPECT_TRUE(watched.expired());
+}
+
 TEST(OuiPixelLayerTests, AMenuOpenedOverALayerCoversIt)
 {
     auto backend{image_backend({480, 240})};

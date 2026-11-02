@@ -217,6 +217,11 @@ const std::vector<PlacedLayer>& PixelBackend::layers() const
     return m_layers;
 }
 
+void PixelBackend::drop_layers()
+{
+    m_layers.clear();
+}
+
 void PixelBackend::redecorate()
 {
     m_canvas.set_clip({0, 0, m_canvas.width(), m_canvas.height()});

@@ -75,6 +75,9 @@ class PixelBackend : public Backend
     [[nodiscard]] virtual bool shows_layers() const { return false; }
     // The layers the last frame drew, in the order drawn, while shows_layers().
     [[nodiscard]] const std::vector<PlacedLayer>& layers() const;
+    // Lets go of the last frame's layers, as a backend must before what their textures live on goes: they may be the
+    // last to hold them.
+    void drop_layers();
     // Decorates and shows the last frame again, as when only the decoration changed.
     void redecorate();
 

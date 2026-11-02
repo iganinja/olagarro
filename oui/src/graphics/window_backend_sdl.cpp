@@ -194,6 +194,10 @@ class WindowBackend final : public DesktopWindow
         {
             SDL_DestroyTexture(wrapped.texture);
         }
+        // The layers may hold the last references to textures on the window's device, a program's among them, which
+        // must go while the device is still there: after it, releasing one locks what the device freed and hangs.
+        m_wrapped.clear();
+        drop_layers();
         SDL_DestroyRenderer(m_renderer);
         if(m_device != nullptr)
         {
