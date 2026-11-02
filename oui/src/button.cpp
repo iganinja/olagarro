@@ -4,6 +4,8 @@
 #include <oui/text_layout.h>
 #include <oui/text_metrics.h>
 
+#include <algorithm>
+
 namespace olagarro::oui
 {
 
@@ -106,7 +108,8 @@ Size Button::measure(const Constraints& constraints) const
 {
     // Compact, the text and a cell either side on one row; otherwise room for the frame and the shadow below. Drawn in
     // pixels a button's text is raised round its margins, with no frame of characters beside it, and an icon takes a
-    // square as tall as a row with those margins beside it, whatever the text it stands for.
+    // square as tall as a row with those margins beside it, whatever the text it stands for. A button with text that is
+    // not compact is at least six cells wide there, as desktop toolkits give OK and Cancel; its text stays centred.
     const auto& metrics{text_metrics()};
     const auto height{m_compact ? 1.0 : 2.0};
     const auto cell{metrics.cell_pixels()};
@@ -116,8 +119,12 @@ Size Button::measure(const Constraints& constraints) const
         return constraints.constrain({snap_up(square, metrics.column_step()), height});
     }
     const auto width{metrics.label_width(strip_mnemonic(m_text))};
-    const auto frame{cell ? 0.0 : m_compact ? 2.0 : 5.0};
-    return constraints.constrain({width + frame, height});
+    if(cell)
+    {
+        constexpr auto least_cells{6.0};
+        return constraints.constrain({m_compact ? width : std::max(width, least_cells), height});
+    }
+    return constraints.constrain({width + (m_compact ? 2.0 : 5.0), height});
 }
 
 void Button::paint(Painter& painter, const Theme& theme) const

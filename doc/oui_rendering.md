@@ -366,7 +366,8 @@ and through `text_metrics()` itself:
   both measured with `text_metrics()`.
 
 So in a window a label is narrower than its characters, a button with text is as wide as its text and margins (its
-raised face needs no cells of frame and shadow), a button with an icon (`set_icon`) is a square as tall as a row with
+raised face needs no cells of frame and shadow) but at least six cells (72 pixels with 12-pixel cells, as desktop
+toolkits give OK and Cancel; since 0.8.0), its text centred in them, unless it is compact, a button with an icon (`set_icon`) is a square as tall as a row with
 `text_margin()` at each side, whatever its text, a menu needs no frame rows, and a window has a title bar of
 two rows; in a terminal the same code gives the Turbo Vision shapes.
 

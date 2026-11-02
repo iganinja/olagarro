@@ -909,7 +909,7 @@ TEST(OuiGraphicsTests, InATerminalALabelIsAsWideAsItsColumns)
     EXPECT_EQ(button("OK")->measure({}).width, 7);
 }
 
-TEST(OuiGraphicsTests, ADialogsOkAndCancelAreAsWideAsTheirTextAndMargins)
+TEST(OuiGraphicsTests, ADialogsOkAndCancelAreAtLeastSixCellsWide)
 {
     auto backend{image_backend({1000, 700})};
     Application application{std::move(backend)};
@@ -921,10 +921,39 @@ TEST(OuiGraphicsTests, ADialogsOkAndCancelAreAsWideAsTheirTextAndMargins)
     const auto* const cancel{&button("Cancel", *actions, [] {})};
     application.set_content(std::move(actions));
     application.run_frame();
+    // As desktop toolkits give them: 72 pixels of 12-pixel cells, though their text and margins take less.
+    ASSERT_LT(text_metrics().label_width("Cancel"), 6);
+    EXPECT_DOUBLE_EQ(ok->bounds().width * 12, 72);
+    EXPECT_DOUBLE_EQ(cancel->bounds().width * 12, 72);
+}
+
+TEST(OuiGraphicsTests, AButtonWhoseTextIsWiderThanSixCellsIsAsWideAsItsTextAndMargins)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    const std::string text{"Rename the selected files"};
     const auto margins{2 * classic_style().text_margin};
-    EXPECT_DOUBLE_EQ(ok->bounds().width, (text_metrics().width("OK") + margins) / 12.0);
-    EXPECT_DOUBLE_EQ(cancel->bounds().width, (text_metrics().width("Cancel") + margins) / 12.0);
-    EXPECT_LT(ok->bounds().width, 7) << "fewer than the cells of a terminal's \"[ OK ]\" and its shadow";
+    const auto shown{(text_metrics().width(text) + margins) / 12.0};
+    ASSERT_GT(shown, 6);
+    EXPECT_DOUBLE_EQ(button(text)->measure({}).width, shown);
+}
+
+TEST(OuiGraphicsTests, IconAndCompactButtonsInAWindowAreNotWidenedToSixCells)
+{
+    auto backend{image_backend({1000, 700})};
+    Application application{std::move(backend)};
+    const auto margins{2 * classic_style().text_margin};
+    // An icon keeps its square as tall as a row with the margins beside it.
+    auto icon{button("OK")};
+    icon->set_icon(Icon::folder);
+    const auto cell{text_metrics().cell_pixels()};
+    ASSERT_TRUE(cell);
+    ASSERT_LT(cell->height + margins, 72);
+    EXPECT_DOUBLE_EQ(icon->measure({}).width, (cell->height + margins) / cell->width);
+    // A compact button keeps its text and margins.
+    auto compact{button("OK")};
+    compact->set_compact(true);
+    EXPECT_DOUBLE_EQ(compact->measure({}).width, (text_metrics().width("OK") + margins) / 12.0);
 }
 
 TEST(OuiGraphicsTests, AMenuInAWindowIsAsWideAsItsWidestEntry)
