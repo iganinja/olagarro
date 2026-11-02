@@ -61,4 +61,31 @@ class KeyboardLayout
     std::optional<char32_t> m_dead;
 };
 
+// The keys a console gives in medium raw mode (K_MEDIUMRAW), byte by byte, as the event codes a keyboard reports, for
+// a program that may not read the keyboards themselves: a key below 128 is one byte, its top bit set when it comes
+// up; any other is three, 0 or 0x80 by the same rule, then its code seven bits at a time, the top bit set on both. A
+// key held down comes again while held, which is a repeat.
+class ConsoleKeys
+{
+  public:
+    struct Key
+    {
+        unsigned int code;
+        // As a keyboard's events say: down 1, repeated 2, up 0.
+        int value;
+    };
+
+    // The key a byte finishes, if it finishes one.
+    [[nodiscard]] std::optional<Key> take(unsigned char byte);
+    // Nothing held any more, as when the keyboard went to another console.
+    void forget();
+
+  private:
+    std::vector<unsigned int> m_held;
+    // Of a key of three bytes, how many came and what they said so far.
+    int m_part{0};
+    bool m_up{false};
+    unsigned int m_code{0};
+};
+
 } // namespace olagarro::oui

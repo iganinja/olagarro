@@ -1,5 +1,7 @@
 #include "keyboard_layout.h"
 
+#include <algorithm>
+
 #include "../unicode_composition.h"
 
 #include <linux/input-event-codes.h>
@@ -335,6 +337,59 @@ std::vector<Event> KeyboardLayout::key(unsigned int code, int value)
     }
     events.push_back(TextEvent{character, false, false, character >= U'A' && character <= U'Z'});
     return events;
+}
+
+std::optional<ConsoleKeys::Key> ConsoleKeys::take(unsigned char byte)
+{
+    const auto up{(byte & 0x80u) != 0};
+    const auto low{static_cast<unsigned int>(byte & 0x7Fu)};
+    if(m_part == 0)
+    {
+        if(low != 0)
+        {
+            m_up = up;
+            m_code = low;
+        }
+        else
+        {
+            // A key past 127: its code comes in the two bytes after.
+            m_up = up;
+            m_part = 1;
+            return std::nullopt;
+        }
+    }
+    else if(m_part == 1)
+    {
+        m_code = low << 7;
+        m_part = 2;
+        return std::nullopt;
+    }
+    else
+    {
+        m_code |= low;
+        m_part = 0;
+    }
+    const auto held{std::find(m_held.begin(), m_held.end(), m_code)};
+    if(m_up)
+    {
+        if(held != m_held.end())
+        {
+            m_held.erase(held);
+        }
+        return Key{m_code, 0};
+    }
+    if(held != m_held.end())
+    {
+        return Key{m_code, 2};
+    }
+    m_held.push_back(m_code);
+    return Key{m_code, 1};
+}
+
+void ConsoleKeys::forget()
+{
+    m_held.clear();
+    m_part = 0;
 }
 
 } // namespace olagarro::oui

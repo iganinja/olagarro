@@ -100,3 +100,31 @@ TEST(OuiKeyboardLayoutTests, TellsWhenTheModifiersChange)
 }
 
 } // namespace
+
+TEST(OuiConsoleKeysTests, ReadsAConsolesKeysInMediumRawMode)
+{
+    oui::ConsoleKeys keys;
+    // What a console gives for bytes, as "code+" for a key down, "code=" for a repeat and "code-" for one up.
+    const auto told{[&](const std::vector<unsigned char>& bytes)
+                    {
+                        std::string out;
+                        for(const auto byte : bytes)
+                        {
+                            if(const auto key{keys.take(byte)})
+                            {
+                                out += std::to_string(key->code) + (key->value == 1 ? "+" : key->value == 2 ? "=" : "-") +
+                                       " ";
+                            }
+                        }
+                        return out;
+                    }};
+    // A: down, held so it comes again, up.
+    EXPECT_EQ(told({KEY_A, KEY_A, KEY_A | 0x80}), "30+ 30= 30- ");
+    // F13, 183, past 127: three bytes each way.
+    EXPECT_EQ(told({0x00, 0x80 | (KEY_F13 >> 7), 0x80 | (KEY_F13 & 0x7F)}), "183+ ");
+    EXPECT_EQ(told({0x80, 0x80 | (KEY_F13 >> 7), 0x80 | (KEY_F13 & 0x7F)}), "183- ");
+    // Forgotten, a key held is down anew.
+    static_cast<void>(told({KEY_B}));
+    keys.forget();
+    EXPECT_EQ(told({KEY_B}), "48+ ");
+}
