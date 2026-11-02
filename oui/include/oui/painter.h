@@ -104,14 +104,20 @@ struct ButtonLook
 
 struct CheckBoxLook
 {
+    // With none, the box alone, in the middle of its place and with nothing painted round it, as a column of boxes in
+    // a table is.
     std::string_view text;
     bool checked{false};
     bool focused{false};
+    // Round the box and its text; a box alone leaves what is under it.
     Color background;
     // Where in `text` the letter that turns it with Alt is, in bytes.
     std::optional<std::size_t> mnemonic{};
     // A disabled box shows so, quieter.
     bool enabled{true};
+    // The box's own colours, inside it and its mark; the style's unless given.
+    std::optional<Color> face{};
+    std::optional<Color> mark{};
 };
 
 struct TabLook

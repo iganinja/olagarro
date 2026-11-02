@@ -749,13 +749,26 @@ void GraphicalPainter::draw_button(const Rect& bounds, const ButtonLook& look, c
 void GraphicalPainter::draw_check_box(const Rect& bounds, const CheckBoxLook& look, const Theme& theme)
 {
     const auto area{pixels(bounds)};
-    m_canvas.fill(area, look.background);
+    const auto alone{look.text.empty()};
+    if(!alone)
+    {
+        m_canvas.fill(area, look.background);
+    }
     const auto size{m_cell.height * 2 / 3};
-    const PixelRect box{area.x + 2, area.y + (m_cell.height - size) / 2, size, size};
-    bevel(box, true, m_style.light);
+    const PixelRect box{alone ? area.x + (area.width - size) / 2 : area.x + 2, area.y + (m_cell.height - size) / 2,
+                        size, size};
+    bevel(box, true, look.face.value_or(m_style.light));
     if(look.checked)
     {
-        m_canvas.fill({box.x + 4, box.y + 4, size - 8, size - 8}, theme.dialog_foreground);
+        m_canvas.fill({box.x + 4, box.y + 4, size - 8, size - 8}, look.mark.value_or(theme.dialog_foreground));
+    }
+    if(alone)
+    {
+        if(look.focused)
+        {
+            focus_ring({box.x - 2, box.y - 2, size + 4, size + 4});
+        }
+        return;
     }
     const auto text_x{box.x + size + 8};
     label({text_x, area.y, area.x + area.width - text_x, m_cell.height}, look.text,
