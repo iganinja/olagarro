@@ -228,6 +228,57 @@ TEST(CompletionTests, AParameterOfACallbackHasTheTypeItsMethodDeclares)
     EXPECT_EQ(signature->text, "over(below: Image, opacity?: number): Image");
 }
 
+namespace
+{
+
+// Two kinds of plugin whose callbacks share names but not what they are given, as a video editor's effects and
+// transitions both render, from pictures or from layers.
+const char* const plugin_api{R"ts(declare namespace video {
+    function effect(definition: Effect): void;
+    function transition(definition: Transition): void;
+    class Picture {
+        blur(radius: number): Picture;
+    }
+    class Layer {
+        mix(other: Layer, amount: number): Layer;
+    }
+    class Effect {
+        render(frame: Picture, values: object): Picture;
+    }
+    class Transition {
+        render(frame: Layer, other: Layer, progress: number): Layer;
+    }
+}
+)ts"};
+
+} // namespace
+
+TEST(CompletionTests, ACallbackGivenToAFunctionHasTheParametersOfTheClassThatFunctionTakes)
+{
+    const ScriptApi api{plugin_api};
+    const std::string_view effect{"video.effect({\n    render(frame, values) {\n        return frame;\n    },\n});\n"};
+    const std::string_view transition{"video.transition({\n    render(frame, other, progress) {\n"
+                                      "        return frame;\n    },\n});\n"};
+    EXPECT_EQ(api.type_of("frame", {effect}), "video.Picture");
+    EXPECT_EQ(api.type_of("frame", {transition}), "video.Layer") << "not the effect's, declared first";
+    EXPECT_EQ(api.type_of("other", {transition}), "video.Layer");
+    const std::string_view arrow{"video.transition({render: (frame) => frame});\n"};
+    EXPECT_EQ(api.type_of("frame", {arrow}), "video.Layer");
+
+    // Several documents: the first that tells, as the one being written goes first.
+    EXPECT_EQ(api.type_of("frame", {transition, effect}), "video.Layer");
+    EXPECT_EQ(api.type_of("frame", {effect, transition}), "video.Picture");
+
+    // Written outside such a call, the first class declaring the method, as before.
+    const std::string_view loose{"const plugin = {\n    render(frame) {\n    },\n};\n"};
+    EXPECT_EQ(api.type_of("frame", {loose}), "video.Picture");
+
+    const std::string text{std::string{transition} + "frame."};
+    const auto found{labels(suggestions_for(writing_at(text, text.size()), {text}, nullptr, &api))};
+    EXPECT_NE(std::find(found.begin(), found.end(), "mix"), found.end());
+    EXPECT_EQ(std::find(found.begin(), found.end(), "blur"), found.end());
+}
+
 TEST(CompletionTests, WhatIsDeclaredCanBeLookedUpByItsWholeName)
 {
     const ScriptApi api{"declare namespace paint {\n    /**\n     * Clouds.\n     */\n"

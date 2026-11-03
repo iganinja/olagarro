@@ -512,6 +512,35 @@ std::string ScriptApi::returned(const std::string& key) const
     return {};
 }
 
+std::string ScriptApi::given_class(std::string_view document, std::size_t at) const
+{
+    const auto call{call_at(document, at)};
+    if(!call || call->made)
+    {
+        return {};
+    }
+    const auto whole{call->qualifier.empty() ? call->name : call->qualifier + "." + call->name};
+    const auto signature{m_signatures.find(whole)};
+    if(signature == m_signatures.end())
+    {
+        return {};
+    }
+    const auto place{signature->second.parameter_of(call->argument)};
+    if(!place)
+    {
+        return {};
+    }
+    const auto [first, last]{signature->second.parameters[*place]};
+    const auto declared{std::string_view{signature->second.text}.substr(first, last - first)};
+    const auto colon{declared.find(':')};
+    if(colon == std::string_view::npos)
+    {
+        return {};
+    }
+    const auto scope{m_scopes.find(whole)};
+    return resolved(declared.substr(colon + 1), scope == m_scopes.end() ? "" : scope->second);
+}
+
 std::string ScriptApi::type_of(std::string_view name, const std::vector<std::string_view>& documents) const
 {
     return type_of(name, documents, 0);
@@ -596,17 +625,19 @@ std::string ScriptApi::type_of(std::string_view name, const std::vector<std::str
         }
     }
     // A parameter of a function written with the name of a method a class declares with typed parameters: the
-    // callbacks an API's objects have, as `render(image, values) {` or `render: (image, values) =>`.
-    for(const auto& [key, signature] : m_signatures)
+    // callbacks an API's objects have, as `render(image, values) {` or `render: (image, values) =>`. The documents in
+    // their order, so the one written in, given first, tells before the others.
+    for(const auto document : documents)
     {
-        const auto hash{key.find('#')};
-        if(hash == std::string::npos)
+        for(const auto& [key, signature] : m_signatures)
         {
-            continue;
-        }
-        const auto method{std::string_view{key}.substr(hash + 1)};
-        for(const auto document : documents)
-        {
+            const auto hash{key.find('#')};
+            if(hash == std::string::npos)
+            {
+                continue;
+            }
+            const auto method{std::string_view{key}.substr(hash + 1)};
+            const auto owner{std::string_view{key}.substr(0, hash)};
             for(auto at{document.find(method)}; at != std::string_view::npos; at = document.find(method, at + 1))
             {
                 const auto end{at + method.size()};
@@ -637,6 +668,20 @@ std::string ScriptApi::type_of(std::string_view name, const std::vector<std::str
                 if(after >= document.size() || (document[after] != '{' && document.substr(after, 2) != "=>"))
                 {
                     continue;
+                }
+                // In an object given to a function the API declares, as `paint.effect({render(image) {`, the method
+                // is that of the class the function takes there, or of a class it derives from.
+                if(auto given{given_class(document, at)}; !given.empty())
+                {
+                    while(!given.empty() && given != owner)
+                    {
+                        const auto base{m_bases.find(given)};
+                        given = base == m_bases.end() ? std::string{} : base->second;
+                    }
+                    if(given.empty())
+                    {
+                        continue;
+                    }
                 }
                 // The parameters written, by place, against those declared.
                 const auto written{document.substr(open + 1, close - open - 1)};

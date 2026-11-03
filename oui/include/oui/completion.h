@@ -87,10 +87,16 @@ class ScriptApi
     // The API's class `name` is in the documents, as far as they tell: made with `new`, as `label = new oui.Label(`;
     // given what a function or method of the API returns, as `soft = image.gaussianBlur(4)` when gaussianBlur is
     // declared to return a class; or a parameter of a function written with the name of a method a class declares,
-    // as `image` in `render(image, values) {` when a class has `render(image: Image, ...)`. Empty when they do not.
+    // as `image` in `render(image, values) {` when a class has `render(image: Image, ...)`; written in an object given
+    // to a function the API declares, as `paint.effect({render(image) {`, the method of the class that function takes
+    // there, when several classes have one of its name. The documents tell in their order, so the one being written
+    // is to go first. Empty when they do not.
     [[nodiscard]] std::string type_of(std::string_view name, const std::vector<std::string_view>& documents) const;
 
   private:
+    // The class the argument at `at` of `document` is to be, as `paint.Definition` in `paint.effect({...})` when
+    // paint.effect takes one; empty when the argument is in no call of a function the API declares with a class there.
+    [[nodiscard]] std::string given_class(std::string_view document, std::size_t at) const;
     [[nodiscard]] std::string type_of(std::string_view name, const std::vector<std::string_view>& documents,
                                       int depth) const;
     // The class `type` names as written where `scope` is, looked for from there outwards; empty for none.
