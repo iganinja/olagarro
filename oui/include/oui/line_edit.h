@@ -46,7 +46,9 @@ class LineEdit final : public Widget
     [[nodiscard]] bool is_focusable() const override;
     bool handle_event(const Event& event) override;
     // What is typed, and the keys that edit it and move along it, are the field's before any shortcut of the
-    // application: Backspace in a field deletes, whatever the application binds Backspace to.
+    // application: Backspace in a field deletes, whatever the application binds Backspace to. Up, Down, Page Up and
+    // Page Down too, which it does not use: no arrow reaches a shortcut while a field has the focus, and in a dialog
+    // they step between its fields.
     [[nodiscard]] bool claims_key(const Event& event) const override;
     // Keys pressed alone that the field keeps too, for what its key handler does with them, as a number field's
     // arrows step its number.

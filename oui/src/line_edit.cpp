@@ -121,6 +121,13 @@ bool LineEdit::claims_key(const Event& event) const
     case Key::home:
     case Key::end:
         return true;
+    // A line has no line above or below, but they are still not the program's while it has the focus; a dialog
+    // steps between its fields with them.
+    case Key::up:
+    case Key::down:
+    case Key::page_up:
+    case Key::page_down:
+        return !key->control;
     case Key::space:
         return !key->control;
     default:

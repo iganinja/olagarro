@@ -989,15 +989,17 @@ void Application::deliver_event(const Event& event)
     {
         return;
     }
-    // Keys a focused widget claims as its own go to it first, as a file panel's F5.
-    if((std::holds_alternative<KeyEvent>(event) || std::holds_alternative<TextEvent>(event)) && m_focused != nullptr &&
-       m_focused->claims_key(event) && dispatch_to_focused(event))
+    // Keys a focused widget claims as its own go to it first, as a file panel's F5; one it does not use is still no
+    // shortcut's, as a field's Down.
+    const auto claimed{(std::holds_alternative<KeyEvent>(event) || std::holds_alternative<TextEvent>(event)) &&
+                       m_focused != nullptr && m_focused->claims_key(event)};
+    if(claimed && dispatch_to_focused(event))
     {
         return;
     }
     // Shortcuts the application bound come before a widget's default handling of the same keys, as in
     // most toolkits; widgets then need not know which keys the application reserves.
-    if(m_modal_depth == 0 && (m_content == nullptr || m_content->keyboard_target() == nullptr) &&
+    if(!claimed && m_modal_depth == 0 && (m_content == nullptr || m_content->keyboard_target() == nullptr) &&
        m_commands.dispatch(event))
     {
         return;

@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <string>
 
 using namespace olagarro;
 
@@ -103,5 +104,50 @@ TEST(OuiClaimedKeysTests, ANumberFieldLeavesSpaceToTheProgramAndATextFieldKeepsI
     space();
     EXPECT_EQ(played, 1);
     EXPECT_EQ(text.text(), " ");
+    application.set_content(nullptr);
+}
+
+TEST(OuiClaimedKeysTests, AFieldKeepsEveryArrowAndPageKeyFromTheProgramsShortcuts)
+{
+    oui::Application application{oui::scripted_backend({}, {80, 25})};
+    auto content{oui::column()};
+    auto& text{content->add(oui::line_edit())};
+    auto& number{content->add(oui::number_field())};
+    number.set_range(0, 100);
+    number.set_value(5);
+    auto& button{content->add(oui::button("Go"))};
+    application.set_content(std::move(content));
+    application.render();
+    auto moved{0};
+    for(const auto key : {oui::Key::up, oui::Key::down, oui::Key::page_up, oui::Key::page_down})
+    {
+        const auto id{"move" + std::to_string(static_cast<int>(key))};
+        application.commands().register_command(id, "Move", [&moved] { ++ moved; });
+        application.commands().bind(id, oui::KeyShortcut{key});
+    }
+
+    // A field does not use them, and no shortcut has them while it has the focus.
+    application.focus(text);
+    application.dispatch_event(oui::TextEvent{U'a'});
+    for(const auto key : {oui::Key::up, oui::Key::down, oui::Key::page_up, oui::Key::page_down})
+    {
+        application.dispatch_event(oui::KeyEvent{key});
+    }
+    EXPECT_EQ(text.text(), "a");
+    EXPECT_EQ(moved, 0) << "none reached the program's shortcuts";
+    EXPECT_EQ(application.focused(), &text);
+
+    // A number field's still step its number.
+    application.focus(number.text_field());
+    application.dispatch_event(oui::KeyEvent{oui::Key::up});
+    EXPECT_EQ(number.value(), 6.0);
+    application.dispatch_event(oui::KeyEvent{oui::Key::page_down});
+    EXPECT_EQ(number.value(), 0.0);
+    EXPECT_EQ(moved, 0);
+
+    // Away from a field, they are the program's.
+    application.focus(button);
+    application.dispatch_event(oui::KeyEvent{oui::Key::up});
+    EXPECT_EQ(moved, 1);
     application.set_content(nullptr);
 }
