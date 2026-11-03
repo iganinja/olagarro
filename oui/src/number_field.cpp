@@ -67,6 +67,8 @@ NumberField::NumberField()
             }
         });
     m_field->claim_keys({Key::up, Key::down, Key::page_up, Key::page_down});
+    // No number has a space: Space is the program's, as a video editor's play.
+    m_field->leave_keys({Key::space});
     m_field->set_pointer_handler([this](const MouseEvent& mouse) { return drag_with(mouse); });
     show_value();
 }

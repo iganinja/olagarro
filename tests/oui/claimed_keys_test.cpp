@@ -2,6 +2,7 @@
 #include <oui/button.h>
 #include <oui/combo_box.h>
 #include <oui/layout.h>
+#include <oui/line_edit.h>
 #include <oui/number_field.h>
 #include <oui/scripted_backend.h>
 #include <oui/slider.h>
@@ -69,4 +70,38 @@ TEST(OuiClaimedKeysTests, AWidgetThatMovesWithTheArrowsKeepsThemFromTheProgramsS
     press(oui::Key::down);
     press(oui::Key::page_down);
     EXPECT_EQ(ran, 3);
+}
+
+// No number has a space, so a number field leaves Space to the program, as a video editor plays with it; a text field
+// keeps it, and with nothing bound to it the number field's Space changes nothing.
+TEST(OuiClaimedKeysTests, ANumberFieldLeavesSpaceToTheProgramAndATextFieldKeepsIt)
+{
+    oui::Application application{oui::scripted_backend({}, {80, 25})};
+    auto content{oui::column()};
+    auto& number{content->add(oui::number_field())};
+    number.set_range(0, 100);
+    number.set_value(5);
+    auto& text{content->add(oui::line_edit())};
+    application.set_content(std::move(content));
+    application.render();
+    const auto space{[&application] { application.dispatch_event(oui::KeyEvent{oui::Key::space}); }};
+
+    application.focus(number.text_field());
+    space();
+    application.dispatch_event(oui::TextEvent{U' '});
+    EXPECT_EQ(number.value(), 5.0);
+
+    auto played{0};
+    application.commands().register_command("play", "Play", [&played] { ++ played; });
+    application.commands().bind("play", oui::KeyShortcut{oui::Key::space});
+    space();
+    application.dispatch_event(oui::TextEvent{U' '});
+    EXPECT_EQ(played, 1) << "Space as text is no key bound";
+    EXPECT_EQ(number.value(), 5.0);
+
+    application.focus(text);
+    space();
+    EXPECT_EQ(played, 1);
+    EXPECT_EQ(text.text(), " ");
+    application.set_content(nullptr);
 }

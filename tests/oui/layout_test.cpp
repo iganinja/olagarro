@@ -411,6 +411,18 @@ TEST(OuiLayoutTests, ScrollViewMovesContentWithinTheViewport)
     EXPECT_EQ(content.bounds().y, -1);
 }
 
+// The scrollbar is drawn in the last column: content taller than the viewport leaves it, so nothing at its right edge,
+// a button or a mark, is under the bar; content that fits has the whole width.
+TEST(OuiLayoutTests, ScrollViewLeavesTheScrollbarsColumnOnlyWhenItsContentIsTaller)
+{
+    auto scroll{oui::scroll_view()};
+    const auto& content{scroll->add(std::make_unique<FixedWidget>(oui::Size{4, 5}))};
+    scroll->arrange({0, 0, 10, 2});
+    EXPECT_EQ(content.bounds().width, 9);
+    scroll->arrange({0, 0, 10, 5});
+    EXPECT_EQ(content.bounds().width, 10);
+}
+
 TEST(OuiLayoutTests, PanelAppliesPaddingToItsContent)
 {
     auto panel{oui::panel()};

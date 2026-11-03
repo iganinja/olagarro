@@ -265,7 +265,8 @@ takes the focus.
 ### ScrollView
 
 `oui::scroll_view()` ([scroll_view.h](../oui/include/oui/scroll_view.h)) holds one widget, measures it with no limit
-on its height, and shows the part that fits, with a scrollbar at the right when it is taller. The wheel, Up and Down
+on its height, and shows the part that fits, with a scrollbar at the right when it is taller; it then gives the widget
+one column less, the scrollbar's, so nothing at the widget's right edge is under the bar. The wheel, Up and Down
 and the scrollbar scroll it. It scrolls up and down only. Widgets with long contents of their own, as `TextEdit`,
 `Table` and `MarkdownView`, scroll themselves and need none.
 
@@ -341,7 +342,8 @@ same key, so here it is, as the code does it:
 10. A key the focused widget claims as its own, through `Widget::claims_key`, goes to it: a file panel's F5, a
     terminal's Ctrl+W, the arrows of a field, a number field, an open drop-down, a slider, a table or a tree, which
     a program may bind elsewhere as a video editor moves its playhead with them. A field's key handler that uses
-    more keys says which with `LineEdit::claim_keys`.
+    more keys says which with `LineEdit::claim_keys`, and one that gives up keys a field keeps with
+    `LineEdit::leave_keys`, as a number field leaves Space, which no number has, to a video editor's play.
 11. The application's shortcuts run, outside dialogs and while no overlay holds the keyboard.
 12. The focused widget hears it: first its key handler and then `handle_event`, then each of its parents the same
     way.

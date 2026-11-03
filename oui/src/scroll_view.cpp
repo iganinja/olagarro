@@ -66,11 +66,18 @@ void ScrollView::arrange(const Rect& bounds)
     {
         return;
     }
-    const auto content{children().front()->measure({bounds.width, std::numeric_limits<int>::max()})};
+    auto width{bounds.width};
+    auto content{children().front()->measure({width, std::numeric_limits<int>::max()})};
+    // Taller than it shows, what it holds gives the scrollbar its column, so nothing of it is under the bar.
+    if(whole(content.height) > whole(bounds.height) && width > 1)
+    {
+        width -= 1;
+        content = children().front()->measure({width, std::numeric_limits<int>::max()});
+    }
     m_content_height = whole(content.height);
     m_viewport_height = whole(bounds.height);
     m_scroll_offset = std::min(m_scroll_offset, max_scroll_offset());
-    children().front()->arrange({bounds.x, bounds.y - m_scroll_offset, bounds.width, content.height});
+    children().front()->arrange({bounds.x, bounds.y - m_scroll_offset, width, content.height});
 }
 
 void ScrollView::paint(Painter& painter, const Theme& theme) const

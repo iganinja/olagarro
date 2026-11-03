@@ -96,12 +96,14 @@ bool LineEdit::is_focusable() const
 
 bool LineEdit::claims_key(const Event& event) const
 {
+    const auto left{[this](Key key) { return std::find(m_left.begin(), m_left.end(), key) != m_left.end(); }};
     if(const auto* const text{std::get_if<TextEvent>(&event)})
     {
-        return !text->control && !text->alt;
+        // A space may come as text too.
+        return !text->control && !text->alt && !(text->codepoint == U' ' && left(Key::space));
     }
     const auto* const key{std::get_if<KeyEvent>(&event)};
-    if(key == nullptr || key->alt)
+    if(key == nullptr || key->alt || (!key->control && left(key->key)))
     {
         return false;
     }
@@ -129,6 +131,10 @@ bool LineEdit::claims_key(const Event& event) const
 void LineEdit::claim_keys(std::vector<Key> keys)
 {
     m_claimed = std::move(keys);
+}
+void LineEdit::leave_keys(std::vector<Key> keys)
+{
+    m_left = std::move(keys);
 }
 
 bool LineEdit::handle_event(const Event& event)

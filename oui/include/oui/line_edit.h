@@ -51,6 +51,9 @@ class LineEdit final : public Widget
     // Keys pressed alone that the field keeps too, for what its key handler does with them, as a number field's
     // arrows step its number.
     void claim_keys(std::vector<Key> keys);
+    // Keys pressed alone that the field gives up to the application's shortcuts, though it would keep them, as a number
+    // field, where no number has a space, leaves Space to a video editor's play.
+    void leave_keys(std::vector<Key> keys);
     [[nodiscard]] Size measure(const Constraints& constraints) const override;
     void paint(Painter& painter, const Theme& theme) const override;
 
@@ -76,6 +79,7 @@ class LineEdit final : public Widget
     bool m_mouse_selecting{false};
     bool m_password{false};
     std::vector<Key> m_claimed;
+    std::vector<Key> m_left;
     // The byte the field shows from, when its text is wider than it; painting keeps the cursor in sight.
     mutable std::size_t m_first_shown{};
     olagarro::signal_slot::Signal<std::string_view> m_changed;
