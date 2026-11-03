@@ -7,6 +7,7 @@
 #include <effects/sound.h>
 #include <oui/layout.h>
 #include <oui/script/script_engine.h>
+#include <paint/canvas.h>
 #include <signalslot/signalslot.h>
 
 #include <vector>
@@ -38,11 +39,14 @@ int main()
     const auto blurred{effects::gaussian_blur(concurrency::TaskPool::shared(), image, 1.0)};
     const auto quieter{effects::gain(effects::Sound{48000, std::size_t{4}}, -6.0)};
 
+    const std::vector<std::uint8_t> red{255, 0, 0, 255};
+    const auto canvas{paint::from_rgba8(1, 1, red.data())};
+
     oui::script::ScriptEngine engine;
     engine.run("const answer = 6 * 7;", "consumer.js");
 
     return value == 2 && layout->child_count() == 0 && stream.read<int>() == 7 && fired == 3 && values[2] == 6 &&
-                   blurred.width == 2 && quieter.frames() == 4
+                   blurred.width == 2 && quieter.frames() == 4 && paint::to_rgba8(canvas).bytes == red
                ? 0
                : 1;
 }

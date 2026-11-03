@@ -135,6 +135,20 @@ set_target_properties(olagarro_effects PROPERTIES EXPORT_NAME Effects)
 olagarro_configure_target(olagarro_effects)
 target_link_libraries(olagarro_effects PUBLIC olagarro::Concurrency)
 
+add_library(olagarro_paint
+    paint/blend.cpp
+    paint/canvas.cpp
+    paint/color.cpp
+    paint/image.cpp
+    paint/pixel_format.cpp
+    paint/selection.cpp
+    paint/tile.cpp
+    paint/tile_change.cpp)
+add_library(olagarro::Paint ALIAS olagarro_paint)
+set_target_properties(olagarro_paint PROPERTIES EXPORT_NAME Paint)
+olagarro_configure_target(olagarro_paint)
+target_link_libraries(olagarro_paint PUBLIC olagarro::Concurrency olagarro::Effects)
+
 set(olagarro_oui_platform_sources
     oui/src/clipboard_win32.cpp
     oui/src/crash_reporter_win32.cpp
@@ -413,6 +427,7 @@ set(olagarro_targets
     olagarro_cttasks
     olagarro_concurrency
     olagarro_effects
+    olagarro_paint
     olagarro_oui
     olagarro_quickjs
     olagarro_oui_script
@@ -442,6 +457,7 @@ endif()
 install(DIRECTORY
     bytestream
     effects
+    paint
     signalslot
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/olagarro
     FILES_MATCHING PATTERN "*.h")
@@ -672,6 +688,10 @@ if(OLAGARRO_BUILD_TESTS)
         add_executable(olagarro_effects_unit_tests tests/effects/image_test.cpp tests/effects/sound_test.cpp)
         target_link_libraries(olagarro_effects_unit_tests PRIVATE olagarro::Effects GTest::gtest_main)
         gtest_discover_tests(olagarro_effects_unit_tests)
+
+        add_executable(olagarro_paint_unit_tests tests/paint/canvas_test.cpp tests/paint/selection_test.cpp)
+        target_link_libraries(olagarro_paint_unit_tests PRIVATE olagarro::Paint GTest::gtest_main)
+        gtest_discover_tests(olagarro_paint_unit_tests)
 
        add_executable(olagarro_oui_tests
              tests/oui/layout_test.cpp

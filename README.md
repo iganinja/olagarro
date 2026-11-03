@@ -19,6 +19,8 @@ OUI Code, a text editor made with OUI, the same program in a terminal and in a w
 - `Concurrency`: standard-library-based task pool, cancelling and `concurrent_for`.
 - `Effects`: the pieces picture and sound effects are made of: blurs, noise, tables, colour and blend modes, on the
   task pool; gain, filters, an equaliser, echo, bitcrush, mono and crackle, cut into blocks exactly by their tails.
+- `Paint`: painting without OUI, shared by OUI Paint and ouivi: a canvas in tiles of grey or RGBA, 8 or 16 bits, what
+  a step changed in it, Paint.NET's blend modes, colours and selections.
 - `OUI`: a small UI toolkit for terminals, desktop windows and the whole screen.
 - `OUIScript`: JavaScript for OUI programs, run by QuickJS.
 
