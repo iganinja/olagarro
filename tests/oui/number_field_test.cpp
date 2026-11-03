@@ -24,6 +24,29 @@ TEST(OuiNumberFieldTests, ShowsItsValueWithTheDecimalsAsked)
     EXPECT_EQ(field.text_field().text(), "1.50");
 }
 
+TEST(OuiNumberFieldTests, WithTrimmedZerosItShowsNoZerosEndingItsDecimals)
+{
+    oui::NumberField field;
+    field.set_range(-10, 10);
+    field.set_step(0.001);
+    field.set_decimals(3);
+    field.set_value(0.5);
+    EXPECT_EQ(field.text_field().text(), "0.500");
+    field.set_trim_zeros(true);
+    EXPECT_EQ(field.text_field().text(), "0.5");
+    field.set_value(4);
+    EXPECT_EQ(field.text_field().text(), "4");
+    field.set_value(0.705);
+    EXPECT_EQ(field.text_field().text(), "0.705");
+    field.set_step(0);
+    field.set_value(-0.0001);
+    EXPECT_EQ(field.text_field().text(), "0");
+    field.set_value(10);
+    EXPECT_EQ(field.text_field().text(), "10") << "the zeros before the point stay";
+    field.set_mixed(true);
+    EXPECT_EQ(field.text_field().text(), "—");
+}
+
 TEST(OuiNumberFieldTests, WhatIsTypedIsTakenOnEnterKeptInRange)
 {
     oui::NumberField field;

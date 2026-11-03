@@ -28,6 +28,9 @@ class NumberField final : public Container
     void set_step(double step);
     // How many digits it shows after the point: none unless set.
     void set_decimals(int decimals);
+    // Whether the zeros ending those digits are left out, and the point with them when none is left: 0.5 shows "0.5"
+    // and 4 shows "4" with two decimals. Off unless set.
+    void set_trim_zeros(bool trim);
     void set_value(double value);
     [[nodiscard]] double value() const;
     [[nodiscard]] LineEdit& text_field();
@@ -104,6 +107,7 @@ class NumberField final : public Container
     double m_maximum{100.0};
     double m_step{1.0};
     int m_decimals{0};
+    bool m_trim_zeros{false};
     double m_value{0.0};
     olagarro::signal_slot::Signal<double> m_changed;
     olagarro::signal_slot::Connection m_typed;

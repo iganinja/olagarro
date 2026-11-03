@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <string_view>
 
 namespace olagarro::oui
 {
@@ -173,6 +174,12 @@ void NumberField::set_decimals(int decimals)
     show_value();
 }
 
+void NumberField::set_trim_zeros(bool trim)
+{
+    m_trim_zeros = trim;
+    show_value();
+}
+
 double NumberField::fitted(double value, double step) const
 {
     if(std::isnan(value))
@@ -265,10 +272,24 @@ void NumberField::show_value() const
     {
         std::snprintf(text, sizeof text, "%.*f", m_decimals, m_value);
     }
-    if(m_field->text() != text)
+    std::string_view shown{text};
+    if(m_trim_zeros && !m_mixed && shown.find('.') != std::string_view::npos)
+    {
+        shown = shown.substr(0, shown.find_last_not_of('0') + 1);
+        if(shown.back() == '.')
+        {
+            shown.remove_suffix(1);
+        }
+        // No "-0" for a value that rounds to nothing.
+        if(shown == "-0")
+        {
+            shown = "0";
+        }
+    }
+    if(m_field->text() != shown)
     {
         m_showing = true;
-        m_field->set_text(text);
+        m_field->set_text(std::string{shown});
         m_showing = false;
     }
 }
