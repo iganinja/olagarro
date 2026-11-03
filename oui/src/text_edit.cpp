@@ -203,6 +203,55 @@ bool TextEdit::go_to_line(std::size_t number)
     ensure_cursor_visible();
     return true;
 }
+void TextEdit::set_marked_line(std::optional<std::size_t> line)
+{
+    m_marked_line = line == 0 ? std::nullopt : line;
+}
+std::optional<std::size_t> TextEdit::marked_line() const
+{
+    return m_marked_line;
+}
+// A change that starts before the marked line, or adds lines just at its start, moves it by the line breaks it adds
+// less those it removes before the line; one within the line or after it leaves it.
+void TextEdit::follow_marked_line(std::size_t first, std::size_t last, std::string_view inserted)
+{
+    const auto& starts{line_starts()};
+    if(!m_marked_line || *m_marked_line > starts.size())
+    {
+        return;
+    }
+    const auto start{starts.at(*m_marked_line - 1)};
+    if(first > start || (first == start && last > first))
+    {
+        return;
+    }
+    const auto removed{static_cast<std::size_t>(
+        std::count(m_text.begin() + static_cast<std::ptrdiff_t>(first),
+                   m_text.begin() + static_cast<std::ptrdiff_t>(std::min(last, start)), '\n'))};
+    const auto added{static_cast<std::size_t>(std::count(inserted.begin(), inserted.end(), '\n'))};
+    *m_marked_line = *m_marked_line + added - removed;
+}
+// What changed is what lies between the text both have at the start and at the end.
+void TextEdit::follow_marked_line(std::string_view after)
+{
+    if(!m_marked_line)
+    {
+        return;
+    }
+    const std::string_view before{m_text};
+    std::size_t prefix{};
+    while(prefix < before.size() && prefix < after.size() && before[prefix] == after[prefix])
+    {
+        ++ prefix;
+    }
+    std::size_t suffix{};
+    while(suffix < before.size() - prefix && suffix < after.size() - prefix &&
+          before[before.size() - 1 - suffix] == after[after.size() - 1 - suffix])
+    {
+        ++ suffix;
+    }
+    follow_marked_line(prefix, before.size() - suffix, after.substr(prefix, after.size() - suffix - prefix));
+}
 bool TextEdit::undo()
 {
     if(m_read_only)
@@ -247,6 +296,7 @@ TextEdit::Snapshot TextEdit::snapshot() const
 }
 void TextEdit::restore(Snapshot state)
 {
+    follow_marked_line(state.text);
     m_text = std::move(state.text);
     ++ m_revision;
     m_line_starts_dirty = true;

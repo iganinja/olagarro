@@ -74,6 +74,17 @@ int main(int argument_count, char* const* const arguments)
     items->add(oui::label("List item: arbitrary child widgets"));
     browsers.add(std::move(items));
 
+    // An editor takes all it is offered, so it goes in a grid row of its own height. Its second line is marked as
+    // where an error was found.
+    auto& notes{oui::grid(*content)};
+    notes.set_columns({oui::Length::fill()});
+    notes.set_rows({oui::Length::cells(4)});
+    auto script{oui::text_edit()};
+    script->set_line_numbers_visible(true);
+    script->set_text("const width = 80;\nconst height = widht / 2;\nprint(width * height);");
+    script->set_marked_line(2);
+    notes.add(std::move(script));
+
     auto& actions{oui::row(*content)};
     actions.set_gap(oui::Spacing::tight);
     actions.set_centered(true);

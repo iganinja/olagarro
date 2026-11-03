@@ -90,6 +90,7 @@ std::size_t TextEdit::replace_all(std::string_view needle, std::string_view repl
         }
     }
     result.append(m_text, copied, std::string::npos);
+    follow_marked_line(result);
     m_text = std::move(result);
     ++ m_revision;
     m_line_starts_dirty = true;

@@ -463,8 +463,25 @@ bool TextEdit::handle_scrollbar(const MouseEvent& mouse)
 }
 
 void TextEdit::paint_line(Painter& painter, const Theme& theme, std::size_t index, std::size_t end, double x, double y,
-                          const std::vector<SyntaxSpan>& spans, std::size_t line_start) const
+                          const std::vector<SyntaxSpan>& spans, std::size_t line_start, bool marked) const
 {
+    // Where the underline of a marked line starts, and, in pixels, the row's height, to draw it in the error colour
+    // rather than underline the text in its own.
+    auto underline_from{end};
+    std::optional<std::size_t> underline_column;
+    std::optional<double> row_pixels;
+    if(marked)
+    {
+        underline_from = index;
+        while(underline_from < end && (m_text.at(underline_from) == ' ' || m_text.at(underline_from) == '\t'))
+        {
+            ++ underline_from;
+        }
+        if(const auto pixels{painter.pixel_bounds({x, y, 1.0, 1.0})}; pixels && pixels->height > 0)
+        {
+            row_pixels = pixels->height;
+        }
+    }
     std::size_t column{};
     // The first span that ends past this visual line's start; it moves on as the line is drawn.
     auto span{std::upper_bound(spans.begin(), spans.end(), index - line_start,
@@ -547,13 +564,31 @@ void TextEdit::paint_line(Painter& painter, const Theme& theme, std::size_t inde
                     background);
             }
         }
+        const auto underlined{character >= underline_from};
+        if(underlined && !underline_column)
+        {
+            underline_column = column;
+        }
         if(m_text.at(character) != '\t' && column + static_cast<std::size_t>(visible) > m_scroll_column &&
            column < m_scroll_column + static_cast<std::size_t>(content_width()))
         {
-            painter.draw_text({x + static_cast<int>(column - m_scroll_column), y}, encode_utf8(codepoint),
-                              {foreground, background});
+            painter.draw_text(
+                {x + static_cast<int>(column - m_scroll_column), y}, encode_utf8(codepoint),
+                {foreground, background, static_cast<std::uint8_t>(underlined && !row_pixels ? text_underline : 0)});
         }
         column += static_cast<std::size_t>(visible);
+    }
+    if(row_pixels && underline_column)
+    {
+        const auto start{std::max(*underline_column, m_scroll_column)};
+        const auto finish{std::min(column, m_scroll_column + static_cast<std::size_t>(content_width()))};
+        if(start < finish)
+        {
+            // One pixel, two above the row's bottom.
+            painter.fill_rect({x + static_cast<double>(start - m_scroll_column), y + 1.0 - 2.0 / *row_pixels,
+                               static_cast<double>(finish - start), 1.0 / *row_pixels},
+                              theme.error_foreground);
+        }
     }
 }
 void TextEdit::paint(Painter& painter, const Theme& theme) const
@@ -576,15 +611,17 @@ void TextEdit::paint(Painter& painter, const Theme& theme) const
             break;
         }
         const auto& vl{vlines.at(vline_index)};
+        const auto marked{m_marked_line == vl.logical_line + 1};
         // A wrapped line has its number on its first row only.
         if(gutter > 0 && vl.start_byte == line_starts()[vl.logical_line])
         {
             const auto number{std::to_string(vl.logical_line + 1)};
-            painter.draw_text({bounds().x + gutter - static_cast<int>(number.size()) - 1, bounds().y + row}, number,
-                              {theme.line_number_foreground, theme.editor_background});
+            painter.draw_text(
+                {bounds().x + gutter - static_cast<int>(number.size()) - 1, bounds().y + row}, number,
+                {marked ? theme.error_foreground : theme.line_number_foreground, theme.editor_background});
         }
         paint_line(painter, theme, vl.start_byte, vl.end_byte, bounds().x + gutter, bounds().y + row,
-                   line_syntax(vl.logical_line), line_starts()[vl.logical_line]);
+                   line_syntax(vl.logical_line), line_starts()[vl.logical_line], marked);
     }
     if(scrollbar_width() > 0)
     {

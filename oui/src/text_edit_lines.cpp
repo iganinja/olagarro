@@ -29,6 +29,7 @@ void TextEdit::replace_lines(std::size_t start, std::size_t end, std::string_vie
 {
     flush_pending_text_change();
     remember_change();
+    follow_marked_line(start, end, text);
     m_text.replace(start, end - start, text);
     ++ m_revision;
     m_line_starts_dirty = true;

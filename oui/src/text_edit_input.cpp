@@ -563,6 +563,7 @@ void TextEdit::insert_text(std::string_view text)
     }
     m_last_text_change_time = now;
     const auto [first, last]{selection_range()};
+    follow_marked_line(first, last, text);
     m_text.replace(first, last - first, text);
     ++ m_revision;
     m_line_starts_dirty = true;
@@ -581,6 +582,7 @@ void TextEdit::replace_selection(std::string_view replacement)
     flush_pending_text_change();
     remember_change();
     const auto [first, last]{selection_range()};
+    follow_marked_line(first, last, replacement);
     m_text.replace(first, last - first, replacement);
     ++ m_revision;
     m_line_starts_dirty = true;

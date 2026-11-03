@@ -104,6 +104,12 @@ class TextEdit final : public Widget
     [[nodiscard]] std::size_t search_match_count() const;
     [[nodiscard]] std::optional<std::size_t> selected_search_match() const;
     [[nodiscard]] bool go_to_line(std::size_t line_number);
+    // Marks a line, counting from 1, as where something is wrong, such as the line an error was found at: its number
+    // in the gutter and a line under its text in the theme's error_foreground (in a terminal its text underlined, in
+    // its own colours). The mark follows its line as lines are added or removed above it, and set_text keeps it;
+    // none unless set.
+    void set_marked_line(std::optional<std::size_t> line);
+    [[nodiscard]] std::optional<std::size_t> marked_line() const;
     // The characters that open and close a pair, such as '(' and ')'; (), [] and {} unless set. The
     // bracket beside the cursor and its pair show in the theme's bracket colours. Every bracket counts,
     // those inside strings and comments too: the editor does not know the language.
@@ -201,6 +207,10 @@ class TextEdit final : public Widget
                        std::size_t cursor);
     [[nodiscard]] Snapshot snapshot() const;
     void restore(Snapshot state);
+    // Moves the marked line by the lines a change adds or removes before it, called before the text changes: [first,
+    // last) replaced by `inserted`, or the text becoming `after`.
+    void follow_marked_line(std::size_t first, std::size_t last, std::string_view inserted);
+    void follow_marked_line(std::string_view after);
     void remember_change();
     void flush_pending_text_change();
     void insert_text(std::string_view text);
@@ -245,8 +255,9 @@ class TextEdit final : public Widget
     [[nodiscard]] int horizontal_thumb_left() const;
     [[nodiscard]] bool handle_horizontal_scrollbar(const MouseEvent& mouse);
     // `spans` colour the logical line the visual line belongs to, which starts at `line_start`.
+    // A marked line has its text from its first that is not blank underlined.
     void paint_line(Painter& painter, const Theme& theme, std::size_t index, std::size_t end, double x, double y,
-                    const std::vector<SyntaxSpan>& spans, std::size_t line_start) const;
+                    const std::vector<SyntaxSpan>& spans, std::size_t line_start, bool marked) const;
     // Brings the highlighter's colours up to date down to `line`; lines before it are reused while their text
     // and the state they start in are the same.
     void update_syntax(std::size_t line) const;
@@ -317,6 +328,7 @@ class TextEdit final : public Widget
     mutable std::optional<std::size_t> m_content_columns;
     bool m_mouse_dragging{false};
     bool m_line_numbers_visible{false};
+    std::optional<std::size_t> m_marked_line;
     bool m_use_spaces_for_tab{false};
     int m_tab_spaces{4};
     bool m_word_wrap_enabled{false};
