@@ -1,14 +1,24 @@
 #pragma once
 
 #include <paint/color.h>
+#include <paint/palette.h>
+#include <paint/panels/palette_library.h>
 
 #include <oui/command.h>
+#include <oui/menu_bar.h>
 #include <oui/widget.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <optional>
+#include <string>
 #include <vector>
+
+namespace olagarro::oui
+{
+class Application;
+}
 
 namespace olagarro::paint
 {
@@ -16,15 +26,53 @@ namespace olagarro::paint
 // A colour as a square of it shows on screen: seen through, as over a panel's grey.
 [[nodiscard]] oui::Color on_screen(const Color& color);
 
+// What a colour panel asks a person while it edits palettes. Each may be left empty: what needs it then does nothing.
+struct PaletteAsks
+{
+    // A colour, from `start`; none when cancelled.
+    std::function<std::optional<Color>(const Color& start)> color;
+    // A palette's name, asked under `title`, from `name`; none when cancelled.
+    std::function<std::optional<std::string>(const std::string& title, const std::string& name)> name;
+    // Whether to go on, asked as a yes or no.
+    std::function<bool(const std::string& question)> confirm;
+    // Says what went wrong.
+    std::function<void(const std::string& message)> tell;
+    // The text of a .gpl file the person chose; none when cancelled.
+    std::function<std::optional<std::string>()> gpl_file;
+    // Opens a menu with its top left corner at `at`, as `oui::MenuBar::open_context_menu` does.
+    std::function<void(std::vector<oui::MenuItem> items, oui::Point at)> open_menu;
+};
+
+// The asks with Paint's colour dialog (`ask_color`), OUI's prompt, message boxes and file dialog, the menus opened by
+// `open_menu`. The application outlives them.
+[[nodiscard]] PaletteAsks palette_asks(oui::Application& application,
+                                       std::function<void(std::vector<oui::MenuItem> items, oui::Point at)> open_menu);
+
 // The primary and secondary colours, as two squares one over the other, and a palette under them: a click on a
 // palette colour makes it the colour being edited, the primary unless C chose the secondary, a right click the other,
 // and a click on a square asks for it. The colour being edited shows in front, framed.
+//
+// Given a library of palettes, the palette is one's own to change and keep by name: its name shows over its colours,
+// with "*" while it changed since it was chosen or saved; a double click on a colour asks for another in its place, the
+// cell after the last adds the primary colour, a colour dragged away from the panel goes and dragged onto another
+// moves there, and a right click away from the colours opens a menu of the library's palettes, to choose, save,
+// rename, remove and import them.
 class ColorPanel final : public oui::Widget
 {
   public:
     static constexpr int width{4};
 
-    ColorPanel();
+    // The palette under the squares, `Palette::standard()` at first.
+    [[nodiscard]] const Palette& palette() const { return m_palette; }
+    // Shows another palette as it is, unchanged since chosen, without telling.
+    void set_palette(Palette palette);
+    // Whether the palette changed since it was set, chosen or saved.
+    [[nodiscard]] bool palette_modified() const { return m_palette_modified; }
+    // Called after the panel changed the palette, its colours or its name, as a person edited or chose it.
+    void on_palette_changed(std::function<void()> changed);
+    // The library the panel edits, which outlives it; none, as at first, leaves the palette only to pick from.
+    void set_library(PaletteLibrary* library);
+    void set_asks(PaletteAsks asks);
 
     [[nodiscard]] const Color& primary() const { return m_primary; }
     [[nodiscard]] const Color& secondary() const { return m_secondary; }
@@ -62,15 +110,34 @@ class ColorPanel final : public oui::Widget
 
     Color m_primary{0.0, 0.0, 0.0, 1.0};
     Color m_secondary{1.0, 1.0, 1.0, 1.0};
-    std::vector<Color> m_palette;
+    Palette m_palette{Palette::standard()};
+    bool m_palette_modified{false};
     bool m_editing_secondary{false};
     double m_scale{1.0};
     int m_palette_columns{2};
+    PaletteLibrary* m_library{};
+    PaletteAsks m_asks;
+    // The colour pressed on with the left button, while it may be dragged.
+    std::optional<std::size_t> m_dragged;
     std::function<void(bool)> m_edit;
     std::function<void(bool)> m_picked;
     std::function<void()> m_changed;
+    std::function<void()> m_palette_changed;
 
     void changed() const;
+    // The palette's colours start under the squares and, with a library, the name.
+    [[nodiscard]] double palette_top() const;
+    // Cells of the palette's grid: its colours and, with a library, the "+" after them.
+    [[nodiscard]] std::size_t palette_cells() const;
+    [[nodiscard]] std::optional<std::size_t> cell_index_at(oui::Point cell) const;
+    // The palette changed by the panel, `modified` as it is now.
+    void palette_changed(bool modified);
+    [[nodiscard]] std::vector<oui::MenuItem> menu_items();
+    void choose(const std::string& name);
+    void save_as();
+    void rename();
+    void remove();
+    void import();
 };
 
 // Paint.NET's keys for the colours as commands bound in `commands`: X swaps the primary and the secondary

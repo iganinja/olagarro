@@ -45,6 +45,11 @@ std::string_view trim(std::string_view s)
 
 } // namespace
 
+std::filesystem::path user_settings_folder(std::string_view app_name)
+{
+    return settings_app_data_dir(app_name);
+}
+
 Settings::Settings(SettingsLocation location, std::string_view app_name)
 {
     auto dir{location == SettingsLocation::app_data ? settings_app_data_dir(app_name) : settings_executable_dir()};

@@ -98,6 +98,12 @@ compositing does: over nothing, the pixel above shows as it is whatever the mode
 `Color` (`paint/color.h`) is red, green, blue and alpha from 0 to 1, whatever the depth; `to_hex` writes `#rrggbb`, or
 `#rrggbbaa` when it is not solid, and `from_hex` reads either.
 
+A `Palette` (`paint/palette.h`) is a name and colours to paint with; `Palette::standard()` is the colour panel's greys
+and colours, named "Default". `to_gpl` writes it as GIMP's `.gpl` text and `palette_from_gpl` reads that, GIMP's own
+files too. The format has no alpha: a colour not solid goes under its `#rrggbbaa` as the colour's name, which gives the
+alpha back when read, and one wholly see-through as black named `transparent`. Reading and writing the files is the
+program's, or the panels' library's.
+
 ## Selections
 
 ```cpp
@@ -269,6 +275,18 @@ shows a `ToolSession` and wants Paint.NET's way of choosing what it paints with.
   X to `swap` and C to `toggle_editing`, which chooses the colour the palette's left button sets. `set_scale` draws it
   bigger, as the tools; `set_palette_columns` puts more colours to a palette row, each as much smaller, so a long
   palette fits under the tools of a short window.
+  The palette is a `Palette` (`palette()`, `set_palette`). Given a `PaletteLibrary` (`set_library`) and what to ask
+  with (`set_asks`, `palette_asks(application, open_menu)` for Paint's colour dialog and OUI's prompt, message boxes
+  and file dialog), the panel edits it: its name shows over the colours, with "*" while `palette_modified()`; a double
+  click on a colour asks for another in its place, a "+" after the last adds the primary colour, a colour dragged away
+  from the panel goes and dragged onto another moves there, and a right click away from the colours opens a menu:
+  *Palettes* (the library's, the one in use ticked), *Save*, *Save as…*, *Rename…*, *Remove*, *Import a .gpl…* and
+  *Add the primary colour*. `on_palette_changed` hears each change the panel makes, not those `set_palette` makes.
+- `PaletteLibrary` (`paint/panels/palette_library.h`) keeps palettes by name as the `.gpl` files of a folder,
+  `default_folder()` being `olagarro/palettes` in the user's configuration folder (`oui::user_settings_folder`), the
+  same for every program on Olagarro: a palette saved in one is there in the others. It lists (`names`), loads, saves
+  (a name's file replaced), renames and removes them; "Default" is always first and cannot be replaced, renamed or
+  removed.
 - `ask_color` (`paint/panels/color_dialog.h`) asks for a colour as Paint.NET's Colors window does: a square of
   saturation and value, a bar of hue, red, green, blue and alpha, hue, saturation and value, hexadecimal, and grey as a
   16-bit value for heightmaps. Unlike `oui::ask_color`, it has alpha and keeps colours deeper than 8 bits.
@@ -276,6 +294,6 @@ shows a `ToolSession` and wants Paint.NET's way of choosing what it paints with.
   under the MIT license, and OUI Paint's own in their style), as Godot draws them for a dark interface or as its light
   themes recolour them; `add` gives a program's own.
 
-The panels' texts are translated (`oui::translate`, contexts `Tools`, `Commands` and `Dialogs`) by catalogs of their own
+The panels' texts are translated (`oui::translate`, contexts `Tools`, `Commands`, `Dialogs` and `Palettes`) by catalogs of their own
 in `paint/translations`, built in as `panel_translations()` (`paint/panels/panel_translations.h`), which a program gives
 `oui::install_language` before its own.

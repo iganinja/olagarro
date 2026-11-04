@@ -18,6 +18,10 @@ enum class SettingsLocation
     portable
 };
 
+// The user's configuration folder for `app_name`, where `SettingsLocation::app_data` keeps its settings, for what a
+// program keeps beside them; empty when it cannot be found.
+[[nodiscard]] std::filesystem::path user_settings_folder(std::string_view app_name);
+
 class Settings
 {
   public:

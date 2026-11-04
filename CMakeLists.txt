@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Olagarro VERSION 0.17.0 LANGUAGES C CXX)
+project(Olagarro VERSION 0.18.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -145,6 +145,7 @@ add_library(olagarro_paint
     paint/floating.cpp
     paint/gradient.cpp
     paint/image.cpp
+    paint/palette.cpp
     paint/pixel_format.cpp
     paint/selection.cpp
     paint/shapes.cpp
@@ -369,6 +370,7 @@ add_library(olagarro_paint_panels
     paint/panels/color_dialog.cpp
     paint/panels/color_panel.cpp
     paint/panels/icons.cpp
+    paint/panels/palette_library.cpp
     paint/panels/panel_translations.cpp
     paint/panels/tool_options_bar.cpp
     paint/panels/tool_panel.cpp)
@@ -729,6 +731,7 @@ if(OLAGARRO_BUILD_TESTS)
             tests/paint/fill_test.cpp
             tests/paint/floating_test.cpp
             tests/paint/gradient_test.cpp
+            tests/paint/palette_test.cpp
             tests/paint/selection_test.cpp
             tests/paint/shapes_test.cpp
             tests/paint/stroke_test.cpp

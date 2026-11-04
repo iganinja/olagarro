@@ -1,5 +1,6 @@
 #include <paint/panels/color_panel.h>
 #include <paint/panels/icons.h>
+#include <paint/panels/palette_library.h>
 #include <paint/panels/panel_translations.h>
 #include <paint/panels/tool_options_bar.h>
 #include <paint/panels/tool_panel.h>
@@ -9,12 +10,15 @@
 #include <oui/event.h>
 #include <oui/layout.h>
 #include <oui/line_edit.h>
+#include <oui/menu_bar.h>
 #include <oui/number_field.h>
 #include <oui/slider.h>
 #include <oui/translation.h>
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -302,7 +306,9 @@ TEST(PaintPanelsTests, ThePanelsTextsComeInSpanish)
     EXPECT_EQ(paint::panel_translations().front().language(), "es");
     oui::install_language("es", paint::panel_translations());
     const auto buttons{paint::paint_tool_buttons()};
+    const auto palettes{oui::translate("Palettes", "&Palettes")};
     oui::remove_translations();
+    EXPECT_EQ(palettes, "&Paletas");
     EXPECT_EQ(buttons[8].id, "brush");
     EXPECT_EQ(buttons[8].title, "Pincel");
 }
@@ -334,6 +340,215 @@ TEST(PaintPanelsTests, ScaledThePanelsAreBiggerAndTheirClicksLandWhereTheyAreDra
     EXPECT_FALSE(same(*colors.palette_at({1, 6.5}), *colors.palette_at({5, 6.5})));
     EXPECT_TRUE(colors.handle_event(press(5, 7)));
     EXPECT_TRUE(same(colors.primary(), *colors.palette_at({5, 6.5})));
+}
+
+TEST(PaintPanelsTests, TheLibrarySavesListsRenamesAndRemovesAndKeepsDefault)
+{
+    const auto folder{std::filesystem::temp_directory_path() / "olagarro_palette_library_test"};
+    std::filesystem::remove_all(folder);
+    paint::PaletteLibrary library{folder};
+    EXPECT_EQ(library.folder(), folder);
+    EXPECT_EQ(library.names(), (std::vector<std::string>{"Default"})) << "there before any is saved";
+    EXPECT_EQ(library.load("Default"), paint::Palette::standard());
+
+    const paint::Palette warm{"Warm", {{1, 0, 0, 1}, {1, 1, 0, 1}}};
+    const paint::Palette cold{"Cold", {{0, 0, 1, 1}}};
+    EXPECT_TRUE(library.save(warm));
+    EXPECT_TRUE(library.save(cold));
+    EXPECT_TRUE(library.save({"Blue/Green", {{0, 1, 1, 1}}})) << "a name no file could have";
+    EXPECT_EQ(library.names(), (std::vector<std::string>{"Default", "Blue/Green", "Cold", "Warm"}));
+    EXPECT_EQ(library.load("Warm"), warm);
+    EXPECT_EQ(library.load("Blue/Green")->name, "Blue/Green");
+    EXPECT_FALSE(library.load("Nothing"));
+
+    // A name's file replaced.
+    const paint::Palette warmer{"Warm", {{1, 0, 0, 1}}};
+    EXPECT_TRUE(library.save(warmer));
+    EXPECT_EQ(library.load("Warm"), warmer);
+    EXPECT_EQ(library.names().size(), 4u);
+
+    EXPECT_FALSE(library.save({"Default", {}}));
+    EXPECT_FALSE(library.rename("Default", "Mine"));
+    EXPECT_FALSE(library.rename("Warm", "Default"));
+    EXPECT_FALSE(library.rename("Warm", "Cold")) << "one there already";
+    EXPECT_FALSE(library.remove("Default"));
+    EXPECT_EQ(library.load("Default"), paint::Palette::standard());
+
+    EXPECT_TRUE(library.rename("Warm", "Hot"));
+    EXPECT_EQ(library.load("Hot"), (paint::Palette{"Hot", warmer.colors}));
+    EXPECT_FALSE(library.load("Warm"));
+    EXPECT_TRUE(library.remove("Cold"));
+    EXPECT_FALSE(library.remove("Cold"));
+    EXPECT_EQ(library.names(), (std::vector<std::string>{"Default", "Blue/Green", "Hot"}));
+    // Kept in the folder, as another program finds them.
+    EXPECT_EQ(paint::PaletteLibrary{folder}.names(), library.names());
+    std::filesystem::remove_all(folder);
+
+    const auto shared{paint::PaletteLibrary::default_folder()};
+    EXPECT_EQ(shared.filename(), "palettes");
+    EXPECT_EQ(shared.parent_path().filename(), "olagarro");
+}
+
+TEST(PaintPanelsTests, ADoubleClickAsksForAColourPlusAddsThePrimaryAndADragRemovesOrMovesOne)
+{
+    const auto folder{std::filesystem::temp_directory_path() / "olagarro_palette_panel_test"};
+    std::filesystem::remove_all(folder);
+    paint::PaletteLibrary library{folder};
+    paint::ColorPanel panel;
+    panel.arrange({0, 0, paint::ColorPanel::width, 30});
+    std::vector<paint::Color> asked;
+    paint::PaletteAsks asks;
+    asks.color = [&asked](const paint::Color& start)
+    {
+        asked.push_back(start);
+        return std::optional<paint::Color>{paint::Color{1, 0, 0, 1}};
+    };
+    panel.set_asks(asks);
+    const auto plain{panel.measure({100, 100})};
+    panel.set_library(&library);
+    EXPECT_EQ(panel.measure({100, 100}).height, plain.height + 2.0) << "the name's row, and the \"+\"'s";
+    auto changes{0};
+    panel.on_palette_changed([&changes] { ++ changes; });
+    const auto standard{paint::Palette::standard()};
+    EXPECT_EQ(panel.palette(), standard);
+    EXPECT_FALSE(panel.palette_modified());
+
+    // Under the squares the name, then the colours two to a row: the third colour at the left of the second row.
+    EXPECT_TRUE(same(*panel.palette_at({0, 5}), standard.colors[2]));
+    EXPECT_TRUE(panel.handle_event(press(0, 5)));
+    EXPECT_TRUE(asked.empty()) << "a single click picks";
+    auto twice{press(0, 5)};
+    twice.clicks = 2;
+    EXPECT_TRUE(panel.handle_event(twice));
+    ASSERT_EQ(asked.size(), 1u);
+    EXPECT_TRUE(same(asked.front(), standard.colors[2]));
+    EXPECT_TRUE(same(panel.palette().colors[2], {1, 0, 0, 1}));
+    EXPECT_TRUE(panel.palette_modified());
+    EXPECT_EQ(changes, 1);
+
+    // The cell after the last colour adds the primary.
+    panel.set_primary({0, 0, 1, 1});
+    const auto plus_row{4.0 + static_cast<double>(standard.colors.size() / 2)};
+    EXPECT_FALSE(panel.palette_at({0, plus_row}));
+    EXPECT_TRUE(panel.handle_event(press(0, plus_row)));
+    ASSERT_EQ(panel.palette().colors.size(), standard.colors.size() + 1);
+    EXPECT_TRUE(same(panel.palette().colors.back(), {0, 0, 1, 1}));
+    EXPECT_EQ(changes, 2);
+
+    // The second colour dragged away from the panel goes.
+    oui::MouseEvent moved{10, 4, false};
+    moved.dragging = true;
+    oui::MouseEvent released{10, 4, false};
+    released.released = true;
+    EXPECT_TRUE(panel.handle_event(press(2, 4)));
+    EXPECT_TRUE(panel.handle_event(moved));
+    EXPECT_TRUE(panel.handle_event(released));
+    ASSERT_EQ(panel.palette().colors.size(), standard.colors.size());
+    EXPECT_TRUE(same(panel.palette().colors[1], {1, 0, 0, 1}));
+    EXPECT_EQ(changes, 3);
+
+    // The first dragged onto the fourth goes there.
+    released.x = 2;
+    released.y = 5;
+    EXPECT_TRUE(panel.handle_event(press(0, 4)));
+    EXPECT_TRUE(panel.handle_event(released));
+    EXPECT_TRUE(same(panel.palette().colors[3], standard.colors[0]));
+    EXPECT_TRUE(same(panel.palette().colors[0], {1, 0, 0, 1}));
+    EXPECT_EQ(changes, 4);
+    // Let go where it was picked, it stays.
+    released.x = 0;
+    released.y = 4;
+    EXPECT_TRUE(panel.handle_event(press(0, 4)));
+    EXPECT_TRUE(panel.handle_event(released));
+    EXPECT_EQ(changes, 4);
+
+    // Without a library the palette is only picked from.
+    panel.set_library(nullptr);
+    EXPECT_TRUE(panel.handle_event(twice));
+    EXPECT_EQ(asked.size(), 1u);
+    std::filesystem::remove_all(folder);
+}
+
+TEST(PaintPanelsTests, APaletteSavedAsANameComesBackFromPalettes)
+{
+    const auto folder{std::filesystem::temp_directory_path() / "olagarro_palette_menu_test"};
+    std::filesystem::remove_all(folder);
+    paint::PaletteLibrary library{folder};
+    paint::ColorPanel panel;
+    panel.arrange({0, 0, paint::ColorPanel::width, 30});
+    std::vector<oui::MenuItem> menu;
+    std::vector<std::string> questions;
+    std::string name{"Mine"};
+    paint::PaletteAsks asks;
+    asks.open_menu = [&menu](std::vector<oui::MenuItem> items, oui::Point) { menu = std::move(items); };
+    asks.name = [&name](const std::string&, const std::string&) { return std::optional<std::string>{name}; };
+    asks.confirm = [&questions](const std::string& question)
+    {
+        questions.push_back(question);
+        return true;
+    };
+    panel.set_asks(asks);
+    panel.set_library(&library);
+    const auto entry{[&menu](const std::vector<oui::MenuItem>& items, const std::string& title) -> const oui::MenuItem&
+                     {
+                         for(const auto& item : items)
+                         {
+                             if(oui::strip_mnemonic(item.title()) == title)
+                             {
+                                 return item;
+                             }
+                         }
+                         ADD_FAILURE() << "no entry " << title;
+                         return menu.front();
+                     }};
+    const auto standard{paint::Palette::standard()};
+    const auto plus_row{4.0 + static_cast<double>(standard.colors.size() / 2)};
+
+    // A right click away from the colours opens the menu; on one it picks the other colour.
+    EXPECT_TRUE(panel.handle_event(press(0, 4, true)));
+    EXPECT_TRUE(menu.empty());
+    EXPECT_TRUE(panel.handle_event(press(2, plus_row, true)));
+    ASSERT_FALSE(menu.empty());
+    EXPECT_FALSE(entry(menu, "Save").enabled()) << "not over Default";
+    EXPECT_FALSE(entry(menu, "Rename…").enabled());
+    EXPECT_FALSE(entry(menu, "Remove").enabled());
+    panel.set_primary({0, 1, 0, 1});
+    entry(menu, "Add the Primary Colour").run();
+    EXPECT_TRUE(panel.palette_modified());
+
+    entry(menu, "Save As…").run();
+    EXPECT_TRUE(questions.empty());
+    EXPECT_EQ(panel.palette().name, "Mine");
+    EXPECT_FALSE(panel.palette_modified());
+    EXPECT_EQ(library.names(), (std::vector<std::string>{"Default", "Mine"}));
+    EXPECT_TRUE(same(library.load("Mine")->colors.back(), {0, 1, 0, 1}));
+
+    // Back to Default from the list, then Mine again.
+    EXPECT_TRUE(panel.handle_event(press(2, plus_row + 1, true)));
+    const auto palettes{entry(menu, "Palettes").items()};
+    ASSERT_EQ(palettes.size(), 2u);
+    EXPECT_EQ(entry(palettes, "Mine").checked(), std::optional<bool>{true});
+    EXPECT_EQ(entry(palettes, "Default").checked(), std::optional<bool>{false});
+    entry(palettes, "Default").run();
+    EXPECT_EQ(panel.palette(), standard);
+    entry(entry(menu, "Palettes").items(), "Mine").run();
+    EXPECT_EQ(panel.palette(), *library.load("Mine"));
+    EXPECT_FALSE(panel.palette_modified());
+
+    // Saved as a name there already, it asks first; Rename and Remove act on the library's.
+    EXPECT_TRUE(panel.handle_event(press(2, plus_row + 1, true)));
+    EXPECT_TRUE(entry(menu, "Save").enabled());
+    entry(menu, "Save As…").run();
+    EXPECT_EQ(questions.size(), 1u);
+    name = "Ours";
+    entry(menu, "Rename…").run();
+    EXPECT_EQ(panel.palette().name, "Ours");
+    EXPECT_EQ(library.names(), (std::vector<std::string>{"Default", "Ours"}));
+    entry(menu, "Remove").run();
+    EXPECT_EQ(questions.size(), 2u);
+    EXPECT_EQ(library.names(), (std::vector<std::string>{"Default"}));
+    EXPECT_TRUE(panel.palette_modified()) << "its colours kept, no longer saved";
+    std::filesystem::remove_all(folder);
 }
 
 TEST(PaintPanelsTests, MoreColoursToARowMakeThePaletteShorterEachColourSmaller)
