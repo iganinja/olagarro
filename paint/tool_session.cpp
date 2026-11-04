@@ -425,6 +425,45 @@ void ToolSession::deselect()
     end_step(true);
 }
 
+void ToolSession::flip_selection(bool horizontal)
+{
+    transform_selection(
+        [horizontal](PieceTransform& transform)
+        {
+            // Mirrored in the image's frame: the turn goes the other way.
+            transform.radians = -transform.radians;
+            (horizontal ? transform.scale_x : transform.scale_y) *= -1.0;
+        });
+}
+
+void ToolSession::turn_selection(int quarter_turns)
+{
+    transform_selection([quarter_turns](PieceTransform& transform) { transform.radians += quarter_turns * pi / 2.0; });
+}
+
+void ToolSession::transform_selection(const std::function<void(PieceTransform&)>& change)
+{
+    if(!m_floating && !m_selection.active())
+    {
+        return;
+    }
+    if(m_held || m_line_edit || m_arc)
+    {
+        // What a drag or another tool was doing is put down first, and with it what floated.
+        finish();
+        if(!m_selection.active())
+        {
+            return;
+        }
+    }
+    begin_step();
+    lift_floating();
+    change(m_floating->transform);
+    place_piece(m_canvas, m_floating->base, m_selection, m_floating->piece, m_floating->transform,
+                m_options.brush.exact);
+    end_step(true);
+}
+
 void ToolSession::paint_press(const ToolInput& input)
 {
     auto settings{m_options.brush};
@@ -670,6 +709,18 @@ void ToolSession::settle_floating()
     m_floating.reset();
 }
 
+void ToolSession::lift_floating()
+{
+    if(m_floating)
+    {
+        return;
+    }
+    // Lifts what is selected, leaving a hole: the whole canvas when nothing is selected.
+    Floating floating{m_canvas, lift_piece(m_canvas, m_selection), {}};
+    static_cast<void>(erase_selected(floating.base, m_selection));
+    m_floating = std::move(floating);
+}
+
 std::array<Position, 8> ToolSession::floating_handles() const
 {
     std::array<Position, 4> corners;
@@ -728,13 +779,7 @@ void ToolSession::move_selected(const ToolInput& input, bool released)
                 }
             }
         }
-        if(!m_floating)
-        {
-            // Lifts what is selected, leaving a hole: the whole canvas when nothing is selected.
-            Floating floating{m_canvas, lift_piece(m_canvas, m_selection), {}};
-            static_cast<void>(erase_selected(floating.base, m_selection));
-            m_floating = std::move(floating);
-        }
+        lift_floating();
         const auto& piece{m_floating->piece};
         const Position middle{piece.x + piece.pixels.width / 2.0 + m_floating->transform.dx,
                               piece.y + piece.pixels.height / 2.0 + m_floating->transform.dy};

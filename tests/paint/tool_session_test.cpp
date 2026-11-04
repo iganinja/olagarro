@@ -409,3 +409,63 @@ TEST(ToolSession, EraseSelectionClearsWhatIsSelectedAndDeselectSelectsNothingEac
     session.deselect();
     EXPECT_TRUE(session.take_steps().empty()) << "nothing was selected";
 }
+
+TEST(ToolSession, WhatIsSelectedIsFlippedAndTurnedRoundItsMiddleEachAStep)
+{
+    Canvas canvas{PixelFormat::rgba8, 20, 20};
+    Selection selection{20, 20};
+    const Rgba8 red{{255, 0, 0, 255}};
+    const Rgba8 green{{0, 255, 0, 255}};
+    const Rgba8 blue{{0, 0, 255, 255}};
+    Image row{PixelFormat::rgba8, 3, 1};
+    row.set_pixel(0, 0, red);
+    row.set_pixel(1, 0, green);
+    row.set_pixel(2, 0, blue);
+    canvas.write(row, 4, 6);
+    ToolSession session{canvas, selection};
+    // Nothing selected: nothing flipped, no step.
+    session.flip_selection(true);
+    EXPECT_EQ(at(canvas, 4, 6).value, red.value);
+    EXPECT_TRUE(session.take_steps().empty());
+    EXPECT_FALSE(session.busy());
+
+    selection.add_rectangle({4, 6, 3, 1}, SelectionMode::replace);
+    const auto before{canvas};
+    session.flip_selection(true);
+    EXPECT_EQ(at(canvas, 4, 6).value, blue.value) << "its pixels reversed";
+    EXPECT_EQ(at(canvas, 5, 6).value, green.value);
+    EXPECT_EQ(at(canvas, 6, 6).value, red.value);
+    EXPECT_EQ(selection.at(4, 6), 255) << "the selection where it went";
+    EXPECT_TRUE(session.busy()) << "floating until put down";
+    auto steps{session.take_steps()};
+    ASSERT_EQ(steps.size(), 1u);
+    EXPECT_TRUE(steps[0].selection);
+    steps[0].change.undo(canvas);
+    EXPECT_TRUE(same_tiles(canvas, before)) << "one undo gives the canvas back";
+    steps[0].change.redo(canvas);
+
+    // Flipped back, then turned once clockwise round its middle (5.5, 6.5): 1 wide and 3 high, its first pixel on top.
+    session.flip_selection(true);
+    session.turn_selection(1);
+    EXPECT_EQ(at(canvas, 5, 5).value, red.value);
+    EXPECT_EQ(at(canvas, 5, 6).value, green.value);
+    EXPECT_EQ(at(canvas, 5, 7).value, blue.value);
+    EXPECT_EQ(at(canvas, 4, 6).alpha(), 0) << "a hole where it was";
+    EXPECT_EQ(at(canvas, 6, 6).alpha(), 0);
+    EXPECT_EQ(selection.at(5, 5), 255);
+    EXPECT_EQ(selection.at(4, 6), 0);
+    EXPECT_EQ(session.take_steps().size(), 2u);
+
+    // Half round, then counter-clockwise: lying again, its first pixel at the right.
+    session.turn_selection(2);
+    EXPECT_EQ(at(canvas, 5, 5).value, blue.value);
+    EXPECT_EQ(at(canvas, 5, 7).value, red.value);
+    session.turn_selection(3);
+    EXPECT_EQ(at(canvas, 4, 6).value, blue.value);
+    EXPECT_EQ(at(canvas, 6, 6).value, red.value);
+    session.flip_selection(false);
+    EXPECT_EQ(at(canvas, 4, 6).value, blue.value) << "one row flipped upside down is the same";
+    EXPECT_EQ(session.take_steps().size(), 3u);
+    session.finish();
+    EXPECT_FALSE(session.busy());
+}

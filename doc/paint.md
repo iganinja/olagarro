@@ -171,7 +171,10 @@ enough for the others), `release`, and `hover`, the pointer moving with no butto
 
 Two uses need no pointer, each a step of its own after what is under way is put down: `erase_selection()` makes the
 selected pixels see-through, as Paint.NET's Delete does, and `deselect()` selects nothing, as its Ctrl+D does; neither
-does anything while nothing is selected.
+does anything while nothing is selected. `flip_selection(horizontal)` and `turn_selection(quarter_turns)` (1 clockwise,
+2 half round, 3 counter-clockwise), as OUI Paint's Flip and Rotate Selection, lift what is selected as `move_pixels`
+does, unless it floats already, and flip or turn it round its middle with the selection, a step each; it is left
+floating, so those that follow keep its pixels exact, and nothing is done while nothing is selected or floats.
 
 `ToolOptions` are what they paint with: `brush` (width, hardness, antialiasing), `fill` (tolerance, global), `shape`
 (rectangle, rounded rectangle or ellipse; outline, filled, or both), `line` (arrowheads), `gradient` and its

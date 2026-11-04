@@ -6,6 +6,7 @@
 #include <paint/tool.h>
 
 #include <array>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -95,6 +96,12 @@ class ToolSession
     // What is under way put down first, then a step of its own: nothing selected, as Paint.NET's Ctrl+D does; nothing
     // when nothing was.
     void deselect();
+    // What is selected lifted to float, as Move Selected Pixels lifts it, if it does not float yet, then flipped round
+    // its middle, left to right or upside down, with the selection, as OUI Paint's Flip Selection does: a step of its
+    // own, what floats left floating. Nothing when nothing is selected or floats.
+    void flip_selection(bool horizontal);
+    // As flip_selection, turned by quarter turns: 1 clockwise, 2 half round, 3 counter-clockwise.
+    void turn_selection(int quarter_turns);
 
     // The steps finished since last asked, oldest first.
     [[nodiscard]] std::vector<ToolStep> take_steps();
@@ -185,6 +192,10 @@ class ToolSession
     void redraw_line();
     void finish_line();
     void settle_floating();
+    // Lifts what is selected to float, leaving a hole, unless something floats already.
+    void lift_floating();
+    // What is selected lifted and its transform changed, laid down where it goes as one step.
+    void transform_selection(const std::function<void(PieceTransform&)>& change);
     [[nodiscard]] std::array<Position, 8> floating_handles() const;
     [[nodiscard]] Position constrained(const ToolInput& input, Position from) const;
 
