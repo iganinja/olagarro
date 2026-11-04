@@ -107,14 +107,20 @@ struct ButtonLook
 
 struct CheckBoxLook
 {
+    // With none, the box alone, in the middle of its place and with nothing painted round it, as a column of boxes in
+    // a table is.
     std::string_view text;
     bool checked{false};
     bool focused{false};
+    // Round the box and its text; a box alone leaves what is under it.
     Color background;
     // Where in `text` the letter that turns it with Alt is, in bytes.
     std::optional<std::size_t> mnemonic{};
     // A disabled box shows so, quieter.
     bool enabled{true};
+    // The box's own colours, inside it and its mark; the style's unless given.
+    std::optional<Color> face{};
+    std::optional<Color> mark{};
 };
 
 struct TabLook
@@ -248,6 +254,10 @@ class Painter
     // left, or where they centre or end it, cut to the area's whole columns.
     virtual void draw_label(const Rect& area, std::string_view text, const TextStyle& style,
                             Align align = Align::start);
+    // Interface text `scale` times its usual size, as a heading over what it names, set within `area` as `align` says
+    // and in the middle of its height. A terminal, whose characters are all one size, writes it in bold.
+    virtual void draw_heading(const Rect& area, std::string_view text, const TextStyle& style, double scale,
+                              Align align = Align::start);
     // Runs of interface text one after another on a line, as prose with words in bold, code or links: a graphical
     // style sets them flowing in a proportional font over `background`, the line's own.
     virtual void draw_label_runs(Point position, const std::vector<LabelRun>& runs, Color background);

@@ -97,7 +97,7 @@ What each builds, and what its properties do, as `Builder::make` in ui.cpp does 
 | `ProgressBar` | `ProgressBar` | `value=0.25` how much is done, from 0 to 1; `text="..."` what it says after the bar |
 | `TextEdit` | `TextEdit` | `read_only`; `wrap` long lines break |
 | `MarkdownView` | `MarkdownView` | `background=colour`, `foreground=colour` |
-| `CheckButton "text"` | `CheckButton` | `checked`; `background=colour` |
+| `CheckButton "text"` | `CheckButton` | `checked`; `background=colour`; with `""` the box alone, in the middle of its place, as in a column of a table |
 | `Button "text"` | `Button` | `default` Enter presses it; `compact` on one row; `flat` without its shadow |
 | `ComboBox` | `ComboBox` | none; its options are the code's to give |
 | `VSpacer`, `HSpacer` | `VSpacer`, `HSpacer` | `height=rows`, `width=cells`, 1 unless given |

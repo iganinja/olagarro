@@ -36,6 +36,7 @@
 #include <sys/eventfd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <termios.h>
 #include <unistd.h>
 
 namespace olagarro::oui
@@ -99,6 +100,9 @@ std::atomic<int> wake_fd{-1};
 std::atomic<int> console_fd{-1};
 // How the console read the keyboard before the program told it to leave the keyboard alone.
 std::atomic<int> console_keyboard_mode{-1};
+// How the console's line was set before the program read its keys raw, when it does; a crash puts it back.
+termios console_line{};
+std::atomic<bool> console_line_saved{false};
 
 // The kernel asked the program to stop, or to give the screen to another console, or gave it back.
 void on_signal(int signal)
@@ -137,6 +141,10 @@ void restore_console_after_crash()
         if(const auto mode{console_keyboard_mode.load()}; mode >= 0)
         {
             ioctl(fd, static_cast<IoctlRequest>(KDSKBMODE), mode);
+        }
+        if(console_line_saved)
+        {
+            tcsetattr(fd, TCSANOW, &console_line);
         }
     }
 }
@@ -193,10 +201,10 @@ constexpr std::array<std::string_view, 17> resize_rows_arrow{{
     "   X   ",
 }};
 
-class DrmBackend final : public PixelBackend
+class DrmBackend final : public DrmScreen
 {
   public:
-    explicit DrmBackend(const DrmOptions& options) : PixelBackend{options.style}, m_keyboard{keyboard(options)}
+    explicit DrmBackend(const DrmOptions& options) : DrmScreen{options.style}, m_keyboard{keyboard(options)}
     {
         m_card = Descriptor{open(options.card.c_str(), O_RDWR | O_CLOEXEC)};
         if(m_card.get() < 0)
@@ -209,7 +217,8 @@ class DrmBackend final : public PixelBackend
         find_input();
         m_wake = Descriptor{eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)};
         wake_fd = m_wake.get();
-        take_console();
+        take_console(
+            std::any_of(m_devices.begin(), m_devices.end(), [](const Device& device) { return device.keyboard; }));
         for(const auto signal : {SIGTERM, SIGHUP, SIGUSR1, SIGUSR2})
         {
             struct sigaction action
@@ -265,6 +274,23 @@ class DrmBackend final : public PixelBackend
 
     [[nodiscard]] bool reports_modifiers() const override { return true; }
 
+    void lend_screen() override
+    {
+        m_active = false;
+        control(m_card.get(), DRM_IOCTL_DROP_MASTER, nullptr);
+    }
+
+    void take_screen_back() override
+    {
+        control(m_card.get(), DRM_IOCTL_SET_MASTER, nullptr);
+        // The program may have left another mode: this one's, and its frame.
+        show_now(m_buffers[m_front].framebuffer);
+        take_held_keys();
+        m_active = true;
+        m_flip_pending = false;
+        present();
+    }
+
     std::optional<Event> poll_event() override
     {
         if(release_asked != 0)
@@ -310,6 +336,10 @@ class DrmBackend final : public PixelBackend
         }
         watched.push_back({m_wake.get(), POLLIN, 0});
         watched.push_back({m_card.get(), POLLIN, 0});
+        if(m_reads_console_keys)
+        {
+            watched.push_back({m_console.get(), POLLIN, 0});
+        }
         auto timeout{-1};
         if(deadline)
         {
@@ -633,7 +663,10 @@ class DrmBackend final : public PixelBackend
             Device device;
             device.keyboard = has_bit(types, EV_KEY) && has_bit(keys, KEY_A) && has_bit(keys, KEY_ENTER);
             const auto relative{has_bit(types, EV_REL) && has_bit(event_bits(fd.get(), EV_REL, REL_MAX), REL_X)};
-            device.absolute = has_bit(types, EV_ABS) && has_bit(event_bits(fd.get(), EV_ABS, ABS_MAX), ABS_X);
+            // A pad has an ABS_X too, its stick, which is not where a pointer is: it is left to whoever reads pads.
+            const auto pad{has_bit(keys, BTN_GAMEPAD) || has_bit(keys, BTN_JOYSTICK)};
+            device.absolute =
+                !pad && has_bit(types, EV_ABS) && has_bit(event_bits(fd.get(), EV_ABS, ABS_MAX), ABS_X);
             if(device.absolute)
             {
                 control(fd.get(), EVIOCGABS(ABS_X), &device.x_range);
@@ -650,6 +683,25 @@ class DrmBackend final : public PixelBackend
 
     void read_input()
     {
+        if(m_reads_console_keys)
+        {
+            std::array<unsigned char, 64> bytes{};
+            for(;;)
+            {
+                const auto got{read(m_console.get(), bytes.data(), bytes.size())};
+                if(got <= 0)
+                {
+                    break;
+                }
+                for(std::size_t index{}; index < static_cast<std::size_t>(got); ++ index)
+                {
+                    if(const auto key{m_console_keys.take(bytes[index])}; key && m_active)
+                    {
+                        take_key(key->code, key->value);
+                    }
+                }
+            }
+        }
         for(auto& device : m_devices)
         {
             std::array<input_event, 64> events{};
@@ -885,7 +937,9 @@ class DrmBackend final : public PixelBackend
 
     // The console the program runs on, which stops drawing while the screen is ours and tells the program before
     // another console takes it, so it can let go.
-    void take_console()
+    // With no keyboard of its own to read, as when its user may not read the event devices, the program reads the
+    // console's keys raw instead; with neither, it does not start, rather than leave nobody reading the keyboard.
+    void take_console(bool has_keyboard)
     {
         // The program's own console, as a session on one has, which its user owns; or, for a program with none,
         // as the first program of a system, the one showing now, which only root may take.
@@ -897,14 +951,21 @@ class DrmBackend final : public PixelBackend
         {
             Descriptor any{open("/dev/tty0", O_RDWR | O_CLOEXEC)};
             vt_stat state{};
-            if(any.get() < 0 || control(any.get(), VT_GETSTATE, &state) != 0)
+            if(any.get() >= 0 && control(any.get(), VT_GETSTATE, &state) == 0)
+            {
+                m_console =
+                    Descriptor{open(("/dev/tty" + std::to_string(state.v_active)).c_str(), O_RDWR | O_CLOEXEC)};
+            }
+            else
             {
                 m_console = Descriptor{};
-                return;
             }
-            m_console = Descriptor{open(("/dev/tty" + std::to_string(state.v_active)).c_str(), O_RDWR | O_CLOEXEC)};
             if(m_console.get() < 0)
             {
+                if(!has_keyboard)
+                {
+                    fail("no keyboard can be read, and no console to read one from: the user needs the input group");
+                }
                 return;
             }
         }
@@ -917,7 +978,23 @@ class DrmBackend final : public PixelBackend
         if(control(m_console.get(), KDGKBMODE, &mode) == 0)
         {
             console_keyboard_mode = mode;
-            control_with(m_console.get(), KDSKBMODE, K_OFF);
+            control_with(m_console.get(), KDSKBMODE, has_keyboard ? K_OFF : K_MEDIUMRAW);
+        }
+        if(!has_keyboard)
+        {
+            // Its keys as codes, a byte or three each, read as they come: no line to wait for, nothing echoed, and
+            // Ctrl+C a key like any other.
+            if(tcgetattr(m_console.get(), &console_line) == 0)
+            {
+                console_line_saved = true;
+            }
+            auto raw{console_line};
+            raw.c_iflag &= ~static_cast<tcflag_t>(ICRNL | IXON | ISTRIP | INLCR | IGNCR);
+            raw.c_lflag &= ~static_cast<tcflag_t>(ICANON | ECHO | ISIG | IEXTEN);
+            raw.c_cc[VMIN] = 0;
+            raw.c_cc[VTIME] = 0;
+            tcsetattr(m_console.get(), TCSANOW, &raw);
+            m_reads_console_keys = true;
         }
         vt_mode told{};
         told.mode = VT_PROCESS;
@@ -951,6 +1028,7 @@ class DrmBackend final : public PixelBackend
     void take_held_keys()
     {
         m_keyboard.forget();
+        m_console_keys.forget();
         for(const auto& device : m_devices)
         {
             if(!device.keyboard)
@@ -981,6 +1059,9 @@ class DrmBackend final : public PixelBackend
     }
 
     KeyboardLayout m_keyboard;
+    // The console's keys, read raw when there is no keyboard to read.
+    ConsoleKeys m_console_keys;
+    bool m_reads_console_keys{false};
     // Whether the screen is ours, rather than another console's.
     bool m_active{true};
     bool m_stop_reported{false};
@@ -1013,7 +1094,7 @@ class DrmBackend final : public PixelBackend
 
 } // namespace
 
-std::unique_ptr<PixelBackend> drm_backend(DrmOptions options)
+std::unique_ptr<DrmScreen> drm_backend(DrmOptions options)
 {
     return std::make_unique<DrmBackend>(options);
 }

@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <stdexcept>
 
 #include "../unicode_composition.h"
@@ -559,6 +560,47 @@ void GraphicalPainter::draw_label(const Rect& area, std::string_view text, const
     m_canvas.set_clip(previous);
 }
 
+namespace
+{
+
+// The interface font at the sizes headings ask for, each made once: setting a font at a size is too slow for a frame.
+Font& heading_font(InterfaceFont font, int pixels)
+{
+    static std::map<std::pair<InterfaceFont, int>, std::unique_ptr<Font>> fonts;
+    auto& made{fonts[{font, pixels}]};
+    if(made == nullptr)
+    {
+        made = built_in_interface_font(static_cast<float>(pixels), font);
+    }
+    return *made;
+}
+
+} // namespace
+
+void GraphicalPainter::draw_heading(const Rect& area, std::string_view text, const TextStyle& style, double scale,
+                                    Align align)
+{
+    const auto box{pixels(area)};
+    auto& font{heading_font(m_style.interface_font,
+                            std::max(1, static_cast<int>(std::lround(m_interface_font.line_height() * scale))))};
+    const auto margin{m_style.text_margin};
+    const auto width{std::min(box.width, font.measure(text) + 2 * margin)};
+    const auto left{align == Align::center ? box.x + (box.width - width) / 2
+                    : align == Align::end  ? box.x + box.width - width
+                                           : box.x};
+    if(!text.empty())
+    {
+        m_canvas.fill({left, box.y, width, box.height}, style.background);
+    }
+    const auto previous{m_canvas.clip()};
+    m_canvas.set_clip(intersect(previous, box));
+    const auto foreground{(style.attributes & text_dim) != 0 ? mix(style.foreground, style.background, 110)
+                                                             : style.foreground};
+    const auto top{box.y + (box.height - font.line_height()) / 2};
+    static_cast<void>(font.draw(m_canvas, left + margin, top, text, foreground));
+    m_canvas.set_clip(previous);
+}
+
 void GraphicalPainter::draw_label_runs(Point position, const std::vector<LabelRun>& runs, Color background)
 {
     int columns{};
@@ -750,13 +792,26 @@ void GraphicalPainter::draw_button(const Rect& bounds, const ButtonLook& look, c
 void GraphicalPainter::draw_check_box(const Rect& bounds, const CheckBoxLook& look, const Theme& theme)
 {
     const auto area{pixels(bounds)};
-    m_canvas.fill(area, look.background);
+    const auto alone{look.text.empty()};
+    if(!alone)
+    {
+        m_canvas.fill(area, look.background);
+    }
     const auto size{m_cell.height * 2 / 3};
-    const PixelRect box{area.x + 2, area.y + (m_cell.height - size) / 2, size, size};
-    bevel(box, true, m_style.light);
+    const PixelRect box{alone ? area.x + (area.width - size) / 2 : area.x + 2, area.y + (m_cell.height - size) / 2,
+                        size, size};
+    bevel(box, true, look.face.value_or(m_style.light));
     if(look.checked)
     {
-        m_canvas.fill({box.x + 4, box.y + 4, size - 8, size - 8}, theme.dialog_foreground);
+        m_canvas.fill({box.x + 4, box.y + 4, size - 8, size - 8}, look.mark.value_or(theme.dialog_foreground));
+    }
+    if(alone)
+    {
+        if(look.focused)
+        {
+            focus_ring({box.x - 2, box.y - 2, size + 4, size + 4});
+        }
+        return;
     }
     const auto text_x{box.x + size + 8};
     label({text_x, area.y, area.x + area.width - text_x, m_cell.height}, look.text,

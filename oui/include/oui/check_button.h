@@ -14,13 +14,19 @@
 namespace olagarro::oui
 {
 
+// A box to tick, with its text after it. With no text it is the box alone, in the middle of its place and with nothing
+// painted round it, as a column of boxes in a table is.
 class CheckButton final : public Widget
 {
   public:
     explicit CheckButton(std::string_view text);
 
     void set_text(std::string_view text);
+    // Round the box and its text; the dialog's unless given. A box alone has nothing round it.
     void set_background(ColorRef background);
+    // The box's own colours, inside it and its mark, as a table's background and text are for a box in its rows; the
+    // style's unless given.
+    void set_box_colors(ColorRef face, ColorRef mark);
     [[nodiscard]] std::string_view text() const;
     void set_checked(bool checked);
     [[nodiscard]] bool is_checked() const;
@@ -44,6 +50,8 @@ class CheckButton final : public Widget
     bool m_checked{};
     bool m_pressed{};
     std::optional<ColorRef> m_background;
+    std::optional<ColorRef> m_face;
+    std::optional<ColorRef> m_mark;
     olagarro::signal_slot::Signal<bool> m_toggled;
 };
 

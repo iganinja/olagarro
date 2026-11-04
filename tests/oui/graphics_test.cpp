@@ -876,6 +876,113 @@ TEST(OuiGraphicsTests, AButtonTakesItsWholeWidthWhereNoShadowIsDrawn)
     EXPECT_FALSE(same(canvas.pixel_at(1, 24), around));
 }
 
+TEST(OuiGraphicsTests, AHeadingIsItsTextScaledUp)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    const auto style{classic_style()};
+    const Color background{1, 2, 3};
+    const TextStyle text{Color{250, 250, 250}, background, 0};
+    // How many rows of pixels the text's ink takes, and how many columns.
+    const auto ink{[&](bool heading)
+                   {
+                       Canvas canvas{480, 96};
+                       canvas.fill({0, 0, 480, 96}, background);
+                       GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+                       if(heading)
+                       {
+                           painter.draw_heading({0, 0, 40, 4}, "Mega Drive", text, 2.0, Align::start);
+                       }
+                       else
+                       {
+                           painter.draw_label(Rect{0, 0, 40, 4}, "Mega Drive", text, Align::start);
+                       }
+                       int top{96};
+                       int bottom{-1};
+                       int left{480};
+                       int right{-1};
+                       for(int y{}; y < 96; ++ y)
+                       {
+                           for(int x{}; x < 480; ++ x)
+                           {
+                               if(!same(canvas.pixel_at(x, y), background))
+                               {
+                                   top = std::min(top, y);
+                                   bottom = std::max(bottom, y);
+                                   left = std::min(left, x);
+                                   right = std::max(right, x);
+                               }
+                           }
+                       }
+                       return std::pair<int, int>{right - left + 1, bottom - top + 1};
+                   }};
+    const auto label{ink(false)};
+    const auto heading{ink(true)};
+    ASSERT_GT(label.second, 0);
+    EXPECT_GE(heading.second, label.second * 18 / 10);
+    EXPECT_GE(heading.first, label.first * 18 / 10);
+}
+
+TEST(OuiGraphicsTests, ACheckBoxWithNoTextIsItsBoxAloneInTheMiddleOfItsPlace)
+{
+    // As a column of boxes in a table: the box in the middle of its cell, and nothing painted round it, so the row
+    // shows through.
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{240, 24};
+    const Color row{1, 2, 3};
+    canvas.fill({0, 0, 240, 24}, row);
+    const auto style{classic_style()};
+    const auto theme{theme_for(style)};
+    GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    CheckBoxLook look;
+    look.checked = true;
+    look.background = Color{200, 200, 200};
+    painter.draw_check_box({0, 0, 20, 1}, look, theme);
+    int first{-1};
+    int last{-1};
+    for(int x{}; x < 240; ++ x)
+    {
+        if(!same(canvas.pixel_at(x, 12), row))
+        {
+            first = first < 0 ? x : first;
+            last = x;
+        }
+    }
+    ASSERT_GE(first, 0);
+    EXPECT_NEAR((first + last) / 2.0, 119.5, 1.0);
+    EXPECT_LT(last - first, 24);
+    EXPECT_TRUE(same(canvas.pixel_at(2, 2), row));
+}
+
+TEST(OuiGraphicsTests, ACheckBoxsFaceAndMarkAreTheColoursItIsGiven)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    Canvas canvas{240, 24};
+    const auto style{classic_style()};
+    const auto theme{theme_for(style)};
+    GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+    const Color face{10, 20, 30};
+    const Color mark{200, 0, 0};
+    CheckBoxLook look;
+    look.checked = true;
+    look.face = face;
+    look.mark = mark;
+    painter.draw_check_box({0, 0, 20, 1}, look, theme);
+    // The mark in the middle of the box, the face between it and the box's edge.
+    EXPECT_TRUE(same(canvas.pixel_at(120, 12), mark));
+    int face_pixels{};
+    for(int x{100}; x < 140; ++ x)
+    {
+        face_pixels += same(canvas.pixel_at(x, 12), face) ? 1 : 0;
+    }
+    EXPECT_GT(face_pixels, 0);
+}
+
 TEST(OuiGraphicsTests, WidgetsWithTextAskForTheCellsItShowsInNotItsCharacters)
 {
     // In a proportional font "Rename Files" takes about half the cells of its twelve characters: a window of such
@@ -894,6 +1001,8 @@ TEST(OuiGraphicsTests, WidgetsWithTextAskForTheCellsItShowsInNotItsCharacters)
     // A button's raised face is round the text's margins, with no frame of characters beside them.
     EXPECT_DOUBLE_EQ(width_of(*button(text)), shown);
     EXPECT_DOUBLE_EQ(width_of(*check_button(text)), shown + 5);
+    // With no text, the box alone: in a terminal "[X]", which a window's box fits in.
+    EXPECT_DOUBLE_EQ(width_of(*check_button("")), 3.0);
     EXPECT_DOUBLE_EQ(width_of(*combo_box({text, "Go"})), shown + 4);
     // No text takes nothing, margins and all: drawn, it covers nothing beside it.
     EXPECT_EQ(shown_width(""), 0);

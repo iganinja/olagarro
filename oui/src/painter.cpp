@@ -203,15 +203,32 @@ void Painter::draw_button(const Rect& bounds, const ButtonLook& look, const Them
     }
 }
 
+void Painter::draw_heading(const Rect& area, std::string_view text, const TextStyle& style, double,
+                           Align align)
+{
+    auto bold{style};
+    bold.attributes |= text_bold;
+    draw_label(Rect{area.x, area.y + std::floor((area.height - 1) / 2), area.width, 1}, text, bold, align);
+}
+
 void Painter::draw_check_box(const Rect& bounds, const CheckBoxLook& look, const Theme& theme)
 {
-    // As a Turbo Vision cluster: its own colour across the row, the one with the focus in another.
-    fill_rect(bounds, theme.cluster_background);
     const TextStyle style{!look.enabled  ? theme.disabled_foreground
                           : look.focused ? theme.cluster_focused_foreground
                                          : theme.cluster_foreground,
                           theme.cluster_background};
-    draw_text({bounds.x, bounds.y}, look.checked ? "[X] " : "[ ] ", style);
+    const TextStyle box{look.mark && look.enabled && !look.focused ? *look.mark : style.foreground,
+                        look.face.value_or(style.background)};
+    if(look.text.empty())
+    {
+        // The box alone, in the middle of its place, leaving the rest as it is.
+        draw_text({bounds.x + std::floor((bounds.width - 3) / 2), bounds.y}, look.checked ? "[X]" : "[ ]", box);
+        return;
+    }
+    // As a Turbo Vision cluster: its own colour across the row, the one with the focus in another.
+    fill_rect(bounds, theme.cluster_background);
+    draw_text({bounds.x, bounds.y}, look.checked ? "[X]" : "[ ]", box);
+    draw_text({bounds.x + 3, bounds.y}, " ", style);
     draw_label(Point{bounds.x + 4, bounds.y}, look.text, style);
     if(look.enabled && look.mnemonic && *look.mnemonic < look.text.size())
     {

@@ -22,6 +22,12 @@ void CheckButton::set_background(ColorRef background)
     m_background = background;
 }
 
+void CheckButton::set_box_colors(ColorRef face, ColorRef mark)
+{
+    m_face = face;
+    m_mark = mark;
+}
+
 std::string_view CheckButton::text() const
 {
     return m_text;
@@ -101,17 +107,26 @@ bool CheckButton::handle_event(const Event& event)
 
 Size CheckButton::measure(const Constraints& constraints) const
 {
-    const auto width{text_metrics().label_width(strip_mnemonic(m_text)) + 5};
+    // The box alone takes "[X]", which a window's box fits in.
+    const auto width{m_text.empty() ? 3.0 : text_metrics().label_width(strip_mnemonic(m_text)) + 5};
     return constraints.constrain({width, 1.0});
 }
 
 void CheckButton::paint(Painter& painter, const Theme& theme) const
 {
-    painter.draw_check_box(bounds(),
-                           {strip_mnemonic(m_text), m_checked, is_focused() && is_enabled(),
-                            resolve(m_background, theme, theme.dialog_background), mnemonic_offset(m_text),
-                            is_enabled()},
-                           theme);
+    // Kept here: the look only points at it.
+    const auto text{strip_mnemonic(m_text)};
+    CheckBoxLook look{text, m_checked, is_focused() && is_enabled(),
+                      resolve(m_background, theme, theme.dialog_background), mnemonic_offset(m_text), is_enabled()};
+    if(m_face)
+    {
+        look.face = m_face->resolve(theme);
+    }
+    if(m_mark)
+    {
+        look.mark = m_mark->resolve(theme);
+    }
+    painter.draw_check_box(bounds(), look, theme);
 }
 
 std::unique_ptr<CheckButton> check_button(std::string_view text)

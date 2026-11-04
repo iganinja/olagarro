@@ -946,7 +946,7 @@ void Application::deliver_event(const Event& event)
         {
             if(!dispatch_to_focused(event))
             {
-                focus_next();
+                step_focus(1);
             }
             return;
         }
@@ -954,7 +954,7 @@ void Application::deliver_event(const Event& event)
         {
             if(!dispatch_to_focused(event))
             {
-                focus_previous();
+                step_focus(-1);
             }
             return;
         }
@@ -1028,7 +1028,7 @@ void Application::deliver_event(const Event& event)
     {
         if(key->key == Key::down || key->key == Key::up)
         {
-            focus_by_offset(key->key == Key::down ? 1 : -1, false);
+            step_focus(key->key == Key::down ? 1 : -1, false);
             return;
         }
     }
@@ -1523,6 +1523,16 @@ void Application::focus_next()
 void Application::focus_previous()
 {
     focus_by_offset(-1);
+}
+void Application::step_focus(int offset, bool wrap)
+{
+    const auto* const before{m_focused};
+    focus_by_offset(offset, wrap);
+    // A field come to by a key has all its text selected, so what is typed replaces it.
+    if(auto* const field{dynamic_cast<LineEdit*>(m_focused)}; field != nullptr && m_focused != before)
+    {
+        field->select_all();
+    }
 }
 void Application::set_focus(Widget* const widget)
 {

@@ -199,6 +199,24 @@ TEST(OuiContrastTests, CheckButtonLeavesAGapBetweenTheBoxAndItsText)
     }
 }
 
+TEST(OuiContrastTests, ACheckBoxsTextWithAShortcutLetterIsShownWhole)
+{
+    // Long enough that the text without its '&' is kept apart from the box, where it must still be when painted.
+    const std::string_view shown{"Measure angles in degrees"};
+    auto check{oui::check_button("&Measure angles in degrees")};
+    check->arrange({0, 0, 40, 1});
+    oui::CellBuffer buffer{40, 1};
+    oui::CellBufferPainter painter{buffer};
+    check->paint(painter, {});
+
+    std::u32string row;
+    for(int column{4}; column < 4 + static_cast<int>(shown.size()); ++ column)
+    {
+        row += buffer.cell_at(column, 0).glyph;
+    }
+    EXPECT_EQ(row, std::u32string(shown.begin(), shown.end()));
+}
+
 TEST(OuiContrastTests, ListSelectionStandsOutFromUnselectedRows)
 {
     const oui::Theme theme;
