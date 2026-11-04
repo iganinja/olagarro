@@ -169,6 +169,10 @@ enough for the others), `release`, and `hover`, the pointer moving with no butto
   edges), the opposite one staying put. What floats is laid over the hole it left at each move, so the canvas always
   shows it, and is put down when another tool is used. `move_selection` moves the selection's outline only.
 
+Two uses need no pointer, each a step of its own after what is under way is put down: `erase_selection()` makes the
+selected pixels see-through, as Paint.NET's Delete does, and `deselect()` selects nothing, as its Ctrl+D does; neither
+does anything while nothing is selected.
+
 `ToolOptions` are what they paint with: `brush` (width, hardness, antialiasing), `fill` (tolerance, global), `shape`
 (rectangle, rounded rectangle or ellipse; outline, filled, or both), `line` (arrowheads), `gradient` and its
 `gradient_transparency`, and the `primary` and `secondary` colours. A program shows and changes them through
@@ -244,7 +248,9 @@ shows a `ToolSession` and wants Paint.NET's way of choosing what it paints with.
   click on one, or `press_key`, picks it, and `on_picked` hears the tool's id. `paint_tool_buttons()` are Paint's tools
   in OUI Paint's order, each with its icon and Paint.NET's key: B brush, P pencil, E eraser, F fill, G gradient, O the
   line, shapes and arc, S the four selections, K the picker, M the two moves; a key pressed again goes to the next tool
-  that has it. A program with tools of its own (OUI Paint's zoom, pan, clone stamp, recolor and text) gives the panel
+  that has it. `set_scale` draws the buttons and their icons bigger than the cells, as a program whose painting wants
+  larger buttons than its interface does; a terminal keeps 1. A program with tools of its own (OUI Paint's zoom, pan,
+  clone stamp, recolor and text) gives the panel
   its own list, Paint's among them, and `selected_tool()` is none while one of its own is picked.
   `add_tool_commands` registers each key as a command bound to it ("tool.key_b"), so it works wherever the program's
   commands do.
@@ -257,7 +263,9 @@ shows a `ToolSession` and wants Paint.NET's way of choosing what it paints with.
 - `ColorPanel` (`paint/panels/color_panel.h`) is the primary and secondary colours, two squares one over the other,
   and a palette of greys and colours under them: a click on the palette sets the colour being edited, the right button
   the other, and `on_edit` hears a click on a square, for the program to ask for a colour. `add_color_commands` binds
-  X to `swap` and C to `toggle_editing`, which chooses the colour the palette's left button sets.
+  X to `swap` and C to `toggle_editing`, which chooses the colour the palette's left button sets. `set_scale` draws it
+  bigger, as the tools; `set_palette_columns` puts more colours to a palette row, each as much smaller, so a long
+  palette fits under the tools of a short window.
 - `ask_color` (`paint/panels/color_dialog.h`) asks for a colour as Paint.NET's Colors window does: a square of
   saturation and value, a bar of hue, red, green, blue and alpha, hue, saturation and value, hexadecimal, and grey as a
   16-bit value for heightmaps. Unlike `oui::ask_color`, it has alpha and keeps colours deeper than 8 bits.

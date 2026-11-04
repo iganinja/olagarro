@@ -6,6 +6,7 @@
 #include <oui/command.h>
 #include <oui/widget.h>
 
+#include <algorithm>
 #include <functional>
 #include <optional>
 #include <string>
@@ -52,6 +53,10 @@ class ToolPanel final : public oui::Widget
     [[nodiscard]] const std::string& selected() const;
     // The tool selected, none when it is one of the program's own.
     [[nodiscard]] std::optional<Tool> selected_tool() const;
+    // How many times bigger than its cells it is drawn, buttons and icons; 1 at first. A window can take more, as a
+    // program whose painting wants larger buttons than its interface; a terminal keeps 1, its cells being whole.
+    void set_scale(double scale) { m_scale = std::max(1.0, scale); }
+    [[nodiscard]] double scale() const { return m_scale; }
     // Picks the tool `key` gives, as a click on its button does; false for a key no tool has.
     bool press_key(char32_t key);
     // Called with the id of a button clicked or a tool picked by its key, after it became the selected one.
@@ -72,6 +77,7 @@ class ToolPanel final : public oui::Widget
     std::vector<ToolButton> m_buttons;
     Icons& m_icons;
     std::string m_selected;
+    double m_scale{1.0};
     std::function<void(const std::string&)> m_picked;
 };
 

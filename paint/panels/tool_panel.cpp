@@ -6,6 +6,7 @@
 #include <oui/theme.h>
 #include <oui/translation.h>
 
+#include <cmath>
 #include <utility>
 
 namespace olagarro::paint
@@ -116,11 +117,14 @@ void ToolPanel::pick(std::string id)
 
 std::optional<std::size_t> ToolPanel::button_at(oui::Point cell) const
 {
-    if(cell.x < 0 || cell.y < 0 || cell.x >= columns * button_width)
+    const auto width{button_width * m_scale};
+    if(cell.x < 0 || cell.y < 0 || cell.x >= columns * width)
     {
         return std::nullopt;
     }
-    const auto index{static_cast<std::size_t>(oui::whole(cell.y) * columns + oui::whole(cell.x) / button_width)};
+    const auto row{static_cast<std::size_t>(std::floor(cell.y / m_scale))};
+    const auto column{static_cast<std::size_t>(std::floor(cell.x / width))};
+    const auto index{row * columns + column};
     if(index >= m_buttons.size())
     {
         return std::nullopt;
@@ -132,13 +136,14 @@ oui::Rect ToolPanel::button_bounds(std::size_t index) const
 {
     const auto column{static_cast<int>(index) % columns};
     const auto row{static_cast<int>(index) / columns};
-    return {m_bounds.x + column * button_width, m_bounds.y + row, button_width, 1};
+    const auto width{button_width * m_scale};
+    return {m_bounds.x + column * width, m_bounds.y + row * m_scale, width, m_scale};
 }
 
 oui::Size ToolPanel::measure(const oui::Constraints& constraints) const
 {
     const auto rows{(static_cast<int>(m_buttons.size()) + columns - 1) / columns};
-    return constraints.constrain({columns * button_width, static_cast<double>(rows)});
+    return constraints.constrain({columns * button_width * m_scale, rows * m_scale});
 }
 
 void ToolPanel::paint(oui::Painter& painter, const oui::Theme& theme) const

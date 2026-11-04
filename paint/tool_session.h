@@ -89,6 +89,12 @@ class ToolSession
     void finish();
     // Leaves out what is under way and not yet a step: an arc between its clicks, a line still to bend.
     void cancel();
+    // What is under way put down first, as finish() does, then a step of its own: the selected pixels made
+    // see-through, as Paint.NET's Delete does; nothing when nothing is selected.
+    void erase_selection();
+    // What is under way put down first, then a step of its own: nothing selected, as Paint.NET's Ctrl+D does; nothing
+    // when nothing was.
+    void deselect();
 
     // The steps finished since last asked, oldest first.
     [[nodiscard]] std::vector<ToolStep> take_steps();

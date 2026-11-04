@@ -371,3 +371,41 @@ TEST(ToolSession, ToolsHaveTheirIds)
     EXPECT_EQ(tool_id(Tool::fill), "bucket");
     EXPECT_FALSE(tool_from_id("text"));
 }
+
+TEST(ToolSession, EraseSelectionClearsWhatIsSelectedAndDeselectSelectsNothingEachAStep)
+{
+    Canvas canvas{PixelFormat::rgba8, 100, 100};
+    Selection selection{100, 100};
+    ToolSession session{canvas, selection};
+    square(canvas, 0, 0, 60, Rgba8{{200, 10, 10, 255}});
+    // Nothing selected: nothing erased, no step.
+    session.erase_selection();
+    EXPECT_EQ(at(canvas, 20, 20).alpha(), 255);
+    EXPECT_TRUE(session.take_steps().empty());
+
+    session.set_tool(Tool::rectangle_select);
+    session.press(input(10.5, 10.5));
+    session.release(input(30.5, 30.5));
+    static_cast<void>(session.take_steps());
+    const auto before{canvas};
+    session.erase_selection();
+    EXPECT_EQ(at(canvas, 20, 20).alpha(), 0) << "selected";
+    EXPECT_EQ(at(canvas, 40, 40).alpha(), 255) << "not selected";
+    auto steps{session.take_steps()};
+    ASSERT_EQ(steps.size(), 1u);
+    EXPECT_FALSE(steps[0].selection) << "the selection stays";
+    steps[0].change.undo(canvas);
+    EXPECT_TRUE(same_tiles(canvas, before));
+    steps[0].change.redo(canvas);
+
+    session.deselect();
+    EXPECT_FALSE(selection.active());
+    steps = session.take_steps();
+    ASSERT_EQ(steps.size(), 1u);
+    ASSERT_TRUE(steps[0].selection);
+    EXPECT_TRUE(steps[0].selection->before);
+    EXPECT_FALSE(steps[0].selection->after);
+    EXPECT_TRUE(steps[0].change.empty());
+    session.deselect();
+    EXPECT_TRUE(session.take_steps().empty()) << "nothing was selected";
+}

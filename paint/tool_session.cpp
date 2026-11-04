@@ -401,6 +401,30 @@ void ToolSession::cancel()
     finish();
 }
 
+void ToolSession::erase_selection()
+{
+    finish();
+    if(!m_selection.active())
+    {
+        return;
+    }
+    begin_step();
+    static_cast<void>(erase_selected(m_canvas, m_selection));
+    end_step(false);
+}
+
+void ToolSession::deselect()
+{
+    finish();
+    if(!m_selection.active())
+    {
+        return;
+    }
+    begin_step();
+    m_selection.clear();
+    end_step(true);
+}
+
 void ToolSession::paint_press(const ToolInput& input)
 {
     auto settings{m_options.brush};

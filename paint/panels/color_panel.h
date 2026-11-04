@@ -5,6 +5,7 @@
 #include <oui/command.h>
 #include <oui/widget.h>
 
+#include <algorithm>
 #include <functional>
 #include <optional>
 #include <vector>
@@ -40,6 +41,14 @@ class ColorPanel final : public oui::Widget
     // Called after the primary or the secondary colour changed, however it changed.
     void on_changed(std::function<void()> changed);
 
+    // How many times bigger than its cells it is drawn, squares and palette; 1 at first, and in a terminal.
+    void set_scale(double scale) { m_scale = std::max(1.0, scale); }
+    [[nodiscard]] double scale() const { return m_scale; }
+
+    // How many palette colours to a row, 2 at first: more makes each smaller, as square as two cells to a row are, so a
+    // long palette takes fewer rows. A terminal keeps 2, its cells being whole.
+    void set_palette_columns(int columns) { m_palette_columns = std::max(1, columns); }
+
     // The palette colour at a cell inside the panel, counted from its top left corner.
     [[nodiscard]] std::optional<Color> palette_at(oui::Point cell) const;
 
@@ -55,6 +64,8 @@ class ColorPanel final : public oui::Widget
     Color m_secondary{1.0, 1.0, 1.0, 1.0};
     std::vector<Color> m_palette;
     bool m_editing_secondary{false};
+    double m_scale{1.0};
+    int m_palette_columns{2};
     std::function<void(bool)> m_edit;
     std::function<void(bool)> m_picked;
     std::function<void()> m_changed;

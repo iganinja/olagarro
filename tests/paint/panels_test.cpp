@@ -306,3 +306,55 @@ TEST(PaintPanelsTests, ThePanelsTextsComeInSpanish)
     EXPECT_EQ(buttons[8].id, "brush");
     EXPECT_EQ(buttons[8].title, "Pincel");
 }
+
+TEST(PaintPanelsTests, ScaledThePanelsAreBiggerAndTheirClicksLandWhereTheyAreDrawn)
+{
+    paint::Icons icons;
+    paint::ToolPanel tools{icons};
+    const oui::Constraints loose{100, 100};
+    const auto plain{tools.measure(loose)};
+    tools.set_scale(1.5);
+    const auto scaled{tools.measure(loose)};
+    EXPECT_DOUBLE_EQ(scaled.width, plain.width * 1.5);
+    EXPECT_DOUBLE_EQ(scaled.height, plain.height * 1.5);
+    EXPECT_EQ(tools.button_at({4.5, 0.5}), std::optional<std::size_t>{1}) << "the second button, three cells wide";
+    EXPECT_EQ(tools.button_at({0.5, 1.6}), std::optional<std::size_t>{2}) << "the second row, a row and a half down";
+    tools.set_scale(0.5);
+    EXPECT_DOUBLE_EQ(tools.scale(), 1.0) << "never smaller than its cells";
+
+    paint::ColorPanel colors;
+    const auto colors_plain{colors.measure(loose)};
+    colors.set_scale(2.0);
+    EXPECT_DOUBLE_EQ(colors.measure(loose).width, colors_plain.width * 2.0);
+    colors.arrange({0, 0, 8, 40});
+    // The palette starts under the squares, six rows down at twice the size; its first two colours side by side.
+    EXPECT_FALSE(colors.palette_at({1, 5}));
+    ASSERT_TRUE(colors.palette_at({1, 6.5}));
+    ASSERT_TRUE(colors.palette_at({5, 6.5}));
+    EXPECT_FALSE(same(*colors.palette_at({1, 6.5}), *colors.palette_at({5, 6.5})));
+    EXPECT_TRUE(colors.handle_event(press(5, 7)));
+    EXPECT_TRUE(same(colors.primary(), *colors.palette_at({5, 6.5})));
+}
+
+TEST(PaintPanelsTests, MoreColoursToARowMakeThePaletteShorterEachColourSmaller)
+{
+    paint::ColorPanel panel;
+    const oui::Constraints loose{100, 100};
+    const auto two{panel.measure(loose)};
+    panel.set_palette_columns(4);
+    const auto four{panel.measure(loose)};
+    EXPECT_DOUBLE_EQ(four.width, two.width);
+    // The squares take three rows either way; the palette about half as many rows, each half as tall, a last row half
+    // full counting whole.
+    EXPECT_LE(four.height - 3.0, (two.height - 3.0) / 4.0 + 0.5);
+    EXPECT_LT(four.height, two.height);
+    panel.arrange({0, 0, paint::ColorPanel::width, 20});
+    // Four colours along the first row, each a cell wide and half a row tall.
+    ASSERT_TRUE(panel.palette_at({0.5, 3.2}));
+    ASSERT_TRUE(panel.palette_at({3.5, 3.2}));
+    ASSERT_TRUE(panel.palette_at({0.5, 3.7}));
+    EXPECT_FALSE(same(*panel.palette_at({0.5, 3.2}), *panel.palette_at({3.5, 3.2})));
+    EXPECT_FALSE(same(*panel.palette_at({0.5, 3.2}), *panel.palette_at({0.5, 3.7}))) << "the second row";
+    EXPECT_TRUE(panel.handle_event(press(3, 3)));
+    EXPECT_TRUE(same(panel.primary(), *panel.palette_at({3.5, 3.2})));
+}
