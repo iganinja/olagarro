@@ -64,6 +64,7 @@ Each takes an image and gives a new one; none changes what it is given.
 | `zoom_blur(pool, image, amount, center_x, center_y)` | Averaged along the line from each pixel towards a centre, `amount` from 0 to 1 of the way. |
 | `convolve(pool, image, matrix, size, divisor, offset)` | Each colour the sum of the neighbours' times a square matrix, `size` a side, divided and offset: sharpening, edges, emboss. Alpha kept. |
 | `add_noise(pool, image, intensity, saturation, coverage, seed)` | `coverage` of the pixels lighter or darker by up to `intensity`, the channels apart by `saturation` of that. The same seed gives the same noise. |
+| `clouds(pool, width, height, scale, roughness, seed)` | Not from an image: fractal gradient noise of greys, solid, stretched from black to white, `scale` pixels to its broadest features and `roughness` (0 to 1) how much each finer one counts. The same seed gives the same clouds. |
 | `lookup(pool, image, tables)` | Each of red, green and blue through a table of its own, spread over 0 to 1 and interpolated: curves, levels, invert, posterize. An empty table leaves its channel. |
 | `lookup_luminosity(pool, image, table)` | The luminance through a table, the colour scaled with it so its hue stays; past white goes towards white. Luminance is linear light's: 0.2126 red, 0.7152 green, 0.0722 blue. |
 | `hue_saturation(pool, image, hue, saturation, lightness)` | Hue turned by degrees; saturation scaled by 1 plus `saturation`; towards white or black by `lightness`, from -1 to 1. |

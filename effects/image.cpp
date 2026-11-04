@@ -3,7 +3,9 @@
 #include <concurrency/concurrency.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <numeric>
@@ -276,6 +278,57 @@ double mix_channel(double below, double above, BlendMode mode)
     return above;
 }
 
+// Gradient noise from -1 to 1 over a plane of whole cells, 256 of them each way before it repeats, its gradients
+// shuffled by a seed (Perlin's, as OUI Paint's clouds have it).
+class Noise
+{
+  public:
+    explicit Noise(std::uint32_t seed)
+    {
+        std::iota(m_permutation.begin(), m_permutation.begin() + 256, 0);
+        auto state{seed == 0 ? 0x9e3779b9u : seed};
+        for(int index{255}; index > 0; -- index)
+        {
+            state ^= state << 13u;
+            state ^= state >> 17u;
+            state ^= state << 5u;
+            std::swap(m_permutation[static_cast<std::size_t>(index)],
+                      m_permutation[state % static_cast<std::uint32_t>(index + 1)]);
+        }
+        std::copy(m_permutation.begin(), m_permutation.begin() + 256, m_permutation.begin() + 256);
+        for(int hash{}; hash < 256; ++ hash)
+        {
+            const auto angle{hash * (2.0 * pi / 256.0)};
+            m_gradients[static_cast<std::size_t>(hash)] = {std::cos(angle), std::sin(angle)};
+        }
+    }
+
+    [[nodiscard]] double at(double x, double y) const
+    {
+        const auto cell_x{static_cast<int>(std::floor(x)) & 255};
+        const auto cell_y{static_cast<int>(std::floor(y)) & 255};
+        const auto fx{x - std::floor(x)};
+        const auto fy{y - std::floor(y)};
+        const auto fade{[](double t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }};
+        const auto u{fade(fx)};
+        const auto v{fade(fy)};
+        const auto corner{[&](int i, int j)
+                          {
+                              const auto hash{m_permutation[static_cast<std::size_t>(
+                                  m_permutation[static_cast<std::size_t>(cell_x + i)] + cell_y + j)]};
+                              const auto& gradient{m_gradients[static_cast<std::size_t>(hash)]};
+                              return gradient[0] * (fx - i) + gradient[1] * (fy - j);
+                          }};
+        const auto top{corner(0, 0) + u * (corner(1, 0) - corner(0, 0))};
+        const auto bottom{corner(0, 1) + u * (corner(1, 1) - corner(0, 1))};
+        return (top + v * (bottom - top)) * 1.4142135623730951;
+    }
+
+  private:
+    std::array<int, 512> m_permutation{};
+    std::array<std::array<double, 2>, 256> m_gradients{};
+};
+
 } // namespace
 
 const float* Image::clamped(int x, int y) const
@@ -455,6 +508,47 @@ Image convolve(concurrency::TaskPool& pool, const Image& image, const std::vecto
                          }
                          premultiply(result.at(x, y), sum[0] * divide + offset, sum[1] * divide + offset,
                                      sum[2] * divide + offset, image.at(x, y)[3]);
+                     }
+                 });
+    return result;
+}
+
+Image clouds(concurrency::TaskPool& pool, int width, int height, double scale, double roughness, std::uint32_t seed)
+{
+    Image result{width, height};
+    const Noise noise{seed};
+    std::vector<double> values(static_cast<std::size_t>(width) * static_cast<std::size_t>(height));
+    for_each_row(
+        pool, height,
+        [&](int y)
+        {
+            for(int x{}; x < width; ++ x)
+            {
+                auto sum{0.0};
+                auto amplitude{1.0};
+                // Octaves from `scale` pixels down to one, each finer one weighed by `roughness` more.
+                for(auto size{std::max(1.0, scale)}; size >= 1.0; size /= 2.0, amplitude *= roughness)
+                {
+                    sum += noise.at(x / size + seed % 1000, y / size) * amplitude;
+                }
+                values[static_cast<std::size_t>(y) * static_cast<std::size_t>(width) + static_cast<std::size_t>(x)] =
+                    sum;
+            }
+        });
+    // Stretched from black to white.
+    const auto [lowest, highest]{std::minmax_element(values.begin(), values.end())};
+    const auto low{values.empty() ? 0.0 : *lowest};
+    const auto span{!values.empty() && *highest > low ? *highest - low : 1.0};
+    for_each_row(pool, height,
+                 [&](int y)
+                 {
+                     for(int x{}; x < width; ++ x)
+                     {
+                         const auto gray{(values[static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
+                                                 static_cast<std::size_t>(x)] -
+                                          low) /
+                                         span};
+                         premultiply(result.at(x, y), gray, gray, gray, 1.0);
                      }
                  });
     return result;

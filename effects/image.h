@@ -82,6 +82,11 @@ enum class BlendMode
 // `divisor` and `offset` added; alpha kept.
 [[nodiscard]] Image convolve(concurrency::TaskPool& pool, const Image& image, const std::vector<double>& matrix,
                              int size, double divisor, double offset);
+// Clouds: fractal noise of greys, solid, stretched from black to white, `scale` pixels to its broadest features and
+// `roughness`, from 0 to 1, how much each finer one counts against the one above it. The same seed gives the same
+// clouds.
+[[nodiscard]] Image clouds(concurrency::TaskPool& pool, int width, int height, double scale, double roughness,
+                           std::uint32_t seed);
 // Random noise over the image: `coverage` of its pixels, from 0 to 1, each lighter or darker by up to `intensity`, and
 // each of its channels apart by `saturation` of that. The same `seed` gives the same noise.
 [[nodiscard]] Image add_noise(concurrency::TaskPool& pool, const Image& image, double intensity, double saturation,

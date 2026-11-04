@@ -227,6 +227,45 @@ TEST(EffectsImage, NoiseIsTheSameForTheSameSeedAndCoversWhatItIsAskedTo)
     EXPECT_NEAR(changed / 4096.0, 0.5, 0.05) << "half the pixels";
 }
 
+TEST(EffectsImage, CloudsAreGreysTheSameForTheSameSeedAndBroaderForABiggerScale)
+{
+    concurrency::TaskPool pool{2};
+    const auto first{clouds(pool, 64, 64, 16.0, 0.5, 3)};
+    EXPECT_EQ(first.pixels, clouds(pool, 64, 64, 16.0, 0.5, 3).pixels);
+    EXPECT_NE(first.pixels, clouds(pool, 64, 64, 16.0, 0.5, 4).pixels);
+    auto darkest{1.0f};
+    auto lightest{0.0f};
+    for(int y{}; y < 64; ++ y)
+    {
+        for(int x{}; x < 64; ++ x)
+        {
+            const auto* const pixel{first.at(x, y)};
+            EXPECT_EQ(pixel[0], pixel[1]);
+            EXPECT_EQ(pixel[0], pixel[2]);
+            EXPECT_FLOAT_EQ(pixel[3], 1.0f);
+            darkest = std::min(darkest, pixel[0]);
+            lightest = std::max(lightest, pixel[0]);
+        }
+    }
+    EXPECT_FLOAT_EQ(darkest, 0.0f) << "stretched from black";
+    EXPECT_FLOAT_EQ(lightest, 1.0f) << "to white";
+
+    // Neighbours differ less where the features are broader.
+    const auto roughness{[](const Image& image)
+                         {
+                             auto sum{0.0};
+                             for(int y{}; y < image.height; ++ y)
+                             {
+                                 for(int x{1}; x < image.width; ++ x)
+                                 {
+                                     sum += std::abs(image.at(x, y)[0] - image.at(x - 1, y)[0]);
+                                 }
+                             }
+                             return sum;
+                         }};
+    EXPECT_LT(roughness(clouds(pool, 64, 64, 32.0, 0.5, 3)), roughness(clouds(pool, 64, 64, 4.0, 0.5, 3)));
+}
+
 TEST(EffectsImage, ATableTakesEachChannelThroughItInterpolated)
 {
     concurrency::TaskPool pool{2};
@@ -374,6 +413,7 @@ TEST(EffectsImage, EveryPieceGivesTheSameOnManyThreadsAsOnOne)
     EXPECT_TRUE(both([&](concurrency::TaskPool& pool) { return hue_saturation(pool, image, 40.0, 0.3, -0.2); }));
     EXPECT_TRUE(both([&](concurrency::TaskPool& pool) { return mix(pool, image, above, BlendMode::overlay, 0.7); }));
     EXPECT_TRUE(both([&](concurrency::TaskPool& pool) { return vignette(pool, image, 0.6, 0.5); }));
+    EXPECT_TRUE(both([&](concurrency::TaskPool& pool) { return clouds(pool, 97, 83, 40.0, 0.6, 5); }));
     const auto range_many{channel_range(many, image)};
     const auto range_one{channel_range(one, image)};
     EXPECT_EQ(range_many.low, range_one.low);
