@@ -136,14 +136,24 @@ olagarro_configure_target(olagarro_effects)
 target_link_libraries(olagarro_effects PUBLIC olagarro::Concurrency)
 
 add_library(olagarro_paint
+    paint/arc.cpp
     paint/blend.cpp
     paint/canvas.cpp
     paint/color.cpp
+    paint/color_math.cpp
+    paint/fill.cpp
+    paint/floating.cpp
+    paint/gradient.cpp
     paint/image.cpp
     paint/pixel_format.cpp
     paint/selection.cpp
+    paint/shapes.cpp
+    paint/stroke.cpp
     paint/tile.cpp
-    paint/tile_change.cpp)
+    paint/tile_change.cpp
+    paint/tool.cpp
+    paint/tool_session.cpp
+    paint/transform.cpp)
 add_library(olagarro::Paint ALIAS olagarro_paint)
 set_target_properties(olagarro_paint PROPERTIES EXPORT_NAME Paint)
 olagarro_configure_target(olagarro_paint)
@@ -689,7 +699,18 @@ if(OLAGARRO_BUILD_TESTS)
         target_link_libraries(olagarro_effects_unit_tests PRIVATE olagarro::Effects GTest::gtest_main)
         gtest_discover_tests(olagarro_effects_unit_tests)
 
-        add_executable(olagarro_paint_unit_tests tests/paint/canvas_test.cpp tests/paint/selection_test.cpp)
+        add_executable(olagarro_paint_unit_tests
+            tests/paint/arc_test.cpp
+            tests/paint/canvas_test.cpp
+            tests/paint/color_math_test.cpp
+            tests/paint/fill_test.cpp
+            tests/paint/floating_test.cpp
+            tests/paint/gradient_test.cpp
+            tests/paint/selection_test.cpp
+            tests/paint/shapes_test.cpp
+            tests/paint/stroke_test.cpp
+            tests/paint/tool_session_test.cpp
+            tests/paint/transform_test.cpp)
         target_link_libraries(olagarro_paint_unit_tests PRIVATE olagarro::Paint GTest::gtest_main)
         gtest_discover_tests(olagarro_paint_unit_tests)
 

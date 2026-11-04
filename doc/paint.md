@@ -12,6 +12,8 @@ files, ouivi's tracks, is built on top of it.
 - [Files](#files)
 - [Blend modes and colours](#blend-modes-and-colours)
 - [Selections](#selections)
+- [Tools](#tools)
+- [The pieces the tools are made of](#the-pieces-the-tools-are-made-of)
 
 ## Pixels
 
@@ -112,3 +114,94 @@ wand's region) are combined with what is selected by a `SelectionMode`: replace,
 Ellipses and polygons have a soft edge a pixel wide: a pixel the edge cuts through the middle of is half selected.
 `bounds()` is the smallest `PixelArea` holding everything selected, `offset` moves it by whole pixels, what leaves the
 image lost. Points are `Position`s (`paint/geometry.h`) in the image's pixels, (0.5, 0.5) the middle of the first.
+
+## Tools
+
+```cpp
+#include <paint/tool_session.h>
+
+paint::Canvas canvas{paint::PixelFormat::rgba8, 1920, 1080};
+paint::Selection selection{1920, 1080};
+paint::ToolSession session{canvas, selection};
+session.set_tool(paint::Tool::brush);
+session.options().brush.width = 12.0;
+session.options().primary = {1.0, 0.0, 0.0, 1.0};
+
+paint::ToolInput input;
+input.at = {100.5, 200.5};                          // in the canvas's pixels
+session.press(input);
+input.at = {300.5, 220.5};
+session.drag(input);
+session.release(input);
+for(auto& step : session.take_steps())              // one: the stroke
+{
+    history.push_back(std::move(step));             // step.change.undo(canvas) takes it back
+}
+```
+
+A `ToolSession` uses one tool at a time on a canvas and its selection, which outlive it. It is given the pointer as
+`ToolInput`s: where it is in the canvas's own pixels, the right button (`secondary`), Shift, Ctrl and Alt, and a pen's
+`pressure`, from 0 to 1. Whatever shows the canvas, a program's view of it at some zoom or a video editor's frame with
+the drawing moved and scaled in it, only turns its pointer into those pixels; the session knows nothing of views. It
+hears of `press`, `drag` (with the button held: every move for the tools that trace the pointer, the last of a frame is
+enough for the others), `release`, and `hover`, the pointer moving with no button, which only the arc hears of.
+
+`Tool` names what it can do, `tool_id` its name in OUI Paint's settings ("brush", "bucket" for the fill):
+
+- `brush`, `pencil` (one pixel, hard, no antialiasing) and `eraser` paint as the pointer goes, each segment between two
+  moves a line however fast the drag: a `Stroke` (below), whose width follows the pressure.
+- `fill` fills from the pixel pressed what is within the fill's tolerance of it, joined to it or, `global`, anywhere.
+- `gradient`, `line` and `shapes` are dragged from where they are pressed: until released they are only shown, in the
+  overlay's `preview`, and drawn into the canvas on release. With Shift a line keeps to steps of 15 degrees and a shape
+  is a square or a circle. A line drawn waits to be bent: its ends and two handles a third and two thirds along it are
+  the overlay's `handles`, a press on one drags it, and a press elsewhere, another tool, or `finish()` leaves it as it
+  is, one step from the first press. The right button swaps the colours.
+- `arc` is drawn as with a compass (`ArcGesture`): a click puts its centre, a second its radius and where it starts, the
+  pointer then turns it, and a third click draws it.
+- `rectangle_select`, `ellipse_select` and `lasso_select` select as they are dragged, `magic_wand` what a fill would
+  reach. The mode is Paint.NET's: Ctrl adds, Alt takes away, the right button with Alt intersects and with Ctrl
+  inverts. A click without dragging selects nothing.
+- `color_picker` makes the pixel under the pointer the primary colour, or the secondary with the right button.
+- `move_pixels` lifts what is selected (the whole canvas when nothing is) and moves it by whole pixels, turns it round
+  its middle with the right button (by 15 degrees with Shift), or scales it by one of its eight handles (corners, then
+  edges), the opposite one staying put. What floats is laid over the hole it left at each move, so the canvas always
+  shows it, and is put down when another tool is used. `move_selection` moves the selection's outline only.
+
+`ToolOptions` are what they paint with: `brush` (width, hardness, antialiasing), `fill` (tolerance, global), `shape`
+(rectangle, rounded rectangle or ellipse; outline, filled, or both), `line` (arrowheads), `gradient` and its
+`gradient_transparency`, and the `primary` and `secondary` colours. A program shows and changes them through
+`options()`; the picker changes the colours itself.
+
+Each use of a tool that changed something is a `ToolStep`, taken with `take_steps()`: the tool, the `TileChange` it made
+to the canvas, and a `SelectionChange`, the selection's mask before and after, for the tools that select or move. A
+program's history keeps them and undoes one by `change.undo(canvas)` and putting `selection->before` back.
+`take_changed()` gives the tiles changed since last asked, to draw again. `overlay()` is what to draw over the canvas
+while a tool works, in its pixels: the `preview` to show in its place, `lines` (the selection's outline, a lasso being
+drawn, an arc's radius) and `handles`; `set_handle_reach` says how near a handle a press takes it, in the canvas's
+pixels, so a program sets it from its zoom. `selection_outline` is the edge of what is selected half or more, as lines
+between pixels.
+
+`busy()` says whether something is under way: a button held, a line still to bend, an arc between its clicks, pixels
+floating. `finish()` leaves it as it is, an arc between its clicks left out; `cancel()`, as Esc, leaves out what is not
+yet a step, the canvas as it was.
+
+## The pieces the tools are made of
+
+The tools are OUI Paint's, which a program may also use alone, as OUI Paint does for what its own commands need:
+
+- `paint/stroke.h`: a `Stroke` paints, erases, clones (the Clone Stamp, `StrokeSource`'s offset) or recolours (one
+  colour, within a tolerance) along the points given to `line_to`, each pixel taking the most the stroke ever covered
+  it, so a see-through colour does not build up where it crosses itself. `fill_selected`, `erase_selected`,
+  `lift_selected` and `lay_over` do what Backspace, Delete and a paste do with the selection.
+- `paint/fill.h`: `fill_region` is the pixels a fill reaches in an image, compared with the pixel pressed; `bucket_fill`
+  fills them on a canvas comparing its own pixels, and `fill_reached` fills what a region, as of a program's whole image
+  of several layers, reaches.
+- `paint/gradient.h`: Paint.NET's five gradients, and between two indices of a grey canvas, dithered.
+- `paint/shapes.h`: rectangles, rounded ones and ellipses, lines with arrowheads, curves through four points, and arcs.
+- `paint/arc.h`: `ArcGesture`, the three clicks of an arc.
+- `paint/floating.h`: a `FloatingPiece` lifted from a canvas, the `PieceTransform` that moves, turns, scales and mirrors
+  it, and `place_piece`, which lays it down with its selection, keeping every pixel exactly when it only moves by whole
+  pixels, mirrors or turns by quarter turns.
+- `paint/transform.h`: `Affine`, and images flipped, turned, resized and transformed, by nearest, bilinear, bicubic or
+  supersampling `Resampling`.
+- `paint/color_math.h`: colours to hue, saturation and value and back.

@@ -47,5 +47,5 @@ Code's architecture](https://github.com/iganinja/oui_code/blob/master/doc/oui_co
 - [Concurrency](concurrency.md): the task pool, cancelling, `concurrent_for`, and CTTasks, tasks composed at
   compile time.
 - [Effects](effects.md): the pieces picture effects are made of, on the task pool, and those sound effects are made of.
-- [Paint](paint.md): painting without OUI: a canvas in tiles, what a step changed in it, blend modes, colours and
-  selections.
+- [Paint](paint.md): painting without OUI: a canvas in tiles, what a step changed in it, blend modes, colours,
+  selections and the tools.
