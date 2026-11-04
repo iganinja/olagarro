@@ -16,6 +16,7 @@ set(Olagarro_OUI_FOUND TRUE)
 set(Olagarro_OUIScript_FOUND TRUE)
 set(Olagarro_OUIGraphics_FOUND TRUE)
 set(Olagarro_QuickJS_FOUND TRUE)
+set(Olagarro_PaintPanels_FOUND TRUE)
 # The C++20 modules, when the package was built with them.
 foreach(module Module ModuleByteStream ModuleSignalSlot ModuleTasks ModuleCTTasks ModuleConcurrency ModuleOUI)
     if(TARGET olagarro::${module})

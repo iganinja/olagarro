@@ -364,6 +364,28 @@ set_target_properties(olagarro_oui_script PROPERTIES EXPORT_NAME OUIScript)
 olagarro_configure_target(olagarro_oui_script)
 target_link_libraries(olagarro_oui_script PUBLIC olagarro::OUI PRIVATE olagarro::QuickJS)
 
+# Paint's panels on OUI: the tools, their options and the colours, as OUI Paint has them, with the tools' icons.
+add_library(olagarro_paint_panels
+    paint/panels/color_dialog.cpp
+    paint/panels/color_panel.cpp
+    paint/panels/icons.cpp
+    paint/panels/panel_translations.cpp
+    paint/panels/tool_options_bar.cpp
+    paint/panels/tool_panel.cpp)
+add_library(olagarro::PaintPanels ALIAS olagarro_paint_panels)
+set_target_properties(olagarro_paint_panels PROPERTIES EXPORT_NAME PaintPanels)
+olagarro_configure_target(olagarro_paint_panels)
+target_link_libraries(olagarro_paint_panels PUBLIC olagarro::Paint olagarro::OUI olagarro::OUIGraphics)
+olagarro_embed_files(olagarro_paint_panels NAMESPACE olagarro::paint FUNCTION embedded_paint_icons
+    FILES paint/panels/icons/godot/Bucket.svg paint/panels/icons/godot/ColorPick.svg paint/panels/icons/godot/Edit.svg
+        paint/panels/icons/godot/Eraser.svg paint/panels/icons/godot/Gradient.svg paint/panels/icons/godot/Line.svg
+        paint/panels/icons/godot/RegionEdit.svg paint/panels/icons/godot/ToolMove.svg
+        paint/panels/icons/godot/ToolSelect.svg paint/panels/icons/Arc.svg paint/panels/icons/EllipseSelect.svg
+        paint/panels/icons/Lasso.svg paint/panels/icons/MagicWand.svg paint/panels/icons/Paintbrush.svg
+        paint/panels/icons/Shapes.svg)
+olagarro_embed_files(olagarro_paint_panels NAMESPACE olagarro::paint FUNCTION embedded_paint_catalogs
+    FILES paint/translations/es.json)
+
 if(OLAGARRO_BUILD_MODULES)
     if(CMAKE_VERSION VERSION_LESS 3.28)
         message(FATAL_ERROR "Experimental module adapters require CMake 3.28 or newer.")
@@ -441,7 +463,8 @@ set(olagarro_targets
     olagarro_oui
     olagarro_quickjs
     olagarro_oui_script
-    olagarro_oui_graphics)
+    olagarro_oui_graphics
+    olagarro_paint_panels)
 
 install(TARGETS ${olagarro_targets}
     EXPORT OlagarroTargets
@@ -713,6 +736,10 @@ if(OLAGARRO_BUILD_TESTS)
             tests/paint/transform_test.cpp)
         target_link_libraries(olagarro_paint_unit_tests PRIVATE olagarro::Paint GTest::gtest_main)
         gtest_discover_tests(olagarro_paint_unit_tests)
+
+        add_executable(olagarro_paint_panels_tests tests/paint/panels_test.cpp)
+        target_link_libraries(olagarro_paint_panels_tests PRIVATE olagarro::PaintPanels GTest::gtest_main)
+        gtest_discover_tests(olagarro_paint_panels_tests)
 
        add_executable(olagarro_oui_tests
              tests/oui/layout_test.cpp

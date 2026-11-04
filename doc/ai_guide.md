@@ -34,6 +34,7 @@ C++17 libraries, each a CMake target named `olagarro::<Component>`:
 | `olagarro::Concurrency` | A task pool with cancelling, "latest wins" requests and `concurrent_for`. |
 | `olagarro::Effects` | The pieces of picture and sound effects, on the task pool. |
 | `olagarro::Paint` | Painting without OUI: a canvas in tiles of any pixel format, what a step changed in it, blend modes, colours, selections, and the tools through a `ToolSession`. Namespace `olagarro::paint`. [Paint](paint.md) |
+| `olagarro::PaintPanels` | Paint's panels on OUI: the tools, their options and the colours, as OUI Paint has them. [Paint](paint.md#panels) |
 
 OUI is most of it. A program made with it runs the same in a terminal, over SSH too, in a window of the desktop, on
 the whole screen of a Linux console, and on OUI's own desktop. Programs larger than the examples here have repositories

@@ -8,6 +8,7 @@
 #include <oui/layout.h>
 #include <oui/script/script_engine.h>
 #include <paint/canvas.h>
+#include <paint/panels/tool_panel.h>
 #include <signalslot/signalslot.h>
 
 #include <vector>
@@ -41,12 +42,16 @@ int main()
 
     const std::vector<std::uint8_t> red{255, 0, 0, 255};
     const auto canvas{paint::from_rgba8(1, 1, red.data())};
+    paint::Icons icons;
+    paint::ToolPanel tools{icons};
+    tools.press_key(U'b');
 
     oui::script::ScriptEngine engine;
     engine.run("const answer = 6 * 7;", "consumer.js");
 
     return value == 2 && layout->child_count() == 0 && stream.read<int>() == 7 && fired == 3 && values[2] == 6 &&
-                   blurred.width == 2 && quieter.frames() == 4 && paint::to_rgba8(canvas).bytes == red
+                   blurred.width == 2 && quieter.frames() == 4 && paint::to_rgba8(canvas).bytes == red &&
+                   tools.selected_tool() == paint::Tool::brush
                ? 0
                : 1;
 }

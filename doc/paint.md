@@ -4,7 +4,8 @@ Painting without OUI: the pieces [OUI Paint](https://github.com/iganinja/oui_pai
 which paints drawings in its viewer. Namespace `olagarro::paint`, CMake target `olagarro::Paint`, in the build tree and
 from an installed package alike. It depends on [Concurrency](concurrency.md) and [Effects](effects.md), and nothing
 else: no OUI, no files, no scripts. What a program has of its own, OUI Paint's documents of several layers and its
-files, ouivi's tracks, is built on top of it.
+files, ouivi's tracks, is built on top of it. Its panels on OUI are a target of their own, `olagarro::PaintPanels`
+([Panels](#panels)).
 
 - [Pixels](#pixels)
 - [The canvas](#the-canvas)
@@ -14,6 +15,7 @@ files, ouivi's tracks, is built on top of it.
 - [Selections](#selections)
 - [Tools](#tools)
 - [The pieces the tools are made of](#the-pieces-the-tools-are-made-of)
+- [Panels](#panels)
 
 ## Pixels
 
@@ -205,3 +207,64 @@ The tools are OUI Paint's, which a program may also use alone, as OUI Paint does
 - `paint/transform.h`: `Affine`, and images flipped, turned, resized and transformed, by nearest, bilinear, bicubic or
   supersampling `Resampling`.
 - `paint/color_math.h`: colours to hue, saturation and value and back.
+
+## Panels
+
+```cpp
+#include <paint/panels/color_panel.h>
+#include <paint/panels/tool_options_bar.h>
+#include <paint/panels/tool_panel.h>
+
+paint::Icons icons;                                 // outlives the panels that show them
+auto tools{std::make_unique<paint::ToolPanel>(icons)};
+auto options{std::make_unique<paint::ToolOptionsBar>(session.options())};
+auto colors{std::make_unique<paint::ColorPanel>()};
+tools->on_picked([&](const std::string&)
+                 {
+                     if(const auto tool{tools->selected_tool()})
+                     {
+                         session.set_tool(*tool);
+                         options->show_for(*tool);
+                     }
+                 });
+options->on_changed([&](paint::ToolOptions chosen)
+                    {
+                        chosen.primary = colors->primary();
+                        chosen.secondary = colors->secondary();
+                        session.options() = chosen;
+                    });
+paint::add_tool_commands(application.commands(), *tools);   // B, P, E, F, G, O, S, K, M
+paint::add_color_commands(application.commands(), *colors); // X swaps, C edits the other
+```
+
+`olagarro::PaintPanels` is OUI Paint's panels, moved as they were, on OUI and OUIGraphics: it is for a program that
+shows a `ToolSession` and wants Paint.NET's way of choosing what it paints with.
+
+- `ToolPanel` (`paint/panels/tool_panel.h`) is the tools as icon buttons, two to a row, as Paint.NET's Tools window; a
+  click on one, or `press_key`, picks it, and `on_picked` hears the tool's id. `paint_tool_buttons()` are Paint's tools
+  in OUI Paint's order, each with its icon and Paint.NET's key: B brush, P pencil, E eraser, F fill, G gradient, O the
+  line, shapes and arc, S the four selections, K the picker, M the two moves; a key pressed again goes to the next tool
+  that has it. A program with tools of its own (OUI Paint's zoom, pan, clone stamp, recolor and text) gives the panel
+  its own list, Paint's among them, and `selected_tool()` is none while one of its own is picked.
+  `add_tool_commands` registers each key as a command bound to it ("tool.key_b"), so it works wherever the program's
+  commands do.
+- `ToolOptionsBar` (`paint/panels/tool_options_bar.h`) is the bar of the tool in use's options, as Paint.NET's tool
+  bar: the brush's width (a number and a slider), hardness and antialiasing, the fill's mode and tolerance, the
+  gradient's kind and mode, the line's arrowheads, the shape and its style. `show_for` shows those a tool uses;
+  `options()` is a `ToolOptions` as the bar shows them, `on_changed` hears each change, `set_options` shows others
+  without telling, and `change_width` steps the width, as `[` and `]` do in OUI Paint. The colours are the colour
+  panel's: the bar keeps those it was given. A program's own options go at the end of `bar()`.
+- `ColorPanel` (`paint/panels/color_panel.h`) is the primary and secondary colours, two squares one over the other,
+  and a palette of greys and colours under them: a click on the palette sets the colour being edited, the right button
+  the other, and `on_edit` hears a click on a square, for the program to ask for a colour. `add_color_commands` binds
+  X to `swap` and C to `toggle_editing`, which chooses the colour the palette's left button sets.
+- `ask_color` (`paint/panels/color_dialog.h`) asks for a colour as Paint.NET's Colors window does: a square of
+  saturation and value, a bar of hue, red, green, blue and alpha, hue, saturation and value, hexadecimal, and grey as a
+  16-bit value for heightmaps. Unlike `oui::ask_color`, it has alpha and keeps colours deeper than 8 bits.
+- `Icons` (`paint/panels/icons.h`) draws the icons the panels show, built in (`paint/panels/icons`: the Godot editor's,
+  under the MIT license, and OUI Paint's own in their style), as Godot draws them for a dark interface or as its light
+  themes recolour them; `add` gives a program's own.
+
+The panels' texts are translated (`oui::translate`, contexts `Tools`, `Commands` and `Dialogs`) by catalogs of their own
+in `paint/translations`, built in as `panel_translations()` (`paint/panels/panel_translations.h`), which a program gives
+`oui::install_language` before its own.

@@ -22,6 +22,8 @@ OUI Code, a text editor made with OUI, the same program in a terminal and in a w
 - `Paint`: painting without OUI, shared by OUI Paint and ouivi: a canvas in tiles of grey or RGBA, 8 or 16 bits, what
   a step changed in it, Paint.NET's blend modes, colours and selections, and its tools, from the brush to moving
   selected pixels, driven by a pointer's presses, drags and releases.
+- `PaintPanels`: Paint's panels on OUI, as OUI Paint has them: the tools with Paint.NET's keys, their options, and the
+  colours.
 - `OUI`: a small UI toolkit for terminals, desktop windows and the whole screen.
 - `OUIScript`: JavaScript for OUI programs, run by QuickJS.
 

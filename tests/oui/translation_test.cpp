@@ -428,6 +428,11 @@ TEST_F(OuiTranslationTests, OuisCatalogsCoverItsTexts)
                                   {source_dir / "oui/include", source_dir / "oui/src"});
 }
 
+TEST_F(OuiTranslationTests, PaintsPanelsCatalogsCoverTheirTexts)
+{
+    expect_catalogs_cover_sources(source_dir / "paint/translations", {source_dir / "paint/panels"});
+}
+
 TEST_F(OuiTranslationTests, OuisBuiltInCatalogsAreTheOnesInTheRepository)
 {
     ASSERT_EQ(oui_translations().size(), 1u);

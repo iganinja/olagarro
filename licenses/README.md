@@ -4,7 +4,8 @@ Programs made with OUI carry these, and their release packages a copy beside the
 do in `THIRD_PARTY_NOTICES.txt`, made from the files each kind of package needs. In the source, each third-party piece
 keeps its licence beside it: QuickJS-ng in `third_party/quickjs-ng/LICENSE`, stb_truetype at the end of
 `third_party/stb/stb_truetype.h`, NanoSVG in `third_party/nanosvg/LICENSE.txt`, Spleen in `oui/fonts/spleen_license.txt`,
-Jersey 10 in `oui/fonts/jersey10_ofl.txt` and Noto Sans in `oui/fonts/noto_sans_ofl.txt`. The files here are the ones the source does not hold:
+Jersey 10 in `oui/fonts/jersey10_ofl.txt`, Noto Sans in `oui/fonts/noto_sans_ofl.txt` and the Godot editor's icons,
+which PaintPanels builds in, in `paint/panels/icons/godot/LICENSE.txt`. The files here are the ones the source does not hold:
 
 | File | What it covers | Where it is from |
 |------|----------------|------------------|
