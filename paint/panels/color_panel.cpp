@@ -1,6 +1,7 @@
 #include <paint/panels/color_panel.h>
 
 #include <paint/panels/color_dialog.h>
+#include <paint/panels/icons.h>
 #include <paint/panels/panel_color.h>
 
 #include <oui/dialogs.h>
@@ -11,6 +12,7 @@
 #include <oui/translation.h>
 
 #include <cmath>
+#include <tuple>
 #include <string>
 #include <utility>
 
@@ -37,6 +39,12 @@ namespace
         text.replace(place, 3, name);
     }
     return text;
+}
+
+// Whether `point` is inside `rect`, its right and bottom edges left out.
+[[nodiscard]] bool inside(const oui::Rect& rect, oui::Point point)
+{
+    return point.x >= rect.x && point.y >= rect.y && point.x < rect.x + rect.width && point.y < rect.y + rect.height;
 }
 
 } // namespace
@@ -150,7 +158,17 @@ void ColorPanel::on_picked(std::function<void(bool secondary)> picked)
 
 double ColorPanel::palette_top() const
 {
-    return squares_rows * m_scale + (m_library != nullptr ? 1.0 : 0.0);
+    return (squares_rows + (m_library != nullptr ? 1 : 0)) * m_scale;
+}
+
+oui::Rect ColorPanel::save_button() const
+{
+    return {m_bounds.x, m_bounds.y + squares_rows * m_scale, width / 2 * m_scale, m_scale};
+}
+
+oui::Rect ColorPanel::load_button() const
+{
+    return {m_bounds.x + width / 2 * m_scale, m_bounds.y + squares_rows * m_scale, width / 2 * m_scale, m_scale};
 }
 
 std::size_t ColorPanel::palette_cells() const
@@ -210,15 +228,24 @@ void ColorPanel::paint(oui::Painter& painter, const oui::Theme& theme) const
     const oui::TextStyle text{theme.text, side_panel_color(theme)};
     if(m_library != nullptr)
     {
-        // The name over the colours, cut to the panel's width, the "*" of a palette changed kept at its end.
-        const auto star{m_palette_modified ? 1.0 : 0.0};
-        const oui::Rect name{m_bounds.x, m_bounds.y + squares_rows * s, width * s - star, 1.0};
-        painter.push_clip(name);
-        painter.draw_text({name.x, name.y}, m_palette.name, text);
-        painter.pop_clip();
-        if(m_palette_modified)
+        // Save and Load over the colours, as the tools' buttons are drawn; letters where there are no pixels.
+        for(const auto& [bounds, icon, letter] :
+            {std::tuple{save_button(), "Save", "S"}, std::tuple{load_button(), "Load", "L"}})
         {
-            painter.draw_text({name.x + name.width, name.y}, "*", text);
+            const auto area{painter.pixel_bounds(bounds)};
+            const auto* const picture{area && m_icons != nullptr
+                                          ? m_icons->picture(icon, oui::whole(area->width), oui::whole(area->height))
+                                          : nullptr};
+            if(picture != nullptr)
+            {
+                oui::PixelImage image{picture->pixels.data(), picture->width, picture->height, picture->width};
+                image.alpha = true;
+                painter.draw_image(bounds, image, theme);
+            }
+            else
+            {
+                painter.draw_text({bounds.x + std::floor((bounds.width - 1.0) / 2.0), bounds.y}, letter, text);
+            }
         }
     }
     const auto columns{static_cast<std::size_t>(m_palette_columns)};
@@ -251,13 +278,16 @@ void ColorPanel::choose(const std::string& name)
     }
 }
 
-void ColorPanel::save_as()
+void ColorPanel::save_as(bool own_name_quietly)
 {
     if(!m_asks.name)
     {
         return;
     }
-    const auto name{m_asks.name(oui::translate("Palettes", "Save the Palette As"), m_palette.name)};
+    // Default cannot be saved over, so its name is not offered.
+    const auto standard{m_palette.name == PaletteLibrary::default_name};
+    const auto name{
+        m_asks.name(oui::translate("Palettes", "Save the Palette As"), standard ? std::string{} : m_palette.name)};
     if(!name || name->empty())
     {
         return;
@@ -270,7 +300,7 @@ void ColorPanel::save_as()
         }
         return;
     }
-    if(m_library->contains(*name) &&
+    if(m_library->contains(*name) && !(own_name_quietly && *name == m_palette.name) &&
        !(m_asks.confirm && m_asks.confirm(with_name(oui::translate("Palettes", "Replace the palette {0}?"), *name))))
     {
         return;
@@ -380,6 +410,18 @@ void ColorPanel::import()
         m_asks.tell(with_name(oui::translate("Palettes", "The palette could not be saved in {0}."),
                               oui::utf8_of(m_library->folder())));
     }
+}
+
+std::vector<oui::MenuItem> ColorPanel::palettes_items()
+{
+    std::vector<oui::MenuItem> items;
+    for(const auto& name : m_library->names())
+    {
+        items.push_back(oui::menu_action(name, [this, name] { choose(name); }, true, name == m_palette.name));
+    }
+    items.push_back(oui::menu_separator());
+    items.push_back(oui::menu_action(oui::translate("Palettes", "&Import a .gpl…"), [this] { import(); }));
+    return items;
 }
 
 std::vector<oui::MenuItem> ColorPanel::menu_items()
@@ -516,6 +558,20 @@ bool ColorPanel::handle_event(const oui::Event& event)
     {
         return false;
     }
+    if(cell.y < palette_top() && !mouse->right)
+    {
+        // Save asks a name, Load opens the library's palettes under it.
+        if(inside(save_button(), {mouse->x, mouse->y}))
+        {
+            save_as(true);
+        }
+        else if(inside(load_button(), {mouse->x, mouse->y}) && m_asks.open_menu)
+        {
+            const auto button{load_button()};
+            m_asks.open_menu(palettes_items(), {button.x, button.y + button.height});
+        }
+        return true;
+    }
     if(index && !mouse->right)
     {
         // The "+" after the colours.
@@ -529,6 +585,25 @@ bool ColorPanel::handle_event(const oui::Event& event)
         return true;
     }
     return false;
+}
+
+std::optional<std::string> ColorPanel::tooltip_at(oui::Point point) const
+{
+    if(m_library == nullptr)
+    {
+        return std::nullopt;
+    }
+    // The palette's name, "*" after it while it changed since it was chosen or saved.
+    const auto name{m_palette.name + (m_palette_modified ? "*" : "")};
+    if(inside(save_button(), point))
+    {
+        return with_name(oui::translate("Palettes", "Save the palette {0}…"), name);
+    }
+    if(inside(load_button(), point))
+    {
+        return with_name(oui::translate("Palettes", "Choose a palette (now {0})"), name);
+    }
+    return std::nullopt;
 }
 
 void add_color_commands(oui::CommandRegistry& commands, ColorPanel& panel)

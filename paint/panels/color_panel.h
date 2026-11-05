@@ -23,6 +23,8 @@ class Application;
 namespace olagarro::paint
 {
 
+class Icons;
+
 // A colour as a square of it shows on screen: seen through, as over a panel's grey.
 [[nodiscard]] oui::Color on_screen(const Color& color);
 
@@ -52,11 +54,11 @@ struct PaletteAsks
 // palette colour makes it the colour being edited, the primary unless C chose the secondary, a right click the other,
 // and a click on a square asks for it. The colour being edited shows in front, framed.
 //
-// Given a library of palettes, the palette is one's own to change and keep by name: its name shows over its colours,
-// with "*" while it changed since it was chosen or saved; a double click on a colour asks for another in its place, the
-// cell after the last adds the primary colour, a colour dragged away from the panel goes and dragged onto another
-// moves there, and a right click away from the colours opens a menu of the library's palettes, to choose, save,
-// rename, remove and import them.
+// Given a library of palettes, the palette is one's own to change and keep by name: two buttons over its colours save
+// it as a name and choose one of the library's (their tooltips say its name, with "*" while it changed since it was
+// chosen or saved); a double click on a colour asks for another in its place, the cell after the last adds the primary
+// colour, a colour dragged away from the panel goes and dragged onto another moves there, and a right click away from
+// the colours opens a menu of the library's palettes, to choose, save, rename, remove and import them.
 class ColorPanel final : public oui::Widget
 {
   public:
@@ -73,6 +75,9 @@ class ColorPanel final : public oui::Widget
     // The library the panel edits, which outlives it; none, as at first, leaves the palette only to pick from.
     void set_library(PaletteLibrary* library);
     void set_asks(PaletteAsks asks);
+    // The icons its buttons are drawn with ("Save" and "Load"), which outlive it; without them, or in a terminal,
+    // they are letters.
+    void set_icons(Icons* icons) { m_icons = icons; }
 
     [[nodiscard]] const Color& primary() const { return m_primary; }
     [[nodiscard]] const Color& secondary() const { return m_secondary; }
@@ -103,6 +108,7 @@ class ColorPanel final : public oui::Widget
     [[nodiscard]] oui::Size measure(const oui::Constraints& constraints) const override;
     void paint(oui::Painter& painter, const oui::Theme& theme) const override;
     bool handle_event(const oui::Event& event) override;
+    [[nodiscard]] std::optional<std::string> tooltip_at(oui::Point point) const override;
 
   private:
     // Rows the squares take before the palette starts.
@@ -117,6 +123,7 @@ class ColorPanel final : public oui::Widget
     int m_palette_columns{2};
     PaletteLibrary* m_library{};
     PaletteAsks m_asks;
+    Icons* m_icons{};
     // The colour pressed on with the left button, while it may be dragged.
     std::optional<std::size_t> m_dragged;
     std::function<void(bool)> m_edit;
@@ -125,8 +132,14 @@ class ColorPanel final : public oui::Widget
     std::function<void()> m_palette_changed;
 
     void changed() const;
-    // The palette's colours start under the squares and, with a library, the name.
+    // The palette's colours start under the squares and, with a library, the buttons.
     [[nodiscard]] double palette_top() const;
+    // With a library, the row of buttons under the squares: Save at the left, Load at the right, each as wide as a
+    // tool's button.
+    [[nodiscard]] oui::Rect save_button() const;
+    [[nodiscard]] oui::Rect load_button() const;
+    // The menu of the library's palettes, to choose one, and Import.
+    [[nodiscard]] std::vector<oui::MenuItem> palettes_items();
     // Cells of the palette's grid: its colours and, with a library, the "+" after them.
     [[nodiscard]] std::size_t palette_cells() const;
     [[nodiscard]] std::optional<std::size_t> cell_index_at(oui::Point cell) const;
@@ -134,7 +147,9 @@ class ColorPanel final : public oui::Widget
     void palette_changed(bool modified);
     [[nodiscard]] std::vector<oui::MenuItem> menu_items();
     void choose(const std::string& name);
-    void save_as();
+    // Asks a name and saves the palette as it, asking before replacing another; from the Save button, saved over its
+    // own name without asking.
+    void save_as(bool own_name_quietly = false);
     void rename();
     void remove();
     void import();

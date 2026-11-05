@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Olagarro VERSION 0.19.0 LANGUAGES C CXX)
+project(Olagarro VERSION 0.20.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -381,10 +381,10 @@ target_link_libraries(olagarro_paint_panels PUBLIC olagarro::Paint olagarro::OUI
 olagarro_embed_files(olagarro_paint_panels NAMESPACE olagarro::paint FUNCTION embedded_paint_icons
     FILES paint/panels/icons/godot/Bucket.svg paint/panels/icons/godot/ColorPick.svg paint/panels/icons/godot/Edit.svg
         paint/panels/icons/godot/Eraser.svg paint/panels/icons/godot/Gradient.svg paint/panels/icons/godot/Line.svg
-        paint/panels/icons/godot/RegionEdit.svg paint/panels/icons/godot/ToolMove.svg
-        paint/panels/icons/godot/ToolSelect.svg paint/panels/icons/Arc.svg paint/panels/icons/EllipseSelect.svg
-        paint/panels/icons/Lasso.svg paint/panels/icons/MagicWand.svg paint/panels/icons/Paintbrush.svg
-        paint/panels/icons/Shapes.svg)
+        paint/panels/icons/godot/Load.svg paint/panels/icons/godot/RegionEdit.svg paint/panels/icons/godot/Save.svg
+        paint/panels/icons/godot/ToolMove.svg paint/panels/icons/godot/ToolSelect.svg paint/panels/icons/Arc.svg
+        paint/panels/icons/EllipseSelect.svg paint/panels/icons/Lasso.svg paint/panels/icons/MagicWand.svg
+        paint/panels/icons/Paintbrush.svg paint/panels/icons/Shapes.svg)
 olagarro_embed_files(olagarro_paint_panels NAMESPACE olagarro::paint FUNCTION embedded_paint_catalogs
     FILES paint/translations/es.json)
 

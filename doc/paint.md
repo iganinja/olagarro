@@ -277,9 +277,12 @@ shows a `ToolSession` and wants Paint.NET's way of choosing what it paints with.
   palette fits under the tools of a short window.
   The palette is a `Palette` (`palette()`, `set_palette`). Given a `PaletteLibrary` (`set_library`) and what to ask
   with (`set_asks`, `palette_asks(application, open_menu)` for Paint's colour dialog and OUI's prompt, message boxes
-  and file dialog), the panel edits it: its name shows over the colours, with "*" while `palette_modified()`; a double
-  click on a colour asks for another in its place, a "+" after the last adds the primary colour, a colour dragged away
-  from the panel goes and dragged onto another moves there, and a right click away from the colours opens a menu:
+  and file dialog), the panel edits it: two buttons under the squares, drawn with `set_icons`' "Save" and "Load"
+  (letters without them), save it as a name (asked, its own offered and saved over without asking) and open the
+  library's palettes to choose one or import a `.gpl`, their tooltips saying its name, with "*" while
+  `palette_modified()`; a double click on a colour asks for another in its place, a "+" after the last adds the
+  primary colour, a colour dragged away from the panel goes and dragged onto another moves there, and a right click
+  away from the colours opens a menu:
   *Palettes* (the library's, the one in use ticked), *Save*, *Save as…*, *Rename…*, *Remove*, *Import a .gpl…* and
   *Add the primary colour*. `on_palette_changed` hears each change the panel makes, not those `set_palette` makes.
 - `PaletteLibrary` (`paint/panels/palette_library.h`) keeps palettes by name as the `.gpl` files of a folder,

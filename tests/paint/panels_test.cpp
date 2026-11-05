@@ -406,14 +406,14 @@ TEST(PaintPanelsTests, ADoubleClickAsksForAColourPlusAddsThePrimaryAndADragRemov
     panel.set_asks(asks);
     const auto plain{panel.measure({100, 100})};
     panel.set_library(&library);
-    EXPECT_EQ(panel.measure({100, 100}).height, plain.height + 2.0) << "the name's row, and the \"+\"'s";
+    EXPECT_EQ(panel.measure({100, 100}).height, plain.height + 2.0) << "the buttons' row, and the \"+\"'s";
     auto changes{0};
     panel.on_palette_changed([&changes] { ++ changes; });
     const auto standard{paint::Palette::standard()};
     EXPECT_EQ(panel.palette(), standard);
     EXPECT_FALSE(panel.palette_modified());
 
-    // Under the squares the name, then the colours two to a row: the third colour at the left of the second row.
+    // Under the squares the buttons, then the colours two to a row: the third colour at the left of the second row.
     EXPECT_TRUE(same(*panel.palette_at({0, 5}), standard.colors[2]));
     EXPECT_TRUE(panel.handle_event(press(0, 5)));
     EXPECT_TRUE(asked.empty()) << "a single click picks";
@@ -548,6 +548,82 @@ TEST(PaintPanelsTests, APaletteSavedAsANameComesBackFromPalettes)
     EXPECT_EQ(questions.size(), 2u);
     EXPECT_EQ(library.names(), (std::vector<std::string>{"Default"}));
     EXPECT_TRUE(panel.palette_modified()) << "its colours kept, no longer saved";
+    std::filesystem::remove_all(folder);
+}
+
+TEST(PaintPanelsTests, TheSaveButtonKeepsThePaletteByNameAndTheLoadButtonChoosesOne)
+{
+    const auto folder{std::filesystem::temp_directory_path() / "olagarro_palette_buttons_test"};
+    std::filesystem::remove_all(folder);
+    paint::PaletteLibrary library{folder};
+    paint::ColorPanel panel;
+    panel.arrange({0, 0, paint::ColorPanel::width, 30});
+    std::vector<oui::MenuItem> menu;
+    std::optional<oui::Point> menu_at;
+    std::vector<std::string> offered;
+    std::vector<std::string> questions;
+    std::string name{"Mine"};
+    paint::PaletteAsks asks;
+    asks.open_menu = [&](std::vector<oui::MenuItem> items, oui::Point at)
+    {
+        menu = std::move(items);
+        menu_at = at;
+    };
+    asks.name = [&](const std::string&, const std::string& start)
+    {
+        offered.push_back(start);
+        return std::optional<std::string>{name};
+    };
+    asks.confirm = [&questions](const std::string& question)
+    {
+        questions.push_back(question);
+        return true;
+    };
+    panel.set_asks(asks);
+    EXPECT_FALSE(panel.tooltip_at({0, 3})) << "no buttons without a library";
+    panel.set_library(&library);
+    const auto standard{paint::Palette::standard()};
+
+    // Under the squares, Save at the left and Load at the right; their tooltips say the palette's name.
+    EXPECT_EQ(panel.tooltip_at({0, 3}), std::optional<std::string>{"Save the palette Default…"});
+    EXPECT_EQ(panel.tooltip_at({3, 3}), std::optional<std::string>{"Choose a palette (now Default)"});
+    EXPECT_FALSE(panel.tooltip_at({0, 4})) << "the colours have none";
+
+    // Save asks a name, Default's not offered, and keeps the palette as it.
+    panel.set_primary({0, 1, 0, 1});
+    EXPECT_TRUE(panel.handle_event(press(0, 4 + static_cast<double>(standard.colors.size() / 2))));
+    EXPECT_TRUE(panel.palette_modified());
+    EXPECT_EQ(panel.tooltip_at({3, 3}), std::optional<std::string>{"Choose a palette (now Default*)"});
+    EXPECT_TRUE(panel.handle_event(press(1, 3)));
+    EXPECT_EQ(offered, (std::vector<std::string>{""}));
+    EXPECT_EQ(panel.palette().name, "Mine");
+    EXPECT_FALSE(panel.palette_modified());
+    EXPECT_EQ(library.names(), (std::vector<std::string>{"Default", "Mine"}));
+
+    // Saved again over its own name, it does not ask; over another's, it does.
+    EXPECT_TRUE(panel.handle_event(press(0, 3)));
+    EXPECT_EQ(offered.back(), "Mine");
+    EXPECT_TRUE(questions.empty());
+    library.save({"Other", {{1, 0, 0, 1}}});
+    name = "Other";
+    EXPECT_TRUE(panel.handle_event(press(0, 3)));
+    EXPECT_EQ(questions.size(), 1u);
+    EXPECT_EQ(panel.palette().name, "Other");
+
+    // Load opens the library's palettes under it, the one in use ticked, then Import.
+    EXPECT_TRUE(menu.empty());
+    EXPECT_TRUE(panel.handle_event(press(3, 3)));
+    ASSERT_TRUE(menu_at);
+    EXPECT_EQ(menu_at->x, 2.0);
+    EXPECT_EQ(menu_at->y, 4.0);
+    ASSERT_EQ(menu.size(), 5u);
+    EXPECT_EQ(menu[0].title(), "Default");
+    EXPECT_EQ(menu[2].title(), "Other");
+    EXPECT_EQ(menu[2].checked(), std::optional<bool>{true});
+    EXPECT_EQ(oui::strip_mnemonic(menu[4].title()), "Import a .gpl…");
+    menu[1].run();
+    EXPECT_EQ(panel.palette().name, "Mine");
+    EXPECT_FALSE(panel.palette_modified());
     std::filesystem::remove_all(folder);
 }
 
