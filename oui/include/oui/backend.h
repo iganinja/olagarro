@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 struct SDL_GPUDevice;
 
@@ -52,6 +53,22 @@ class Backend
     // is its, through set_clipboard_text and clipboard_text, and not the system's.
     [[nodiscard]] virtual bool keeps_clipboard() const { return false; }
     [[nodiscard]] virtual std::string clipboard_text() const { return {}; }
+    // Whether it reaches the system's clipboard itself, as a window does: then text and data go through it, by
+    // set_clipboard_text, clipboard_text and the three below, and not through wl-paste or xclip, which would wait on
+    // the window for what it copied while the window waits on them.
+    [[nodiscard]] virtual bool reaches_clipboard() const { return false; }
+    virtual bool set_clipboard_data(std::string_view type, std::string_view bytes)
+    {
+        static_cast<void>(type);
+        static_cast<void>(bytes);
+        return false;
+    }
+    [[nodiscard]] virtual std::vector<std::string> clipboard_types() const { return {}; }
+    [[nodiscard]] virtual std::optional<std::string> clipboard_data(std::string_view type) const
+    {
+        static_cast<void>(type);
+        return std::nullopt;
+    }
     // What the application is called where that shows, as over its window and in a task bar; most show nothing.
     virtual void set_title(std::string_view title) { static_cast<void>(title); }
     // Whether text and cells can be made bigger or smaller: in a window or on a screen of pixels, not in a terminal,

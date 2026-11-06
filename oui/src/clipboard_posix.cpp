@@ -109,7 +109,7 @@ const std::optional<Clipboard::Tool>& Clipboard::tool() const
 bool Clipboard::set_text(std::string_view text)
 {
     m_fallback = text;
-    if(m_terminal != nullptr && m_terminal->keeps_clipboard())
+    if(m_terminal != nullptr && (m_terminal->keeps_clipboard() || m_terminal->reaches_clipboard()))
     {
         m_terminal->set_clipboard_text(text);
         return true;
@@ -132,7 +132,7 @@ bool Clipboard::set_text(std::string_view text)
 
 std::string Clipboard::text() const
 {
-    if(m_terminal != nullptr && m_terminal->keeps_clipboard())
+    if(m_terminal != nullptr && (m_terminal->keeps_clipboard() || m_terminal->reaches_clipboard()))
     {
         return m_terminal->clipboard_text();
     }
@@ -169,6 +169,10 @@ bool Clipboard::set_data(std::string_view type, std::string_view bytes)
     }
     m_fallback_type = type;
     m_fallback_data = bytes;
+    if(m_terminal != nullptr && m_terminal->reaches_clipboard())
+    {
+        return m_terminal->set_clipboard_data(type, bytes);
+    }
     const auto& found{tool()};
     if(!found || found->copy_data.empty())
     {
@@ -186,6 +190,10 @@ bool Clipboard::set_data(std::string_view type, std::string_view bytes)
 
 std::vector<std::string> Clipboard::types() const
 {
+    if(m_terminal != nullptr && m_terminal->reaches_clipboard())
+    {
+        return m_terminal->clipboard_types();
+    }
     const auto& found{tool()};
     if(!found || found->list_types.empty())
     {
@@ -224,6 +232,10 @@ std::optional<std::string> Clipboard::data(std::string_view type) const
     if(!is_type(type))
     {
         return std::nullopt;
+    }
+    if(m_terminal != nullptr && m_terminal->reaches_clipboard())
+    {
+        return m_terminal->clipboard_data(type);
     }
     const auto& found{tool()};
     if(!found || found->paste_data.empty())
