@@ -310,7 +310,71 @@ class WindowBackend final : public DesktopWindow
         SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     }
 
+    // SDL answers other programs asking for what the window copied while it waits for theirs, which a helper
+    // program read to its end, as xclip, cannot: the window would never answer it.
+    [[nodiscard]] bool reaches_clipboard() const override { return true; }
     void set_clipboard_text(std::string_view text) override { SDL_SetClipboardText(std::string{text}.c_str()); }
+    [[nodiscard]] std::string clipboard_text() const override
+    {
+        auto* const text{SDL_GetClipboardText()};
+        std::string result{text != nullptr ? text : ""};
+        SDL_free(text);
+        return result;
+    }
+    bool set_clipboard_data(std::string_view type, std::string_view bytes) override
+    {
+        // SDL asks for the bytes when a program pastes them, and lets them go when the clipboard holds another thing.
+        struct Offered
+        {
+            std::string type;
+            std::string bytes;
+        };
+        auto* const offered{new Offered{std::string{type}, std::string{bytes}}};
+        const char* const types[]{offered->type.c_str()};
+        const auto given{SDL_SetClipboardData(
+            [](void* userdata, const char* mime_type, std::size_t* size) -> const void*
+            {
+                const auto& data{*static_cast<Offered*>(userdata)};
+                if(mime_type == nullptr || data.type != mime_type)
+                {
+                    *size = 0;
+                    return nullptr;
+                }
+                *size = data.bytes.size();
+                return data.bytes.data();
+            },
+            [](void* userdata) { delete static_cast<Offered*>(userdata); }, offered, types, 1)};
+        return given;
+    }
+    [[nodiscard]] std::vector<std::string> clipboard_types() const override
+    {
+        std::size_t count{};
+        auto** const types{SDL_GetClipboardMimeTypes(&count)};
+        std::vector<std::string> result;
+        for(std::size_t index{}; types != nullptr && index < count; ++index)
+        {
+            result.emplace_back(types[index]);
+        }
+        SDL_free(static_cast<void*>(types));
+        return result;
+    }
+    [[nodiscard]] std::optional<std::string> clipboard_data(std::string_view type) const override
+    {
+        const std::string wanted{type};
+        if(!SDL_HasClipboardData(wanted.c_str()))
+        {
+            return std::nullopt;
+        }
+        std::size_t size{};
+        auto* const data{SDL_GetClipboardData(wanted.c_str(), &size)};
+        if(data == nullptr)
+        {
+            return std::nullopt;
+        }
+        std::string result{static_cast<const char*>(data), size};
+        SDL_free(data);
+        return result;
+    }
 
     [[nodiscard]] int pointer_size() const override { return m_pointer_size; }
 

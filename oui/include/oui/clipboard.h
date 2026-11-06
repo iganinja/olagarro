@@ -14,7 +14,8 @@ class Backend;
 // time they are needed. Text it cannot hand to the system stays in the clipboard itself, so copy and paste
 // still work within the application. With a backend it also offers copied text to the terminal, which can
 // reach the user's clipboard even over SSH. A backend that keeps a clipboard of its own, as OUI's desktop does for
-// all the programs on it, has it instead of the system.
+// all the programs on it, has it instead of the system; one that reaches the system's clipboard itself, as a window,
+// carries text and data there in place of wl-copy or xclip.
 class Clipboard
 {
   public:
