@@ -611,6 +611,30 @@ TEST_F(OuiFileDialogFolderTest, SaveStartsFromTheGivenNameAndConfirmsAnOverwrite
     EXPECT_TRUE(shows(recorder.frames().at(1), U"Overwrite File?")) << "the first Enter only arms the overwrite";
 }
 
+TEST_F(OuiFileDialogFolderTest, SaveTakesAFileDoubleClickedAskingBeforeItSavesOverIt)
+{
+    oui::FileDialogOptions options;
+    options.mode = oui::FileDialogMode::save_file;
+    options.directory = m_folder;
+    const auto press{[](std::u32string_view text)
+                     { return [text](const oui::CellBuffer& frame) { return click_on(frame, text); }; }};
+    const auto release{[](const oui::CellBuffer&) -> oui::Event
+                       { return oui::MouseEvent{0, 0, false, 0, false, true}; }};
+    const auto enter{[](const oui::CellBuffer&) -> oui::Event { return oui::KeyEvent{oui::Key::enter}; }};
+    auto backend{std::make_unique<ScriptedFrameBackend>(std::vector<ScriptedFrameBackend::Step>{
+        press(U"existing.txt"), release, press(U"existing.txt"), release, enter})};
+    const auto& recorder{*backend};
+    oui::Application application{std::move(backend)};
+    application.set_content(oui::window("Background"));
+
+    const auto chosen{oui::file_dialog(application, options)};
+
+    ASSERT_TRUE(chosen);
+    EXPECT_EQ(*chosen, m_folder / "existing.txt");
+    ASSERT_GE(recorder.frames().size(), 5u);
+    EXPECT_TRUE(shows(recorder.frames().back(), U"Overwrite File?")) << "the double click asked before saving over it";
+}
+
 TEST_F(OuiFileDialogFolderTest, SaveOffersANameWhoseStemTypingReplaces)
 {
     oui::FileDialogOptions options;

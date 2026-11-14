@@ -692,8 +692,10 @@ std::optional<std::filesystem::path> file_dialog(Application& application, const
                 name_edit.set_text(utf8_of(path.filename()));
             }
         });
+    // A file double clicked, or Enter on it, is chosen, as if its name were typed and Open or Save pressed: saving over
+    // it asks first, as Save does, and once more confirms.
     file_list.set_on_activate(
-        [&name_edit, &accept, &show, saving](const std::filesystem::path& path)
+        [&name_edit, &accept, &show](const std::filesystem::path& path)
         {
             std::error_code ignored;
             if(std::filesystem::is_directory(path, ignored))
@@ -701,11 +703,12 @@ std::optional<std::filesystem::path> file_dialog(Application& application, const
                 show(path);
                 return;
             }
-            name_edit.set_text(utf8_of(path.filename()));
-            if(!saving)
+            // The same name again leaves an overwrite asked about armed.
+            if(const auto name{utf8_of(path.filename())}; name_edit.text() != name)
             {
-                accept();
+                name_edit.set_text(name);
             }
+            accept();
         });
     file_list.set_on_navigate_parent(
         [&state, &show]

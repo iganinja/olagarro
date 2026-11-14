@@ -87,7 +87,9 @@ struct FileDialogOptions
     FileDialogTexts texts;
 };
 
-// Shows a modal file or folder dialog. Returns the chosen path, or nothing when the user cancelled.
+// Shows a modal file or folder dialog. Returns the chosen path, or nothing when the user cancelled. A file double
+// clicked, or Enter on it in the list, is chosen as its name typed and Open or Save pressed: saving over one that is
+// there asks first, when `confirm_overwrite`.
 [[nodiscard]] std::optional<std::filesystem::path> file_dialog(Application& application,
                                                                const FileDialogOptions& options);
 
