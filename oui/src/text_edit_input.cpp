@@ -37,8 +37,10 @@ bool TextEdit::claims_key(const Event& event) const
     switch(key->key)
     {
     // With Ctrl too: a word at a time, or the start and end of the text.
-    case Key::backspace:
+    // Shift+Delete cuts, as Ctrl+X: the program's or the application's, not the field's.
     case Key::delete_:
+        return !clipboard_letter(*key);
+    case Key::backspace:
     case Key::left:
     case Key::right:
     case Key::up:
@@ -65,6 +67,11 @@ bool TextEdit::handle_event(const Event& event)
 }
 bool TextEdit::handle_input(const Event& event)
 {
+    // Ctrl+Insert, Shift+Insert and Shift+Delete are the clipboard's, as Ctrl+C, Ctrl+V and Ctrl+X.
+    if(const auto* const key{std::get_if<KeyEvent>(&event)}; key != nullptr && clipboard_letter(*key))
+    {
+        return false;
+    }
     if(!m_carets.empty() && !std::holds_alternative<MouseEvent>(event))
     {
         return handle_at_every_cursor(event);

@@ -174,4 +174,23 @@ struct DropEvent
 using Event = std::variant<KeyEvent, ResizeEvent, TextEvent, MouseEvent, FocusEvent, ShutdownEvent, CloseRequestEvent,
                            ModifiersEvent, DropEvent>;
 
+// The clipboard's keys from before Ctrl+C: Ctrl+Insert copies, Shift+Insert pastes and Shift+Delete cuts. The letter
+// of Ctrl+C, Ctrl+V or Ctrl+X the key means, or nothing for any other.
+[[nodiscard]] inline std::optional<char32_t> clipboard_letter(const KeyEvent& key)
+{
+    if(key.alt || key.control == key.shift)
+    {
+        return std::nullopt;
+    }
+    if(key.key == Key::insert_)
+    {
+        return key.control ? U'c' : U'v';
+    }
+    if(key.key == Key::delete_ && key.shift)
+    {
+        return U'x';
+    }
+    return std::nullopt;
+}
+
 } // namespace olagarro::oui

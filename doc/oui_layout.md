@@ -349,7 +349,9 @@ same key, so here it is, as the code does it:
 11. The application's shortcuts run, outside dialogs and while no overlay holds the keyboard.
 12. The focused widget hears it: first its key handler and then `handle_event`, then each of its parents the same
     way.
-13. Ctrl+A, C, X and V that a focused `LineEdit` did not take select, copy, cut and paste through the clipboard.
+13. Ctrl+A, C, X and V that a focused `LineEdit` or `TextEdit` did not take select, copy, cut and paste through the
+    clipboard; Ctrl+Insert, Shift+Delete and Shift+Insert copy, cut and paste as Ctrl+C, X and V. The fields leave
+    Shift+Delete to a shortcut, so a program's Cut bound to it runs.
 14. In a dialog, a letter alone that nothing took works as Alt and the letter, as in Turbo Vision; an Up or Down that
     nothing took moves the focus to the field above or below.
 15. Outside a dialog, Alt and a letter that nothing took go to the letters marked in the window.

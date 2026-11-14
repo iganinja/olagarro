@@ -4551,6 +4551,58 @@ TEST(OuiApplicationTests, ShiftInsertPastesWhereCtrlVDoesAndNoCommandIsBound)
     EXPECT_EQ(edit.text(), "pegado") << "Insert alone pastes nothing";
 }
 
+TEST(OuiApplicationTests, CtrlInsertCopiesAndShiftDeleteCutsWhereCtrlCAndCtrlXDo)
+{
+    auto backend{std::make_unique<ClipboardKeepingBackend>()};
+    const auto clipboard{backend->m_clipboard};
+    oui::Application application{std::move(backend)};
+    auto content{oui::column()};
+    auto& field{content->add(oui::line_edit())};
+    auto& edit{content->add(oui::text_edit())};
+    application.set_content(std::move(content));
+    application.render();
+
+    for(auto* const widget : std::initializer_list<oui::Widget*>{&field, &edit})
+    {
+        application.focus(*widget);
+        application.dispatch_event(oui::Event{oui::TextEvent{U'u'}});
+        application.dispatch_event(oui::Event{oui::TextEvent{U'n'}});
+        application.dispatch_event(oui::Event{oui::TextEvent{U'o'}});
+        application.dispatch_event(oui::Event{oui::TextEvent{U'a', true}});
+        application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::insert_, true}});
+        EXPECT_EQ(*clipboard, "uno");
+        *clipboard = "";
+        application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::delete_, false, false, true}});
+        EXPECT_EQ(*clipboard, "uno") << "Shift+Delete cuts";
+        application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::insert_, false, false, true}});
+        application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::insert_, false, false, true}});
+    }
+    EXPECT_EQ(field.text(), "unouno");
+    EXPECT_EQ(edit.text(), "unouno");
+    // Delete alone still deletes.
+    application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::home}});
+    application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::delete_}});
+    EXPECT_EQ(edit.text(), "nouno");
+}
+
+TEST(OuiApplicationTests, ShiftDeleteInAFieldRunsTheCutBoundToIt)
+{
+    // As OUI Code binds Shift+Delete to its Cut: the field, which deletes with Delete, does not take it first.
+    oui::Application application{std::make_unique<MemoryBackend>()};
+    auto content{oui::column()};
+    auto& edit{content->add(oui::text_edit())};
+    edit.set_text("abc");
+    application.set_content(std::move(content));
+    application.focus(edit);
+    application.render();
+    auto cuts{0};
+    application.commands().register_command("edit.cut", "Cut", [&cuts] { ++ cuts; });
+    application.commands().bind("edit.cut", {oui::Key::delete_, false, false, true});
+    application.dispatch_event(oui::Event{oui::KeyEvent{oui::Key::delete_, false, false, true}});
+    EXPECT_EQ(cuts, 1);
+    EXPECT_EQ(edit.text(), "abc");
+}
+
 TEST(OuiApplicationTests, TheClipboardFollowsTheBackendToTheOneThatReplacedIt)
 {
     // As oui_run's, which starts in one backend and opens its window in another: the first is gone by the copy.
