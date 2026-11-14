@@ -943,8 +943,136 @@ void MarkdownView::arrange(const Rect& bounds)
     {
         m_laid_out_width = text_width_available();
         m_lines = layout(m_laid_out_width);
+        find_search_matches();
     }
     m_scroll = std::clamp(m_scroll, 0, max_scroll());
+}
+
+namespace
+{
+
+// A shown line's text, its runs one after another.
+[[nodiscard]] std::string line_text(const MarkdownView::Line& line)
+{
+    std::string text;
+    for(const auto& run : line)
+    {
+        text += run.text;
+    }
+    return text;
+}
+
+[[nodiscard]] bool same_options(const SearchOptions& first, const SearchOptions& second)
+{
+    return first.match_case == second.match_case && first.whole_word == second.whole_word &&
+           first.regex == second.regex;
+}
+
+} // namespace
+
+void MarkdownView::set_search_highlight(std::string_view needle, const SearchOptions& options)
+{
+    if(m_search && m_search_needle == needle && same_options(m_search_options, options))
+    {
+        return;
+    }
+    m_search_needle = needle;
+    m_search_options = options;
+    m_search.emplace(m_search_needle, options);
+    m_selected_search_match.reset();
+    find_search_matches();
+}
+
+void MarkdownView::clear_search_highlight()
+{
+    m_search.reset();
+    m_search_needle.clear();
+    m_search_matches.clear();
+    m_selected_search_match.reset();
+}
+
+std::size_t MarkdownView::search_match_count() const
+{
+    return m_search_matches.size();
+}
+
+std::optional<std::size_t> MarkdownView::selected_search_match() const
+{
+    if(!m_selected_search_match)
+    {
+        return std::nullopt;
+    }
+    return *m_selected_search_match + 1;
+}
+
+bool MarkdownView::find_next(std::string_view needle, const SearchOptions& options)
+{
+    return find_match(needle, options, true);
+}
+
+bool MarkdownView::find_previous(std::string_view needle, const SearchOptions& options)
+{
+    return find_match(needle, options, false);
+}
+
+bool MarkdownView::find_match(std::string_view needle, const SearchOptions& options, bool forward)
+{
+    set_search_highlight(needle, options);
+    const auto count{m_search_matches.size()};
+    if(count == 0)
+    {
+        return false;
+    }
+    if(m_selected_search_match)
+    {
+        m_selected_search_match = (*m_selected_search_match + (forward ? 1 : count - 1)) % count;
+    }
+    else if(forward)
+    {
+        const auto first{std::find_if(m_search_matches.begin(), m_search_matches.end(),
+                                      [this](const SearchMatch& match) { return match.line >= m_scroll; })};
+        m_selected_search_match =
+            first == m_search_matches.end() ? 0 : static_cast<std::size_t>(first - m_search_matches.begin());
+    }
+    else
+    {
+        const auto bottom{m_scroll + whole(bounds().height)};
+        const auto last{std::find_if(m_search_matches.rbegin(), m_search_matches.rend(),
+                                     [bottom](const SearchMatch& match) { return match.line < bottom; })};
+        m_selected_search_match =
+            last == m_search_matches.rend() ? count - 1 : static_cast<std::size_t>(m_search_matches.rend() - last - 1);
+    }
+    // Shown where it is, or a third of the way down when it was out of sight.
+    const auto line{m_search_matches[*m_selected_search_match].line};
+    const auto rows{whole(bounds().height)};
+    if(line < m_scroll || line >= m_scroll + rows)
+    {
+        scroll_to(line - rows / 3);
+    }
+    return true;
+}
+
+void MarkdownView::find_search_matches()
+{
+    const auto selected{m_selected_search_match};
+    m_search_matches.clear();
+    m_selected_search_match.reset();
+    if(!m_search || !m_search->is_valid())
+    {
+        return;
+    }
+    for(std::size_t index{}; index < m_lines.size(); ++ index)
+    {
+        for(const auto& [start, end] : m_search->find_all(line_text(m_lines[index])))
+        {
+            m_search_matches.push_back({static_cast<int>(index), start, end});
+        }
+    }
+    // Laid out again, as for another width, the same match stays chosen when there still is one of that number.
+    if(selected && *selected < m_search_matches.size())
+    {
+        m_selected_search_match = selected;
+    }
 }
 
 TextStyle MarkdownView::run_style(Role role, const Theme& theme, Color background) const
@@ -998,20 +1126,60 @@ void MarkdownView::paint(Painter& painter, const Theme& theme) const
         const auto on_grid{std::any_of(line.begin(), line.end(), [](const Run& run) { return on_the_grid(run); })};
         auto x{bounds().x + 1};
         std::vector<LabelRun> runs;
+        // The find bar's matches on this line, the chosen one in the selection's colours.
+        const auto line_index{m_scroll + row};
+        const auto first_match{std::lower_bound(m_search_matches.begin(), m_search_matches.end(), line_index,
+                                                [](const SearchMatch& match, int value)
+                                                { return match.line < value; })};
+        std::size_t offset{};
         for(const auto& run : line)
         {
             // The link Tab went to stands out, as what Enter follows.
             const auto style{m_chosen_link && run.link == *m_chosen_link
                                  ? TextStyle{theme.selection_foreground, theme.selection_background}
                                  : run_style(run.role, theme, background)};
+            // The run in pieces, where matches begin and end within it.
+            std::vector<LabelRun> pieces;
+            auto at{offset};
+            const auto run_end{offset + run.text.size()};
+            for(auto match{first_match}; match != m_search_matches.end() && match->line == line_index && at < run_end;
+                ++ match)
+            {
+                const auto start{std::max(match->start, at)};
+                const auto end{std::min(match->end, run_end)};
+                if(start >= end)
+                {
+                    continue;
+                }
+                if(start > at)
+                {
+                    pieces.push_back({std::string_view{run.text}.substr(at - offset, start - at), style});
+                }
+                auto lit{style};
+                const auto chosen{m_selected_search_match &&
+                                  static_cast<std::size_t>(match - m_search_matches.begin()) ==
+                                      *m_selected_search_match};
+                lit.foreground = chosen ? theme.selection_foreground : theme.search_match_foreground;
+                lit.background = chosen ? theme.selection_background : theme.search_match_background;
+                pieces.push_back({std::string_view{run.text}.substr(start - offset, end - start), lit});
+                at = end;
+            }
+            if(at < run_end)
+            {
+                pieces.push_back({std::string_view{run.text}.substr(at - offset), style});
+            }
+            offset = run_end;
             // Indentation keeps its cells, so nested lists line up whatever the font.
             if(on_grid || (runs.empty() && run.text.find_first_not_of(' ') == std::string::npos))
             {
-                painter.draw_text({x, y}, run.text, style);
-                x += text_width(run.text);
+                for(const auto& piece : pieces)
+                {
+                    painter.draw_text({x, y}, piece.text, piece.style);
+                    x += text_width(piece.text);
+                }
                 continue;
             }
-            runs.push_back({run.text, style});
+            runs.insert(runs.end(), pieces.begin(), pieces.end());
         }
         if(!runs.empty())
         {

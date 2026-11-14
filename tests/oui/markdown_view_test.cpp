@@ -2,9 +2,12 @@
 #include <oui/markdown_view.h>
 #include <oui/text_metrics.h>
 #include <oui/text_layout.h>
+#include <oui/theme.h>
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <string>
@@ -272,4 +275,88 @@ TEST(OuiMarkdownViewTests, ProseFillsTheLineAsTheFontItIsDrawnInMeasuresIt)
     }
     // Half as wide, about half the lines: a line takes as many words as fit, not as many as cells would.
     EXPECT_LE(in_a_narrow_font, in_cells / 2 + 1);
+}
+
+namespace
+{
+
+// Lines of `count` paragraphs, the one at `with` holding "needle".
+std::string paragraphs(int count, std::initializer_list<int> with)
+{
+    std::string markdown;
+    for(auto index{0}; index < count; ++ index)
+    {
+        const auto has{std::find(with.begin(), with.end(), index) != with.end()};
+        markdown += "Paragraph " + std::to_string(index) + (has ? " with a needle" : "") + "\n\n";
+    }
+    return markdown;
+}
+
+} // namespace
+
+TEST(OuiMarkdownViewTests, FindsInTheTextAsShownGoingRoundAndScrollingToEachMatch)
+{
+    auto view{view_of(paragraphs(30, {2, 20, 25}))};
+    view->arrange({0, 0, 40, 6});
+    view->set_search_highlight("needle");
+    EXPECT_EQ(view->search_match_count(), 3u);
+    EXPECT_FALSE(view->selected_search_match().has_value()) << "none chosen until asked";
+
+    EXPECT_TRUE(view->find_next("needle"));
+    EXPECT_EQ(view->selected_search_match(), 1u);
+    EXPECT_EQ(view->scroll_offset(), 0) << "the first match is in sight already";
+    EXPECT_TRUE(view->find_next("needle"));
+    EXPECT_EQ(view->selected_search_match(), 2u);
+    // Paragraph 20 is the 41st line: shown a third of the way down the six rows.
+    EXPECT_EQ(view->scroll_offset(), 40 - 2);
+    EXPECT_TRUE(view->find_next("needle"));
+    EXPECT_TRUE(view->find_next("needle"));
+    EXPECT_EQ(view->selected_search_match(), 1u) << "round to the first";
+    EXPECT_TRUE(view->find_previous("needle"));
+    EXPECT_EQ(view->selected_search_match(), 3u) << "and back to the last";
+
+    EXPECT_FALSE(view->find_next("haystack"));
+    EXPECT_EQ(view->search_match_count(), 0u);
+    view->clear_search_highlight();
+    EXPECT_EQ(view->search_match_count(), 0u);
+}
+
+TEST(OuiMarkdownViewTests, AFindStartsFromTheTopOfTheView)
+{
+    auto view{view_of(paragraphs(30, {2, 20, 25}))};
+    view->arrange({0, 0, 40, 6});
+    view->scroll_to(30);
+    EXPECT_TRUE(view->find_next("needle"));
+    EXPECT_EQ(view->selected_search_match(), 2u);
+    view->set_search_highlight("Needle", {false});
+    EXPECT_FALSE(view->selected_search_match().has_value()) << "other options, another search";
+    EXPECT_EQ(view->search_match_count(), 3u);
+}
+
+TEST(OuiMarkdownViewTests, ShowsTheMatchesInTheSearchColoursAndTheChosenOneSelected)
+{
+    oui::Theme theme;
+    auto view{view_of("one **needle** and a needle")};
+    view->arrange({0, 0, 40, 2});
+    EXPECT_TRUE(view->find_next("needle"));
+    oui::CellBuffer buffer{40, 2};
+    oui::CellBufferPainter painter{buffer};
+    view->paint(painter, theme);
+    const auto at{[&buffer](std::u32string_view word, std::size_t which)
+                  {
+                      std::u32string row;
+                      for(auto x{0}; x < buffer.width(); ++ x)
+                      {
+                          row += buffer.cell_at(x, 0).glyph;
+                      }
+                      auto found{row.find(word)};
+                      for(std::size_t index{}; index < which; ++ index)
+                      {
+                          found = row.find(word, found + 1);
+                      }
+                      return buffer.cell_at(static_cast<int>(found), 0);
+                  }};
+    EXPECT_EQ(at(U"needle", 0).background, theme.selection_background) << "the chosen one, in bold";
+    EXPECT_EQ(at(U"needle", 1).background, theme.search_match_background);
+    EXPECT_EQ(at(U"one", 0).background, theme.editor_background);
 }

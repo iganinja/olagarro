@@ -592,7 +592,7 @@ it has the focus hears nothing more.
 | `FolderView` | [folder_view.h](../oui/include/oui/folder_view.h) | A folder's contents as a list, folders first; an explorer, or a project tree kept inside a folder; asks the program to rename, copy, delete |
 | `TreeView` | [tree_view.h](../oui/include/oui/tree_view.h) | Nodes that open and close, with a header and an empty message |
 | `TabView` | [tab_view.h](../oui/include/oui/tab_view.h) | Pages under a row of titles that close, drag and reorder |
-| `MarkdownView` | [markdown_view.h](../oui/include/oui/markdown_view.h) | Markdown shown formatted and read-only, with links to sections and out |
+| `MarkdownView` | [markdown_view.h](../oui/include/oui/markdown_view.h) | Markdown shown formatted and read-only, with links to sections and out; finds as TextEdit does, for a find bar (`set_search_highlight`, `find_next`) |
 | `DiffView` | [diff_view.h](../oui/include/oui/diff_view.h) | Two texts side by side, their differences in colour, F7 to the next |
 | `TerminalView` | [terminal_view.h](../oui/include/oui/terminal_view.h) | A program in a pseudo-terminal of its own, its screen shown as xterm would, history included |
 | `CalculatorView` | [calculator_view.h](../oui/include/oui/calculator_view.h) | oui_calc in a widget: an expression line, its result and a log |

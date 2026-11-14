@@ -1,6 +1,7 @@
 #pragma once
 
 #include <oui/scrollbar.h>
+#include <oui/text_search.h>
 #include <oui/theme.h>
 #include <oui/widget.h>
 
@@ -68,6 +69,18 @@ class MarkdownView final : public Widget
     void scroll_to(int line);
     // Shows the heading `anchor` names at the top; false, staying where it is, when there is none.
     bool scroll_to_anchor(std::string_view anchor);
+    // Shows every match of `needle` in the text as laid out with the theme's search colours until cleared, as a find
+    // bar does while it is open; a match lies within one line as shown. A new needle or new options choose no match.
+    void set_search_highlight(std::string_view needle, const SearchOptions& options = {});
+    void clear_search_highlight();
+    // How many matches the highlight has, and which of them, counting from 1, is chosen.
+    [[nodiscard]] std::size_t search_match_count() const;
+    [[nodiscard]] std::optional<std::size_t> selected_search_match() const;
+    // Chooses the next or previous match, wrapping round the text, and scrolls to it; with none chosen, the first from
+    // the top of the view, or the last before its bottom. The highlight becomes `needle`'s. False when there is none.
+    bool find_next(std::string_view needle, const SearchOptions& options = {});
+    bool find_previous(std::string_view needle, const SearchOptions& options = {});
+
     // A link was followed that leads out of the text: where it leads, as written.
     template <typename Callback> olagarro::signal_slot::Connection on_link(Callback&& callback)
     {
@@ -91,7 +104,23 @@ class MarkdownView final : public Widget
     // The first line link `link` shows on.
     [[nodiscard]] std::optional<int> line_of_link(int link) const;
 
+    // Finds the highlight's matches in the lines as laid out.
+    void find_search_matches();
+    bool find_match(std::string_view needle, const SearchOptions& options, bool forward);
+    struct SearchMatch
+    {
+        int line;
+        std::size_t start;
+        std::size_t end;
+    };
+
     std::string m_markdown;
+    // What the find bar looks for, and where it is in the lines laid out.
+    std::optional<TextSearch> m_search;
+    std::string m_search_needle;
+    SearchOptions m_search_options;
+    std::vector<SearchMatch> m_search_matches;
+    std::optional<std::size_t> m_selected_search_match;
     std::optional<ColorRef> m_background;
     std::optional<ColorRef> m_foreground;
     // The layout for the width last arranged.
