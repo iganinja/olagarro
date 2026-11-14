@@ -58,6 +58,9 @@ class Widget
     virtual void collect_focusable(std::vector<Widget*>& widgets);
 
     [[nodiscard]] bool is_focused() const;
+    // The pointer is over it and not over a widget inside it, as a button that lights as the pointer passes asks. The
+    // application says so as the pointer moves.
+    [[nodiscard]] bool is_hovered() const;
     [[nodiscard]] bool is_visible() const;
     void set_visible(bool is_visible);
     // Whether it answers: a disabled widget takes no click, no key, no letter with Alt and no focus, and shows so;
@@ -159,6 +162,7 @@ class Widget
     Rect m_bounds{};
     Container* m_parent{nullptr};
     bool m_is_focused{false};
+    bool m_is_hovered{false};
     bool m_is_visible{true};
     bool m_is_enabled{true};
     std::function<bool(const Event&)> m_key_handler;

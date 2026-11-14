@@ -414,6 +414,9 @@ One widget has the keyboard focus; `Application::focused()` says which, and `is_
 takes the focus when `is_focusable()` is true, it is enabled, and it and its containers are visible.
 `collect_focusable` lists them in the order of the tree, which is the order Tab goes through, wrapping round.
 
+The pointer is over one widget at a time, the deepest under it: `is_hovered()` asks a widget, and the application marks
+it as the pointer moves, as a button that lights under the pointer asks.
+
 - `Application::focus(widget)` gives it the focus; `reset_focus()` gives it to the first that takes it.
 - Setting new content, or showing a dialog, focuses its first focusable widget. A dialog that should start
   elsewhere posts the focus before `show_modal`, as `show_help` in OUI Code does:
@@ -576,7 +579,7 @@ it has the focus hears nothing more.
 | Widget | Header | What it is |
 |--------|--------|------------|
 | `Label` | [label.h](../oui/include/oui/label.h) | Text on one line, or wrapped; bold, coloured, centred or to the right; a mark before it; `set_buddy` names the field its `&` letter focuses |
-| `Button` | [button.h](../oui/include/oui/button.h) | A push button with a shadow, or compact on one row; `on_clicked`; `set_default` for the one Enter presses |
+| `Button` | [button.h](../oui/include/oui/button.h) | A push button with a shadow, or compact on one row; `on_clicked`; `set_default` for the one Enter presses; `set_hover_visible` lights it under the pointer in a window |
 | `CheckButton` | [check_button.h](../oui/include/oui/check_button.h) | A box to tick with its text; `on_toggled` |
 | `LineEdit` | [line_edit.h](../oui/include/oui/line_edit.h) | A one-line field with selection and a placeholder, or for a password with `set_password`; `on_changed` and `on_submitted` on Enter |
 | `NumberField` | [number_field.h](../oui/include/oui/number_field.h) | A number to type, in a range and on a step, with arrows, keys and the wheel to step it; with `set_draggable`, dragged along to change it as in Blender (Shift finer, Ctrl coarser, a double click to type over it), `on_drag_started` and `on_drag_finished` around a drag; `set_mixed` shows "—" for several numbers that differ; `set_trim_zeros` leaves out the zeros ending its decimals |

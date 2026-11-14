@@ -26,6 +26,9 @@ class Button final : public Widget
     // What lies around the button, where its shadow falls; the theme's dialog background when not set.
     void set_background(ColorRef background);
     void set_compact(bool compact);
+    // Lit while the pointer is over it, where the painter draws in pixels, as a toolbar's buttons; off by default.
+    void set_hover_visible(bool visible);
+    [[nodiscard]] bool hover_visible() const;
     // Makes it the button Enter presses from anywhere in its window, unless what has the focus takes Enter itself; it
     // shows apart, as Turbo Vision's default button.
     void set_default(bool is_default);
@@ -57,6 +60,7 @@ class Button final : public Widget
     bool m_shadow_visible{true};
     std::optional<ColorRef> m_background;
     bool m_compact{false};
+    bool m_hover_visible{false};
     bool m_default{false};
     std::optional<Icon> m_icon;
     olagarro::signal_slot::Signal<> m_clicked;

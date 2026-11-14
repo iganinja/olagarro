@@ -1437,6 +1437,58 @@ TEST(OuiGraphicsTests, AFlatButtonHasAThinEdgeAllRoundAndHeldDownIsFilledLighter
     EXPECT_TRUE(same(pressed.pixel_at(2, 10), style.light));
 }
 
+TEST(OuiGraphicsTests, AButtonUnderThePointerIsTintedWithTheFocusColour)
+{
+    auto cell{default_cell_font()};
+    auto interface{default_interface_font()};
+    auto symbols{symbol_font(12, 24, cell->ascent())};
+    const auto style{classic_style()};
+    const auto theme{theme_for(style)};
+    const auto drawn{[&](bool hovered, bool pressed)
+                     {
+                         Canvas canvas{120, 48};
+                         GraphicalPainter painter{canvas, style, *cell, *interface, *symbols};
+                         ButtonLook look;
+                         look.hovered = hovered;
+                         look.pressed = pressed;
+                         look.around = {1, 2, 3};
+                         painter.draw_button({0, 0, 10, 2}, look, theme);
+                         return canvas;
+                     }};
+    const auto face{drawn(true, false).pixel_at(4, 12)};
+    EXPECT_FALSE(same(face, theme.button_background));
+    EXPECT_TRUE(same(drawn(false, false).pixel_at(4, 12), theme.button_background));
+    // Held down it is as any button held down.
+    EXPECT_EQ(drawn(true, true).pixels(), drawn(false, true).pixels());
+}
+
+TEST(OuiGraphicsTests, TheWidgetUnderThePointerIsHoveredUntilThePointerLeavesIt)
+{
+    Application application{scripted_backend({}, {40, 12})};
+    auto content{column()};
+    auto& first{content->add(button("First"))};
+    auto& second{content->add(button("Second"))};
+    application.set_content(std::move(content));
+    application.run_frame();
+    const auto over{[](const Widget& widget)
+                    {
+                        MouseEvent mouse{widget.bounds().x + 1, widget.bounds().y, false};
+                        mouse.hover = true;
+                        return Event{mouse};
+                    }};
+    EXPECT_FALSE(first.is_hovered());
+    application.dispatch_event(over(first));
+    EXPECT_TRUE(first.is_hovered());
+    EXPECT_FALSE(second.is_hovered());
+    application.dispatch_event(over(second));
+    EXPECT_FALSE(first.is_hovered());
+    EXPECT_TRUE(second.is_hovered());
+    // A button shows it only when asked to.
+    EXPECT_FALSE(second.hover_visible());
+    second.set_hover_visible(true);
+    EXPECT_TRUE(second.hover_visible());
+}
+
 TEST(OuiGraphicsTests, AButtonWithAnIconDrawsItInPlaceOfItsText)
 {
     auto cell{default_cell_font()};

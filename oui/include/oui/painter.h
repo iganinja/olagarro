@@ -103,6 +103,8 @@ struct ButtonLook
     bool enabled{true};
     // Drawn in place of the text by a graphical style; a terminal writes the text.
     std::optional<Icon> icon{};
+    // The pointer is over it and it shows so, lighter; a terminal draws it as ever.
+    bool hovered{false};
 };
 
 struct CheckBoxLook

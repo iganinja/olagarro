@@ -71,7 +71,7 @@ Window "Find in Files" context=FindInFiles width=60
 | `TextEdit` | | `read_only`, `wrap` | |
 | `MarkdownView` | | `background`, `foreground` | |
 | `CheckButton` | what it says | `checked`, `background` | |
-| `Button` | what it says | `default`, `compact`, `flat` | |
+| `Button` | what it says | `default`, `compact`, `flat`, `hover` | |
 | `ComboBox` | | | |
 | `VSpacer` | | `height` | |
 | `HSpacer` | | `width` | |
@@ -98,7 +98,7 @@ What each builds, and what its properties do, as `Builder::make` in ui.cpp does 
 | `TextEdit` | `TextEdit` | `read_only`; `wrap` long lines break |
 | `MarkdownView` | `MarkdownView` | `background=colour`, `foreground=colour` |
 | `CheckButton "text"` | `CheckButton` | `checked`; `background=colour`; with `""` the box alone, in the middle of its place, as in a column of a table |
-| `Button "text"` | `Button` | `default` Enter presses it; `compact` on one row; `flat` without its shadow |
+| `Button "text"` | `Button` | `default` Enter presses it; `compact` on one row; `flat` without its shadow; `hover` lit while the pointer is over it, in a window |
 | `ComboBox` | `ComboBox` | none; its options are the code's to give |
 | `VSpacer`, `HSpacer` | `VSpacer`, `HSpacer` | `height=rows`, `width=cells`, 1 unless given |
 | `Slot` | a placeholder that takes no room | needs an `id`; cannot be the root |

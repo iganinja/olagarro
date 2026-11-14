@@ -51,6 +51,10 @@ bool Widget::is_focused() const
 {
     return m_is_focused;
 }
+bool Widget::is_hovered() const
+{
+    return m_is_hovered;
+}
 bool Widget::is_visible() const
 {
     return m_is_visible;

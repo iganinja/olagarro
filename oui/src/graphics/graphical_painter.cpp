@@ -769,7 +769,11 @@ void GraphicalPainter::draw_button(const Rect& bounds, const ButtonLook& look, c
         shape.y += (area.height - height) / 2;
         shape.height = height;
     }
-    bevel(shape, look.pressed, look.pressed && m_style.flat ? m_style.light : theme.button_background);
+    // Under the pointer, a button that shows it takes a tint of the focus's colour.
+    const auto face{look.pressed && m_style.flat    ? m_style.light
+                    : look.hovered && !look.pressed ? mix(theme.button_background, m_style.focus, 56)
+                                                    : theme.button_background};
+    bevel(shape, look.pressed, face);
     const auto shift{look.pressed && !m_style.flat ? 1 : 0};
     const auto ink{look.enabled ? theme.button_foreground : theme.disabled_foreground};
     if(look.icon)

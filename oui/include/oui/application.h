@@ -227,6 +227,8 @@ class Application
     // A mouse event or Escape during a drag between widgets, as begin_drag says; true when it was the drag's.
     [[nodiscard]] bool handle_drag(const Event& event);
     void show_pointer(const Widget* target);
+    // Marks the widget under the pointer, the one before no more; nothing when the pointer is over none.
+    void set_hovered(Widget* widget);
     void hide_tooltip();
     bool edit_focused_field(const Event& event);
     void ensure_focus_is_valid();
@@ -272,6 +274,9 @@ class Application
     // Popups closed while an event was being handled, perhaps their own, kept until the next frame.
     std::vector<std::unique_ptr<Widget>> m_closed_popups;
     std::weak_ptr<void> m_mouse_capture_lifetime;
+    // The widget the pointer is over, as Widget::is_hovered says, and whether it is still there.
+    Widget* m_hovered{};
+    std::weak_ptr<void> m_hovered_lifetime;
     // Set when the widget holding a click goes away mid-click; the rest of that click is dropped.
     bool m_discard_mouse_until_release{false};
     // The last press, to tell double and triple clicks from separate ones.

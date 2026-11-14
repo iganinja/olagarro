@@ -59,7 +59,7 @@ struct Kind
         {"TextEdit", {"read_only", "wrap"}, false},
         {"MarkdownView", {"background", "foreground"}, false},
         {"CheckButton", {"checked", "background"}, true},
-        {"Button", {"default", "compact", "flat"}, true},
+        {"Button", {"default", "compact", "flat", "hover"}, true},
         {"ComboBox", {}, false},
         {"VSpacer", {"height"}, false},
         {"HSpacer", {"width"}, false},
@@ -252,6 +252,7 @@ struct Property
         {"default", Value::flag, [] { return translate("DescriptionProperty", "Enter presses it"); }},
         {"compact", Value::flag, [] { return translate("DescriptionProperty", "one row"); }},
         {"flat", Value::flag, [] { return translate("DescriptionProperty", "without its shadow"); }},
+        {"hover", Value::flag, [] { return translate("DescriptionProperty", "lit while the pointer is over it"); }},
     };
     return all;
 }
@@ -733,6 +734,7 @@ class Builder
             made->set_default(node.has("default"));
             made->set_compact(node.has("compact"));
             made->set_shadow_visible(!node.has("flat"));
+            made->set_hover_visible(node.has("hover"));
             return made;
         }
         if(type == "ComboBox")

@@ -30,6 +30,15 @@ void Button::set_compact(bool compact)
     m_compact = compact;
 }
 
+void Button::set_hover_visible(bool visible)
+{
+    m_hover_visible = visible;
+}
+bool Button::hover_visible() const
+{
+    return m_hover_visible;
+}
+
 void Button::set_default(bool is_default)
 {
     m_default = is_default;
@@ -136,7 +145,7 @@ void Button::paint(Painter& painter, const Theme& theme) const
     painter.draw_button(bounds(),
                         {shown, m_pressed, is_focused() && is_enabled(), m_shadow_visible, m_compact, m_default,
                          mnemonic_offset(m_text), resolve(m_background, theme, theme.dialog_background), is_enabled(),
-                         m_icon},
+                         m_icon, m_hover_visible && is_hovered() && is_enabled()},
                         theme);
 }
 

@@ -902,6 +902,14 @@ void Application::deliver_event(const Event& event)
         }
         m_pointer_position = Point{mouse->x, mouse->y};
         show_pointer(target);
+        if(auto* const under{m_content->hit_test(mouse->x, mouse->y)}; under != nullptr && m_content->contains(under))
+        {
+            set_hovered(under);
+        }
+        else
+        {
+            set_hovered(nullptr);
+        }
         // A press focuses what it falls on, or the first thing round it that takes the focus, as a list does for a
         // click on one of its rows.
         if(mouse->pressed)
@@ -1272,6 +1280,26 @@ void Application::update_pointer()
                      ? m_mouse_capture
                      : m_content->hit_test(m_pointer_position->x, m_pointer_position->y)};
     show_pointer(target != nullptr && m_content->contains(target) ? target : nullptr);
+    auto* const under{m_content->hit_test(m_pointer_position->x, m_pointer_position->y)};
+    set_hovered(under != nullptr && m_content->contains(under) ? under : nullptr);
+}
+void Application::set_hovered(Widget* widget)
+{
+    if(widget == m_hovered && (widget == nullptr || !m_hovered_lifetime.expired()))
+    {
+        return;
+    }
+    if(m_hovered != nullptr && !m_hovered_lifetime.expired())
+    {
+        m_hovered->m_is_hovered = false;
+    }
+    m_hovered = widget;
+    m_hovered_lifetime = widget == nullptr ? std::weak_ptr<void>{} : widget->m_lifetime;
+    if(widget != nullptr)
+    {
+        widget->m_is_hovered = true;
+    }
+    m_needs_render = true;
 }
 void Application::follow_pointer(const MouseEvent& mouse)
 {
